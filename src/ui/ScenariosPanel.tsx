@@ -103,17 +103,17 @@ export function ScenariosPanel() {
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const share = async () => {
-    setBusy('create');
+  const share = async (scenarioId: string) => {
+    setBusy(`create:${scenarioId}`);
     const ready = await ensureBackedUp();
     if (!ready.ok) {
       setBusy(null);
       setMessage({ kind: 'bad', text: ready.message });
       return;
     }
-    const r = await publishShare(appStore, client, s.activeScenarioId, hideAddress);
+    const r = await publishShare(appStore, client, scenarioId, hideAddress);
     setBusy(null);
-    setMessage(r.ok ? { kind: 'ok', text: 'Link created. Anyone with it can view this plan, and nobody can change it.' } : { kind: 'bad', text: r.error.message });
+    setMessage(r.ok ? { kind: 'ok', text: `Link created for "${nameOf(scenarioId)}". Anyone with it can view that plan, and nobody can change it.` } : { kind: 'bad', text: r.error.message });
   };
   const update = async (rec: ShareRecord) => {
     setBusy(rec.token);
@@ -150,8 +150,9 @@ export function ScenariosPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [a, b, s.instances, s.palette, s.hardscape, s.hydrozones, s.autoIrrigation, s.useRain, s.aduEnabled, s.saved, s.timelineMonth, s.library]);
 
-  const links = s.shares.filter((r) => r.scenarioId === s.activeScenarioId);
-  const otherLinks = s.shares.filter((r) => r.scenarioId !== s.activeScenarioId);
+  const liveLinks = (scenarioId: string) => s.shares.filter((r) => r.scenarioId === scenarioId && !r.revoked);
+  // Links whose scenario was deleted still work until turned off, so they stay reachable.
+  const orphanLinks = s.shares.filter((r) => !r.revoked && !s.scenarios.some((x) => x.id === r.scenarioId));
   const linkRow = (r: ShareRecord) => {
     const url = shareUrl(window.location.origin, r.token);
     return (
@@ -159,7 +160,7 @@ export function ScenariosPanel() {
         <div className="row wrap">
           <span className={`pill ${r.revoked ? 'warn' : 'native'}`}>{r.revoked ? 'turned off' : 'live'}</span>
           {r.hideAddress && <span className="pill">address hidden</span>}
-          <span className="muted small">for {nameOf(r.scenarioId)} · shown {when(r.updatedAt)}</span>
+          <span className="muted small">{s.scenarios.some((x) => x.id === r.scenarioId) ? '' : `for ${nameOf(r.scenarioId)} · `}shown {when(r.updatedAt)}</span>
         </div>
         {!r.revoked && (
           <>
@@ -223,6 +224,16 @@ export function ScenariosPanel() {
                   ? <><button className="on" onClick={() => { s.deleteScenario(sc.id); setConfirmDelete(null); }}>Yes, delete</button><button onClick={() => setConfirmDelete(null)}>Keep</button></>
                   : <button onClick={() => setConfirmDelete(sc.id)}>Delete</button>)}
               </div>
+              {SHARING_ENABLED && (
+                <div className="sharebox">
+                  {liveLinks(sc.id).length > 0 && <ul className="species">{liveLinks(sc.id).map(linkRow)}</ul>}
+                  <div className="row wrap">
+                    <button disabled={busy === `create:${sc.id}`} onClick={() => share(sc.id)}>
+                      {busy === `create:${sc.id}` ? 'Creating…' : liveLinks(sc.id).length ? 'Create another link' : 'Create share link'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </li>
           );
         })}
@@ -236,21 +247,19 @@ export function ScenariosPanel() {
 
       <CloudBackup />
 
-      <h2>Share a read-only link</h2>
+      <h2>Sharing</h2>
       {!SHARING_ENABLED ? (
         <p className="muted small">Share links are not available on this site yet. Use Export above to send a scenario as a file.</p>
       ) : (<>
-      <p className="small">For <b>{nameOf(s.activeScenarioId)}</b>. Family and professionals open the link with no login. They can orbit, scrub time and seasons, switch layers, and inspect plants, but cannot change anything.</p>
-      <label className="check"><input type="checkbox" checked={hideAddress} onChange={(e) => setHideAddress(e.target.checked)} />Hide the street address</label>
+      <p className="small">Every scenario above has its own link. Family and professionals open a link with no login. They can orbit, scrub time and seasons, switch layers, and inspect plants, but cannot change anything.</p>
+      <label className="check"><input type="checkbox" checked={hideAddress} onChange={(e) => setHideAddress(e.target.checked)} />Hide the street address on new links</label>
       <p className="muted small">{hideAddress
-        ? 'The shared plan carries no name or address, and its location is rounded to about 7 miles. The lot layout stays, since that is the plan.'
-        : 'The shared plan shows the lot name and address.'}</p>
-      <div className="row"><button className="on" disabled={busy === 'create'} onClick={share}>{busy === 'create' ? 'Creating…' : 'Create link'}</button></div>
-      {links.length > 0 && <ul className="species">{links.map(linkRow)}</ul>}
-      {otherLinks.length > 0 && (
+        ? 'New links carry no name or address, and their location is rounded to about 7 miles. The lot layout stays, since that is the plan.'
+        : 'New links show the lot name and address.'}</p>
+      {orphanLinks.length > 0 && (
         <details>
-          <summary>Links for other scenarios ({otherLinks.length})</summary>
-          <ul className="species">{otherLinks.map(linkRow)}</ul>
+          <summary>Links for deleted scenarios ({orphanLinks.length})</summary>
+          <ul className="species">{orphanLinks.map(linkRow)}</ul>
         </details>
       )}
       <p className="muted small">A link shows a snapshot, so later edits stay private until you press "Update to today's plan". Turning a link off deletes the shared copy and stops it working at once. The key that lets you turn it off is saved in this browser, so keep using this browser for that. Anyone who has the link can pass it on.</p>

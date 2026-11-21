@@ -1,0 +1,115 @@
+{
+  "schema": "ashby-site/1",
+  "name": "10641 Ashby Ave",
+  "address": "10641 Ashby Ave, Los Angeles, CA",
+  "latitude": 34.04,
+  "longitude": -118.43,
+  "timeZone": "America/Los_Angeles",
+  "rearBearingDeg": 330,
+  "driveSide": "left",
+  "lot": { "width": 50.6875, "depth": 150.46875 },
+  "structures": [
+    {
+      "id": "house",
+      "name": "House (E) SFH",
+      "footprint": [[8, 24], [46, 24], [46, 66.229167], [8, 66.229167]],
+      "eaveHeight": 9,
+      "ridgeHeight": 15,
+      "roofForm": "gable",
+      "status": "existing",
+      "toggleable": false,
+      "note": "Rear face derived from printed house-to-ADU separation. Front and sides scaled from photo (about 2 ft). Heights are placeholders."
+    },
+    {
+      "id": "garage",
+      "name": "Garage (E) 2 car",
+      "footprint": [[0, 82.5], [20, 82.5], [20, 103.46875], [0, 103.46875]],
+      "eaveHeight": 9,
+      "ridgeHeight": 11,
+      "roofForm": "gable",
+      "status": "existing",
+      "toggleable": false,
+      "note": "Rear face derived from printed garage-to-ADU distance (19'-10 3/4\"). Front face scaled. Height is a placeholder."
+    },
+    {
+      "id": "adu",
+      "name": "ADU (proposed)",
+      "footprint": [[8.96, 123.364583], [46.7204, 123.364583], [46.7204, 146.46875], [8.96, 146.46875]],
+      "roofFootprint": [[8.96, 120.927083], [46.7204, 120.927083], [46.7204, 146.46875], [8.96, 146.46875]],
+      "eaveHeight": 9,
+      "ridgeHeight": 14,
+      "roofForm": "gable",
+      "status": "proposed",
+      "toggleable": true,
+      "note": "Modeled as one rectangle. The plan shows an L-shape and a 616 SF area, so this overstates the footprint (964 SF). Replace with the ADU floor plan outline. Roof reaches 2.44 ft toward the house (printed width 25'-6 1/2\" includes the overhang)."
+    }
+  ],
+  "hardscape": [
+    {
+      "id": "driveway",
+      "name": "Driveway (E)",
+      "polygon": [[0, 0], [8, 0], [8, 82.5], [0, 82.5]],
+      "material": "concrete"
+    }
+  ],
+  "contextObjects": [
+    { "id": "fence-west", "kind": "fence", "name": "Fence, driveway side", "line": [[0, 0], [0, 150.46875]], "height": 6, "placeholder": true },
+    { "id": "fence-east", "kind": "fence", "name": "Fence, far side", "line": [[50.6875, 0], [50.6875, 150.46875]], "height": 6, "placeholder": true },
+    { "id": "fence-rear", "kind": "fence", "name": "Fence, rear", "line": [[0, 150.46875], [50.6875, 150.46875]], "height": 6, "placeholder": true },
+    { "id": "pole", "kind": "pole", "name": "Power pole (rear lot line)", "position": [40, 150], "height": 30, "placeholder": true, "note": "Position along the rear line is a guess." },
+    { "id": "tree-adu-corner", "kind": "tree", "name": "Existing tree near ADU front corner", "position": [5, 122], "height": 22, "canopyWidth": 16, "trunkHeight": 6, "density": 0.75, "placeholder": true },
+    { "id": "tree-rear-1", "kind": "tree", "name": "Rear tree 1", "position": [3, 112], "height": 25, "canopyWidth": 14, "trunkHeight": 7, "density": 0.75, "placeholder": true },
+    { "id": "tree-rear-2", "kind": "tree", "name": "Rear tree 2", "position": [3, 134], "height": 25, "canopyWidth": 14, "trunkHeight": 7, "density": 0.75, "placeholder": true },
+    { "id": "tree-rear-3", "kind": "tree", "name": "Rear tree 3", "position": [20, 149], "height": 25, "canopyWidth": 14, "trunkHeight": 7, "density": 0.75, "placeholder": true },
+    { "id": "tree-rear-4", "kind": "tree", "name": "Rear tree 4", "position": [36, 149], "height": 25, "canopyWidth": 14, "trunkHeight": 7, "density": 0.75, "placeholder": true }
+  ],
+  "easements": [
+    {
+      "id": "dwp",
+      "label": "DWP easement (4 ft)",
+      "polygon": [[0, 146.46875], [8.96, 146.46875], [8.96, 150.46875], [0, 150.46875]],
+      "heightCap": 15
+    }
+  ],
+  "setbacks": [
+    { "id": "side-left", "label": "Side yard 4'-0\"", "edge": "left", "distance": 4 },
+    { "id": "side-right", "label": "Side yard 4'-0\"", "edge": "right", "distance": 4 },
+    { "id": "rear", "label": "ADU rear setback 4'-0\"", "edge": "rear", "distance": 4 }
+  ],
+  "zones": [
+    { "id": "front_yard", "name": "Front yard", "polygon": [[8, 0], [50.6875, 0], [50.6875, 24], [8, 24]], "slope": 0 },
+    { "id": "side_east", "name": "Side yard (far side)", "polygon": [[46, 24], [50.6875, 24], [50.6875, 66.229167], [46, 66.229167]] },
+    { "id": "side_driveway", "name": "Side yard (driveway side)", "polygon": [[0, 24], [8, 24], [8, 66.229167], [0, 66.229167]] },
+    { "id": "back_yard", "name": "Back yard", "polygon": [[0, 66.229167], [50.6875, 66.229167], [50.6875, 150.46875], [0, 150.46875]] }
+  ],
+  "views": [
+    { "id": "orbit", "label": "Orbit", "kind": "perspective", "position": [80, -70, 70], "target": [25, 70, 0] },
+    { "id": "plan", "label": "Plan", "kind": "plan" },
+    { "id": "street", "label": "Street", "kind": "perspective", "position": [25, -25, 6], "target": [25, 60, 6] },
+    { "id": "front", "label": "Front yard", "kind": "perspective", "position": [44, 3, 5.5], "target": [20, 40, 5] },
+    { "id": "back", "label": "Back yard", "kind": "perspective", "position": [30, 70, 5.5], "target": [28, 125, 5] },
+    { "id": "adu", "label": "ADU door", "kind": "perspective", "position": [28, 121, 5.5], "target": [28, 66, 6] }
+  ],
+  "printed": [
+    { "id": "lot-width", "label": "Lot width", "value": "50'-8 1/4\"", "measure": { "type": "lot", "axis": "x" } },
+    { "id": "lot-depth", "label": "Lot length", "value": "150'-5 5/8\"", "measure": { "type": "lot", "axis": "y" } },
+    { "id": "adu-length", "label": "ADU length (across lot)", "value": "37'-9 1/8\"", "measure": { "type": "extent", "structure": "adu", "axis": "x" } },
+    { "id": "adu-width", "label": "ADU width (front to back, to roof edge)", "value": "25'-6 1/2\"", "measure": { "type": "extent", "structure": "adu", "axis": "y", "roof": true } },
+    { "id": "adu-rear", "label": "ADU rear yard setback", "value": "4'-0\"", "measure": { "type": "edgeToLot", "structure": "adu", "edge": "maxY" } },
+    { "id": "adu-side", "label": "ADU side setback, side opposite driveway", "value": "4'-0\"", "measure": { "type": "edgeToLot", "structure": "adu", "edge": "maxX" } },
+    { "id": "adu-clear", "label": "ADU clearance, driveway side", "value": "9'-0\"", "measure": { "type": "edgeToLot", "structure": "adu", "edge": "minX" } },
+    { "id": "adu-front", "label": "ADU exterior wall to front lot line", "value": "123'-4 3/8\"", "measure": { "type": "edgeToLot", "structure": "adu", "edge": "minY" } },
+    { "id": "house-adu", "label": "House to ADU separation", "value": "57'-1 5/8\"", "measure": { "type": "gap", "from": "house", "to": "adu", "axis": "y" } },
+    { "id": "garage-adu", "label": "Garage to ADU", "value": "19'-10 3/4\"", "measure": { "type": "gap", "from": "garage", "to": "adu", "axis": "y" } }
+  ],
+  "assumptions": [
+    { "id": "north", "text": "True north: the +Y (rear) axis bears 330 degrees. Unverified; every shadow depends on it.", "estimate": true },
+    { "id": "drive-side", "text": "Driveway is on the left when facing the house from the street (so +X runs to the right). Unverified.", "estimate": true },
+    { "id": "location", "text": "Latitude and longitude are approximate for the street; confirm with a geocode.", "estimate": true },
+    { "id": "heights", "text": "Structure heights are placeholders: house 9/15 ft, garage 9/11 ft, ADU 9/14 ft, fences 6 ft.", "estimate": true },
+    { "id": "footprints", "text": "House and garage footprints are scaled from one photo (about 2 ft). Printed dimensions override scaled ones where both exist.", "estimate": true },
+    { "id": "adu-tol", "text": "Printed ADU dimensions disagree by up to 0.9 in (9'-0\" + 37'-9 1/8\" + 4'-0\" exceeds the lot width by 0.9 in). The ADU is placed so both ends are within 0.5 in.", "estimate": true },
+    { "id": "trees", "text": "Existing trees are placeholder positions and generic sizes from the plan.", "estimate": true },
+    { "id": "ground", "text": "Terrain is modeled flat.", "estimate": true }
+  ]
+}

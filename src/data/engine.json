@@ -1,0 +1,31 @@
+{
+  "version": "engine/1",
+  "referenceYear": 2026,
+  "sun": {
+    "model": "clear-sky",
+    "refraction": true,
+    "minElevationDeg": 2,
+    "stepMinutes": 30,
+    "cellSizeFt": 1,
+    "sampleEveryDays": 7,
+    "classes": { "fullSunHours": 6, "partSunHours": 4, "partShadeHours": 2 },
+    "presets": [
+      { "id": "winter", "label": "Winter solstice", "month": 12, "day": 21 },
+      { "id": "spring", "label": "Spring equinox", "month": 3, "day": 20 },
+      { "id": "summer", "label": "Summer solstice", "month": 6, "day": 21 },
+      { "id": "fall", "label": "Fall equinox", "month": 9, "day": 22 }
+    ],
+    "seasons": [
+      { "id": "winter", "label": "Winter (Dec 21 - Mar 19)", "from": [12, 21], "to": [3, 19] },
+      { "id": "spring", "label": "Spring (Mar 20 - Jun 20)", "from": [3, 20], "to": [6, 20] },
+      { "id": "summer", "label": "Summer (Jun 21 - Sep 21)", "from": [6, 21], "to": [9, 21] },
+      { "id": "fall", "label": "Fall (Sep 22 - Dec 20)", "from": [9, 22], "to": [12, 20] },
+      { "id": "year", "label": "Full year", "from": [1, 1], "to": [12, 31] }
+    ]
+  },
+  "scene": {
+    "snapDefaultFt": 0.5,
+    "snapOptionsFt": [0.25, 0.5, 1, 2],
+    "treeCanopyRings": 12
+  }
+}

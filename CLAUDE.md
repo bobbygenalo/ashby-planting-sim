@@ -5,10 +5,13 @@ Browser-based 3D planner for the 10641 Ashby Ave lot. Build brief: `Ashby Yard P
 ## Status
 - M1 (site model) and M2 (sunlight) are built.
 - M3 (plants and growth) is built: growth curve, 50-species library (all values unverified, low confidence), custom species form, palette select/deselect, placement with drag-to-move, inspector, timeline to year 30, plant forms by habit, mature-width ring, plant shadows in the sun map, leaf-off shade and drawing for deciduous plants, bloom color on plants, sun-need mismatch flags. Bloom calendar and pollinator summary are M5. Custom species are not persisted until M7.
-- M4 to M7 (hardscape, water and soil, conflicts and suggestions, scenarios and sharing) are not started.
+- M4 (hardscape) is built: draw, reshape (corner handles), move and delete patios, paths, beds, lawn, decks, gravel, raised beds, walls and fences; 13-material library; takeoff with CSV; permeable vs impervious per zone; easement, root-zone and driveway warnings; snapping to corners, edges and grid; live dimensions; shade from walls, fences, decks and raised beds; undo/redo (Ctrl/Cmd+Z) across plants, palette and hardscape. Existing driveway can be removed per scenario. Not done: neighbor context (SITE-7), slope (SITE-8), raised-bed soil fill volume (WS-14).
+- M5 to M7 (water and soil, conflicts and suggestions, scenarios and sharing) are not started.
 - Sharing will sit behind a local stub until hosting is chosen.
 
 ## Commands
+- In dev, the store is on `window.__app` for inspecting state from the browser console.
+- The Browser pane must be visible for the 3D canvas to repaint. A hidden pane runs the page as a background tab and screenshots go stale.
 - `npm run dev` runs the app. Add `?mode=view` to the URL for read-only view mode.
 - `npm test` runs Vitest. `npm run typecheck` runs tsc. `npm run build` does both checks plus the production build.
 

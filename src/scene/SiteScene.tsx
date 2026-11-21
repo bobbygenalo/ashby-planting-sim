@@ -11,6 +11,7 @@ import { formatFeetInches } from '../engine/units';
 import type { ContextObjectCfg, Pt, StructureCfg } from '../engine/types';
 import { useApp } from '../store/store';
 import { PlantLayer } from './Plants';
+import { HardscapeLayer, useSnapper } from './Hardscape';
 
 const SITE_TO_THREE = (x: number, y: number, z: number): [number, number, number] => [x, z, -y];
 
@@ -179,28 +180,65 @@ function Ground() {
   const select = useApp((s) => s.select);
   const dragId = useApp((s) => s.dragId);
   const updateInstance = useApp((s) => s.updateInstance);
+  const drawing = useApp((s) => s.drawing);
+  const addDrawPoint = useApp((s) => s.addDrawPoint);
+  const finishDrawing = useApp((s) => s.finishDrawing);
+  const selectElement = useApp((s) => s.selectElement);
+  const hsDrag = useApp((s) => s.hsDrag);
+  const setVertex = useApp((s) => s.setVertex);
+  const moveElementBy = useApp((s) => s.moveElementBy);
+  const setHsDrag = useApp((s) => s.setHsDrag);
+  const snapper = useSnapper(hsDrag?.id);
   const { width, depth } = site.lot;
-  const snapPoint = (e: ThreeEvent<MouseEvent | PointerEvent>): [number, number] => [
+  const gridPoint = (e: ThreeEvent<MouseEvent | PointerEvent>): [number, number] => [
     Math.round(e.point.x / snap) * snap,
     Math.round(-e.point.z / snap) * snap,
   ];
+  const clampPt = (x: number, y: number): [number, number] => [Math.min(width, Math.max(0, x)), Math.min(depth, Math.max(0, y))];
   const onClick = (e: ThreeEvent<MouseEvent>) => {
+    // A click that follows a drag (reshaping, moving) is not a click on the ground.
+    if (e.delta > 3) return;
     if (measureActive) {
       e.stopPropagation();
-      addMeasurePoint(snapPoint(e));
+      addMeasurePoint(gridPoint(e));
     } else if (placing) {
       e.stopPropagation();
-      const [x, y] = snapPoint(e);
+      const [x, y] = gridPoint(e);
       if (x >= 0 && x <= width && y >= 0 && y <= depth) addInstance(placing, [x, y]);
+    } else if (drawing) {
+      e.stopPropagation();
+      addDrawPoint(snapper([e.point.x, -e.point.z]).point);
     } else {
       select(null);
+      selectElement(null);
     }
   };
+  const onDouble = (e: ThreeEvent<MouseEvent>) => {
+    if (!drawing) return;
+    e.stopPropagation();
+    finishDrawing();
+  };
   const onMove = (e: ThreeEvent<PointerEvent>) => {
-    if (placing) setHover(snapPoint(e));
+    if (placing) setHover(gridPoint(e));
+    if (drawing) {
+      const s = snapper([e.point.x, -e.point.z]);
+      setHover(s.point, s.kind);
+    }
     if (dragId) {
-      const [x, y] = snapPoint(e);
-      updateInstance(dragId, { position: [Math.min(width, Math.max(0, x)), Math.min(depth, Math.max(0, y))] });
+      const [x, y] = gridPoint(e);
+      updateInstance(dragId, { position: clampPt(x, y) }, { silent: true });
+    }
+    if (hsDrag?.kind === 'vertex') {
+      const s = snapper([e.point.x, -e.point.z]);
+      setVertex(hsDrag.id, hsDrag.index, clampPt(s.point[0], s.point[1]));
+      setHover(s.point, s.kind);
+    } else if (hsDrag?.kind === 'move') {
+      const [gx, gy] = gridPoint(e);
+      const [lx, ly] = [Math.round(hsDrag.last[0] / snap) * snap, Math.round(hsDrag.last[1] / snap) * snap];
+      if (gx !== lx || gy !== ly) {
+        moveElementBy(hsDrag.id, gx - lx, gy - ly);
+        setHsDrag({ ...hsDrag, last: [e.point.x, -e.point.z] });
+      }
     }
   };
   return (
@@ -209,7 +247,7 @@ function Ground() {
         <planeGeometry args={[400, 500]} />
         <meshStandardMaterial color="#b9bdb0" />
       </mesh>
-      <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick} onPointerMove={onMove}>
+      <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick} onDoubleClick={onDouble} onPointerMove={onMove}>
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial color="#a9b98f" roughness={1} />
       </mesh>
@@ -369,9 +407,6 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
       {/* Site coordinates: x across the lot, y toward the rear, z up. Rotating -90 deg about X maps them to three.js (x, z, -y). */}
       <group rotation={[-Math.PI / 2, 0, 0]}>
         <Ground />
-        {site.hardscape.map((h) => (
-          <FlatPoly key={h.id} poly={h.polygon} z={0.04} color="#9a9a96" opacity={1} />
-        ))}
         {layers.easements &&
           site.easements.map((e) => <FlatPoly key={e.id} poly={e.polygon} z={0.06} color="#f59e0b" opacity={0.55} />)}
         {layers.setbacks && <Setbacks />}
@@ -387,6 +422,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
           )}
         {layers.sunHours && sunResult && <SunOverlay result={sunResult} />}
         {layers.dimensions && <Dimensions />}
+        <HardscapeLayer />
         <PlantLayer />
         <Compass />
         <Measure />

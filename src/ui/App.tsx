@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PlantsPanel } from './PlantsPanel';
+import { HardscapePanel } from './HardscapePanel';
 import { SiteScene } from '../scene/SiteScene';
 import { solarPosition } from '../engine/solar';
 import { checkPrintedDimensions } from '../engine/site';
 import { zoneStats } from '../engine/sunhours';
 import { doyToMonthDay, localToUtc, monthDayToDoy, monthName, tzAbbrev } from '../engine/time';
 import { formatFeetInches } from '../engine/units';
-import { useApp } from '../store/store';
+import { appStore, useApp } from '../store/store';
 import { useSunHours } from '../store/useSunHours';
 
 type SunHook = ReturnType<typeof useSunHours>;
@@ -224,9 +225,61 @@ function TimelineBar() {
   );
 }
 
+function UndoRedo() {
+  const edit = useApp((s) => s.mode === 'edit');
+  const past = useApp((s) => s.history.past.length);
+  const future = useApp((s) => s.history.future.length);
+  const undo = useApp((s) => s.undo);
+  const redo = useApp((s) => s.redo);
+  return (
+    <div className="undo">
+      <button title="Undo (Ctrl/Cmd+Z)" disabled={!edit || past === 0} onClick={undo}>↶</button>
+      <button title="Redo (Ctrl/Cmd+Shift+Z)" disabled={!edit || future === 0} onClick={redo}>↷</button>
+    </div>
+  );
+}
+
+function useShortcuts() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')) return;
+      const st = appStore.getState();
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) st.redo();
+        else st.undo();
+      } else if (mod && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        st.redo();
+      } else if (e.key === 'Enter' && st.drawing) {
+        st.finishDrawing();
+      } else if (e.key === 'Escape') {
+        if (st.drawing) st.startDrawing(null);
+        else if (st.placingSpeciesId) st.setPlacing(null);
+        else if (st.measureActive) st.setMeasureActive(false);
+        else {
+          st.select(null);
+          st.selectElement(null);
+        }
+      } else if (e.key === 'Backspace' && st.drawing) {
+        e.preventDefault();
+        st.removeLastDrawPoint();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && !st.drawing) {
+        if (st.selectedElementId) st.deleteElement(st.selectedElementId);
+        else if (st.selectedId) st.deleteInstance(st.selectedId);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+}
+
 export function App() {
   const sun = useSunHours();
-  const [tab, setTab] = useState<'plants' | 'sun'>('plants');
+  useShortcuts();
+  const [tab, setTab] = useState<'plants' | 'hardscape' | 'sun'>('plants');
   const [controlsOpen, setControlsOpen] = useState(true);
   return (
     <div className="app">
@@ -247,10 +300,12 @@ export function App() {
       </main>
       <aside className="right">
         <div className="tabs">
+          <UndoRedo />
           <button className={tab === 'plants' ? 'on' : ''} onClick={() => setTab('plants')}>Plants</button>
+          <button className={tab === 'hardscape' ? 'on' : ''} onClick={() => setTab('hardscape')}>Hardscape</button>
           <button className={tab === 'sun' ? 'on' : ''} onClick={() => setTab('sun')}>Sun hours</button>
         </div>
-        {tab === 'plants' ? <PlantsPanel growing={sun.growing} /> : <SunPanel sun={sun} />}
+        {tab === 'plants' ? <PlantsPanel growing={sun.growing} /> : tab === 'hardscape' ? <HardscapePanel /> : <SunPanel sun={sun} />}
       </aside>
     </div>
   );

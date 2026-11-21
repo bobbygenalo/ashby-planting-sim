@@ -122,3 +122,9 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 .ctl-toggle { justify-self: start; font-size: 11px; padding: 3px 8px; opacity: 0.9; }
 .custom { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 8px; }
 .custom .row.wrap button { font-size: 11px; padding: 2px 6px; }
+
+.tabs .undo { display: flex; gap: 4px; flex: 0 0 auto; }
+.tabs .undo button { flex: 0 0 auto; padding: 5px 9px; }
+.tabs button { font-size: 12px; padding: 5px 6px; }
+.dim-label.live { background: #16a34a; color: #fff; border: 0; }
+.drawbox { border: 1px dashed var(--accent); border-radius: 8px; padding: 8px; margin: 8px 0; }

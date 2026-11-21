@@ -194,5 +194,96 @@
       10,
       20
     ]
+  },
+  "hardscape": {
+    "permeableThreshold": 0.5,
+    "sampleCellFt": 0.5,
+    "snapToleranceFt": 1.0,
+    "rootZoneFactor": 1.0,
+    "drawOrder": [
+      "lawn",
+      "bed",
+      "gravel",
+      "path",
+      "patio",
+      "deck",
+      "raisedBed",
+      "wall",
+      "fence"
+    ],
+    "types": {
+      "patio": {
+        "label": "Patio",
+        "shape": "polygon",
+        "material": "concrete",
+        "height": 0,
+        "depthIn": 4,
+        "width": 0
+      },
+      "path": {
+        "label": "Path",
+        "shape": "line",
+        "material": "decomposed-granite",
+        "height": 0,
+        "depthIn": 3,
+        "width": 3
+      },
+      "bed": {
+        "label": "Planting bed",
+        "shape": "polygon",
+        "material": "soil-bed",
+        "height": 0,
+        "depthIn": 3,
+        "width": 0
+      },
+      "lawn": {
+        "label": "Lawn",
+        "shape": "polygon",
+        "material": "lawn",
+        "height": 0,
+        "depthIn": 4,
+        "width": 0
+      },
+      "deck": {
+        "label": "Deck",
+        "shape": "polygon",
+        "material": "wood-deck",
+        "height": 1.5,
+        "depthIn": 1.5,
+        "width": 0
+      },
+      "gravel": {
+        "label": "Gravel or mulch",
+        "shape": "polygon",
+        "material": "gravel",
+        "height": 0,
+        "depthIn": 3,
+        "width": 0
+      },
+      "raisedBed": {
+        "label": "Raised bed",
+        "shape": "polygon",
+        "material": "raised-bed-wood",
+        "height": 1.5,
+        "depthIn": 0,
+        "width": 0
+      },
+      "wall": {
+        "label": "Wall",
+        "shape": "line",
+        "material": "cmu-wall",
+        "height": 3,
+        "depthIn": 0,
+        "width": 0.67
+      },
+      "fence": {
+        "label": "Fence",
+        "shape": "line",
+        "material": "wood-fence",
+        "height": 6,
+        "depthIn": 0,
+        "width": 0.2
+      }
+    }
   }
 }

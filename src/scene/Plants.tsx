@@ -135,6 +135,7 @@ export function PlantLayer() {
   const select = useApp((s) => s.select);
   const edit = useApp((s) => s.mode === 'edit');
   const setDrag = useApp((s) => s.setDrag);
+  const beginGesture = useApp((s) => s.beginGesture);
   const doy = useApp((s) => s.doy);
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
   const calMonth = doyToMonthDay(doy)[0];
@@ -166,6 +167,7 @@ export function PlantLayer() {
     if (measureActive || placing || !edit) return;
     e.stopPropagation();
     select(id);
+    beginGesture();
     setDrag(id);
     if (controls) controls.enabled = false;
   };

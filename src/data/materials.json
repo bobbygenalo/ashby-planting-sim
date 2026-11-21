@@ -1,0 +1,145 @@
+[
+ {
+  "id": "concrete",
+  "name": "Concrete slab",
+  "category": "paving",
+  "permeability": 0,
+  "defaultDepthIn": 4,
+  "baseDepthIn": 4,
+  "unit": "sf",
+  "color": "#b8b8b4",
+  "note": "Base is compacted aggregate."
+ },
+ {
+  "id": "pavers-sand",
+  "name": "Interlocking pavers on sand",
+  "category": "paving",
+  "permeability": 0.3,
+  "defaultDepthIn": 2.5,
+  "baseDepthIn": 4,
+  "unit": "sf",
+  "color": "#c9a98b",
+  "note": "Sand-set joints let a little water through."
+ },
+ {
+  "id": "flagstone-mortar",
+  "name": "Flagstone, mortared",
+  "category": "paving",
+  "permeability": 0,
+  "defaultDepthIn": 2,
+  "baseDepthIn": 4,
+  "unit": "sf",
+  "color": "#a99f94",
+  "note": ""
+ },
+ {
+  "id": "flagstone-dry",
+  "name": "Flagstone, dry-laid",
+  "category": "paving",
+  "permeability": 0.6,
+  "defaultDepthIn": 2,
+  "baseDepthIn": 4,
+  "unit": "sf",
+  "color": "#b4aa9d",
+  "note": "Set in sand or fine gravel with open joints."
+ },
+ {
+  "id": "decomposed-granite",
+  "name": "Decomposed granite",
+  "category": "loose",
+  "permeability": 0.8,
+  "defaultDepthIn": 3,
+  "baseDepthIn": 3,
+  "unit": "sf",
+  "color": "#c8b48a",
+  "note": "Compacted DG over a base."
+ },
+ {
+  "id": "gravel",
+  "name": "Gravel",
+  "category": "loose",
+  "permeability": 0.9,
+  "defaultDepthIn": 3,
+  "baseDepthIn": 2,
+  "unit": "sf",
+  "color": "#bdb7aa",
+  "note": ""
+ },
+ {
+  "id": "soil-bed",
+  "name": "Planting bed with mulch",
+  "category": "planting",
+  "permeability": 1,
+  "defaultDepthIn": 3,
+  "baseDepthIn": 0,
+  "unit": "sf",
+  "color": "#6e5640",
+  "note": "Surface depth is the mulch layer."
+ },
+ {
+  "id": "lawn",
+  "name": "Lawn",
+  "category": "turf",
+  "permeability": 1,
+  "defaultDepthIn": 4,
+  "baseDepthIn": 0,
+  "unit": "sf",
+  "color": "#7fb06a",
+  "note": "Depth is soil preparation under sod or seed."
+ },
+ {
+  "id": "wood-deck",
+  "name": "Wood deck",
+  "category": "deck",
+  "permeability": 0.8,
+  "defaultDepthIn": 1.5,
+  "baseDepthIn": 0,
+  "unit": "sf",
+  "color": "#a9825a",
+  "note": "Surface depth is board thickness. Footings are not included."
+ },
+ {
+  "id": "composite-deck",
+  "name": "Composite deck",
+  "category": "deck",
+  "permeability": 0.8,
+  "defaultDepthIn": 1,
+  "baseDepthIn": 0,
+  "unit": "sf",
+  "color": "#8d7b6b",
+  "note": "Footings are not included."
+ },
+ {
+  "id": "raised-bed-wood",
+  "name": "Raised bed, wood",
+  "category": "structure",
+  "permeability": 1,
+  "defaultDepthIn": 0,
+  "baseDepthIn": 0,
+  "unit": "sf",
+  "color": "#8a6a47",
+  "note": "Soil fill volume is calculated with the water and soil work."
+ },
+ {
+  "id": "cmu-wall",
+  "name": "Block wall (CMU)",
+  "category": "structure",
+  "permeability": 0,
+  "defaultDepthIn": 0,
+  "baseDepthIn": 12,
+  "unit": "lf",
+  "color": "#a6a29a",
+  "note": "Base depth is the footing. Surface volume is zero."
+ },
+ {
+  "id": "wood-fence",
+  "name": "Wood fence",
+  "category": "structure",
+  "permeability": 1,
+  "defaultDepthIn": 0,
+  "baseDepthIn": 0,
+  "unit": "lf",
+  "color": "#b49a78",
+  "note": "Post footings are not included."
+ }
+]

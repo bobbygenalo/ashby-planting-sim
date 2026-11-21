@@ -17,12 +17,8 @@ export interface StructureCfg {
   note?: string;
 }
 
-export interface HardscapeCfg {
-  id: string;
-  name: string;
-  polygon: Pt[];
-  material: string;
-}
+/** Existing hardscape shipped in the site file. Same shape as a scenario element. */
+export type HardscapeCfg = HardscapeElement;
 
 export interface ContextObjectCfg {
   id: string;
@@ -144,6 +140,17 @@ export interface EngineConfig {
     bloomTintFraction: number;
   };
   timeline: { maxYears: number; presets: number[] };
+  hardscape: {
+    permeableThreshold: number;
+    sampleCellFt: number;
+    snapToleranceFt: number;
+    rootZoneFactor: number;
+    drawOrder: HardscapeType[];
+    types: Record<
+      HardscapeType,
+      { label: string; shape: 'polygon' | 'line'; material: string; height: number; depthIn: number; width: number }
+    >;
+  };
 }
 
 export type PlantType = 'tree' | 'shrub' | 'perennial' | 'grass' | 'groundcover' | 'vine' | 'succulent' | 'edible';
@@ -196,4 +203,41 @@ export interface PlantInstance {
   /** Entered by the owner for existing plants, in feet. */
   currentHeight?: number;
   currentWidth?: number;
+}
+
+export type HardscapeType = 'patio' | 'path' | 'bed' | 'lawn' | 'deck' | 'gravel' | 'raisedBed' | 'wall' | 'fence';
+
+export interface Material {
+  id: string;
+  name: string;
+  category: 'paving' | 'loose' | 'planting' | 'turf' | 'deck' | 'structure';
+  /** Share of rainfall that soaks through, 0 (sealed) to 1 (open soil). */
+  permeability: number;
+  /** Default surface layer depth in inches. */
+  defaultDepthIn: number;
+  /** Compacted base (or footing) depth in inches. */
+  baseDepthIn: number;
+  unit: 'sf' | 'lf';
+  color: string;
+  note?: string;
+}
+
+export interface HardscapeElement {
+  id: string;
+  type: HardscapeType;
+  name?: string;
+  /** Polygon vertices, or polyline vertices for path, wall and fence. */
+  points: Pt[];
+  materialId: string;
+  /** Height above grade in feet, rendered in 3D and cast as shade. */
+  height: number;
+  /** Surface layer depth in inches. */
+  depthIn: number;
+  /** Width of a path, or thickness of a wall or fence, in feet. Ignored for polygons. */
+  width: number;
+  existing: boolean;
+  /** Existing elements a scenario removes. */
+  removed?: boolean;
+  /** New work must not cover this (the driveway). */
+  keepClear?: boolean;
 }

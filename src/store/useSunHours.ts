@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { placedPlants, plantSolid } from '../engine/growth';
+import { hardscapeSolids } from '../engine/hardscape';
 import { buildSunScene, type SunScene } from '../engine/site';
 import type { SunHoursResult, SunPeriod } from '../engine/sunhours';
 import { doyToMonthDay } from '../engine/time';
@@ -58,14 +59,15 @@ export function useSunHours() {
   const palette = useApp((s) => s.palette);
   const library = useApp((s) => s.library);
   const month = useApp((s) => s.timelineMonth);
+  const hardscape = useApp((s) => s.hardscape);
 
   const scene = useMemo(() => {
     const solids = placedPlants(instances, palette, library.species, month, engine.growth).flatMap((p) => {
       const s = plantSolid(p.inst, p.species, p.size, engine.growth, engine.scene.treeCanopyRings);
       return s ? [s] : [];
     });
-    return buildSunScene(site, { aduEnabled }, engine, solids);
-  }, [site, aduEnabled, engine, instances, palette, library, month]);
+    return buildSunScene(site, { aduEnabled }, engine, [...solids, ...hardscapeSolids(hardscape, engine.hardscape)]);
+  }, [site, aduEnabled, engine, instances, palette, library, month, hardscape]);
 
   const period: SunPeriod = useMemo(() => {
     if (sunPeriod === 'day') {
@@ -82,7 +84,10 @@ export function useSunHours() {
   }, [engine]);
 
   // The fit check uses site shade only, so a plant is not judged by its own canopy shadow.
-  const siteScene = useMemo(() => buildSunScene(site, { aduEnabled }, engine), [site, aduEnabled, engine]);
+  const siteScene = useMemo(
+    () => buildSunScene(site, { aduEnabled }, engine, hardscapeSolids(hardscape, engine.hardscape)),
+    [site, aduEnabled, engine, hardscape],
+  );
   const display = useSunRun(scene, period, engine.referenceYear, engine.sun);
   const growing = useSunRun(siteScene, growingPeriod, engine.referenceYear, engine.sun);
 

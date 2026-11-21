@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { elementMetrics, hardscapeWarnings, permeabilityReport, takeoff, takeoffCsv } from '../engine/hardscape';
 import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
 import type { HardscapeType } from '../engine/types';
 import { useApp } from '../store/store';
+import { saveNow } from '../store/persistence';
 
 const fmt = (n: number, d = 0) => n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -23,6 +24,9 @@ export function HardscapePanel() {
   const matById = useMemo(() => new Map(s.materials.map((m) => [m.id, m])), [s.materials]);
   const sel = s.hardscape.find((e) => e.id === s.selectedElementId);
   const types = Object.keys(cfg.types) as HardscapeType[];
+  useEffect(() => {
+    if (s.selectedElementId) document.getElementById('hardscape-inspector')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [s.selectedElementId]);
 
   const tk = useMemo(() => takeoff(s.hardscape, s.materials, cfg), [s.hardscape, s.materials, cfg]);
   const perm = useMemo(
@@ -63,6 +67,12 @@ export function HardscapePanel() {
 
   return (
     <div className="hardscape">
+      <div className="row wrap">
+        <button disabled={!edit} onClick={() => saveNow()}>Save now</button>
+        <span className="small muted" role="status">
+          {s.saveStatus.state === 'saved' && s.saveStatus.at ? `Saved in this browser at ${new Date(s.saveStatus.at).toLocaleTimeString([], { timeStyle: 'short' })}. Everything you draw saves automatically.` : s.saveStatus.state === 'error' ? s.saveStatus.message : 'Everything you draw saves automatically in this browser.'}
+        </span>
+      </div>
       <h2>Draw</h2>
       <div className="row wrap">
         {types.map((t) => (
@@ -85,10 +95,10 @@ export function HardscapePanel() {
           </div>
         </div>
       ) : (
-        <p className="muted small">Pick a type, then click in the yard. Select an element to reshape it by its corner handles or drag it to move.</p>
+        <p className="muted small">Pick a type, then click in the yard. Select an element to reshape it by its corner handles or drag it to move; Option-drag (Alt-drag) copies it. Picking another tool keeps a path you have started.</p>
       )}
 
-      <h2>Selected</h2>
+      <h2 id="hardscape-inspector">Selected</h2>
       {sel ? (
         <div className="inspector">
           <h3>{sel.name ?? cfg.types[sel.type].label}</h3>
@@ -117,6 +127,12 @@ export function HardscapePanel() {
               <select disabled={!edit || sel.existing} value={sel.materialId} onChange={(e) => s.setElementMaterial(sel.id, e.target.value)}>
                 {s.materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
+            </label>
+            <label>Color
+              <span className="row">
+                <input type="color" disabled={!edit} value={sel.color ?? matById.get(sel.materialId)?.color ?? '#aaaaaa'} onChange={(e) => s.updateElement(sel.id, { color: e.target.value }, { silent: false })} />
+                <button disabled={!edit || !sel.color} onClick={() => s.updateElement(sel.id, { color: undefined })}>Use material color</button>
+              </span>
             </label>
             <label>Surface depth (in){num(sel.depthIn, (n) => s.updateElement(sel.id, { depthIn: n }), 0.5, !edit || sel.existing)}</label>
             <label>Height (ft){num(sel.height, (n) => s.updateElement(sel.id, { height: n }), 0.5, !edit || sel.existing)}</label>

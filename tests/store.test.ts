@@ -418,3 +418,68 @@ describe('scenarios (SC-1, SC-2)', () => {
     expect(v.getState().scenarios.length).toBe(1);
   });
 });
+
+describe('hardscape persistence, color and duplicate', () => {
+  it('keeps a half-drawn path when another tool is picked, but Cancel discards it', () => {
+    const s = makeAppStore('edit');
+    const g = () => s.getState();
+    g().startDrawing('path');
+    g().addDrawPoint([10, 90]);
+    g().addDrawPoint([20, 95]);
+    g().startDrawing('patio');
+    expect(g().hardscape.filter((e) => e.type === 'path' && !e.existing)).toHaveLength(1);
+    expect(g().drawing?.type).toBe('patio');
+    g().addDrawPoint([30, 90]);
+    g().setPlacing('x'); // a patio with one point is too short to keep
+    expect(g().hardscape.filter((e) => e.type === 'patio' && !e.existing)).toHaveLength(0);
+    g().startDrawing('path');
+    g().addDrawPoint([10, 100]);
+    g().addDrawPoint([20, 100]);
+    g().startDrawing(null); // Cancel / Esc
+    expect(g().hardscape.filter((e) => e.type === 'path' && !e.existing)).toHaveLength(1);
+  });
+
+  it('stores a custom color on an element and clears it', () => {
+    const s = makeAppStore('edit');
+    const g = () => s.getState();
+    g().startDrawing('path');
+    g().addDrawPoint([10, 90]);
+    g().addDrawPoint([20, 95]);
+    const id = g().finishDrawing()!;
+    g().updateElement(id, { color: '#aa3300' });
+    expect(g().hardscape.find((e) => e.id === id)!.color).toBe('#aa3300');
+    g().updateElement(id, { color: undefined });
+    expect(g().hardscape.find((e) => e.id === id)!.color).toBeUndefined();
+  });
+
+  it('duplicates an element as new work, undoably, keeping its color and shifting nothing when asked', () => {
+    const s = makeAppStore('edit');
+    const g = () => s.getState();
+    g().startDrawing('patio');
+    [[20, 90], [30, 90], [30, 102], [20, 102]].forEach((p) => g().addDrawPoint(p as [number, number]));
+    const id = g().finishDrawing()!;
+    g().updateElement(id, { color: '#336699' });
+    const copy = g().duplicateElement(id, [0, 0])!;
+    const a = g().hardscape.find((e) => e.id === id)!;
+    const b = g().hardscape.find((e) => e.id === copy)!;
+    expect(copy).not.toBe(id);
+    expect(b.points).toEqual(a.points);
+    expect(b.color).toBe('#336699');
+    expect(b.existing).toBe(false);
+    expect(g().selectedElementId).toBe(copy);
+    g().undo();
+    expect(g().hardscape.some((e) => e.id === copy)).toBe(false);
+    const view = makeAppStore('view');
+    expect(view.getState().duplicateElement('anything')).toBeNull();
+  });
+
+  it('copies the existing driveway as new, removable work without its keep-clear flag', () => {
+    const s = makeAppStore('edit');
+    const g = () => s.getState();
+    const drive = g().hardscape.find((e) => e.keepClear)!;
+    const copyId = g().duplicateElement(drive.id)!;
+    const copy = g().hardscape.find((e) => e.id === copyId)!;
+    expect(copy.keepClear).toBeUndefined();
+    expect(copy.existing).toBe(false);
+  });
+});

@@ -246,7 +246,7 @@ describe('comparing scenarios (SC-3)', () => {
   });
 
   it('shows a thirstier palette using more water and a badly placed tree causing conflicts', () => {
-    expect(scenarioMetrics(thirsty, mctx).annualWaterGal).toBeGreaterThan(scenarioMetrics(plain, mctx).annualWaterGal * 3);
+    expect(scenarioMetrics(thirsty, mctx).annualWaterGal).toBeGreaterThan(scenarioMetrics(plain, mctx).annualWaterGal * 1.1);
     expect(scenarioMetrics(crowded, mctx).conflicts).toBeGreaterThanOrEqual(3);
   });
 

@@ -108,7 +108,7 @@ describe('water model details', () => {
   });
 
   it('groups plants into automatic hydrozones by category, with explicit zones overriding', () => {
-    const a = inst('salvia-leucantha'), b = inst('salvia-clevelandii'), c = inst('polygala-myrtifolia');
+    const a = inst('salvia-leucantha'), b = inst('salvia-bees-bliss'), c = inst('polygala-myrtifolia');
     const d = demand(placed([a, b, c]));
     expect(d.hydrozones.map((h) => h.id).sort()).toEqual(['auto:low', 'auto:moderate', 'auto:very low']);
     const hz: Hydrozone[] = [{ id: 'z1', name: 'Front beds', irrigation: 'spray' }];
@@ -126,7 +126,7 @@ describe('water model details', () => {
     expect(hydrozoneMixWarning(['very low', 'low'])).toBeNull();
     expect(hydrozoneMixWarning(['very low', 'moderate'])).toContain('Mixes');
     const hz: Hydrozone[] = [{ id: 'z1', name: 'Mixed', irrigation: 'drip' }];
-    const d = demand(placed([inst('salvia-clevelandii', { hydrozoneId: 'z1' }), inst('polygala-myrtifolia', { hydrozoneId: 'z1' })]), { hydrozones: hz });
+    const d = demand(placed([inst('salvia-bees-bliss', { hydrozoneId: 'z1' }), inst('polygala-myrtifolia', { hydrozoneId: 'z1' })]), { hydrozones: hz });
     expect(d.hydrozones.find((h) => h.id === 'z1')!.warning).not.toBeNull();
   });
 
@@ -194,7 +194,7 @@ describe('soil (WS-10 to WS-14)', () => {
   it('totals excavation, amendment and mulch per bed and for the scenario', () => {
     const bed: HardscapeElement = { id: 'b1', type: 'bed', points: [[28, 72], [42, 72], [42, 84], [28, 84]], materialId: 'soil-bed', height: 0, depthIn: 3, width: 0, existing: false };
     const inBedModerate = inst('salvia-leucantha', { position: [30, 75] }); // moderate drainage: amended
-    const inBedFast = inst('salvia-clevelandii', { position: [35, 78] }); // fast drainage: not amended
+    const inBedFast = inst('salvia-bees-bliss', { position: [35, 78] }); // fast drainage: not amended
     const outside = inst('salvia-leucantha', { position: [10, 120] });
     const existing = inst('salvia-leucantha', { position: [32, 80], existing: true, currentHeight: 3, currentWidth: 3 });
     const q = soilQuantities({ plants: placed([inBedModerate, inBedFast, outside, existing]), elements: [bed], soil, hardscapeCfg: engine.hardscape });
@@ -238,14 +238,14 @@ describe('pollinators (POL-3 to POL-6)', () => {
     // Lomandra (low value, blooms Mar-May) and agapanthus (moderate, May-Aug) only: no high-value plant at all.
     const none = bloomCalendar(placed([inst('lomandra-longifolia'), inst('agapanthus-africanus')]), cfg);
     expect(none.gaps).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-    // Cleveland sage (high, Apr-Jul) covers April to July only.
+    // Cleveland sage (high, May-Aug) covers May to August only.
     const one = bloomCalendar(placed([inst('salvia-clevelandii')]), cfg);
-    expect(one.gaps).toEqual([1, 2, 3, 8, 9, 10, 11, 12]);
+    expect(one.gaps).toEqual([1, 2, 3, 4, 9, 10, 11, 12]);
     expect(one.scores[4]).toBe(1);
     expect(one.scores[0]).toBe(0);
-    // Adding California fuchsia (high, Aug-Oct) closes Aug to Oct, leaving winter gaps.
+    // Adding California fuchsia (high, Aug-Nov) closes Sep to Nov, leaving winter gaps.
     const two = bloomCalendar(placed([inst('salvia-clevelandii'), inst('epilobium-canum')]), cfg);
-    expect(two.gaps).toEqual([1, 2, 3, 11, 12]);
+    expect(two.gaps).toEqual([1, 2, 3, 4, 12]);
   });
 
   it('weights by pollinator value and caps plants counted per species', () => {

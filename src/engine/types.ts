@@ -214,6 +214,8 @@ export interface Species {
   /** Source and confidence per group of fields. Falls back to the library default. */
   roots: { behavior: 'shallow' | 'moderate' | 'sensitive' | 'aggressive'; minFoundationFt: number; minPavingFt: number };
   soil: { drainageNeed: 'fast' | 'moderate' | 'tolerant'; textures: string[]; phMin: number; phMax: number };
+  /** The owner's data sheet (2026-11-21): how well this row is verified and what is left to check. */
+  sheet?: { confidence: string; verified: string | null; toVerify: string | null };
   provenance?: Partial<Record<'size' | 'light' | 'water' | 'pollinator' | 'soil', { source: string; confidence: Confidence }>>;
 }
 
@@ -271,6 +273,8 @@ export interface HardscapeElement {
   /** Width of a path, or thickness of a wall or fence, in feet. Ignored for polygons. */
   width: number;
   existing: boolean;
+  /** Display color chosen by the owner; falls back to the material's color. */
+  color?: string;
   /** Existing elements a scenario removes. */
   removed?: boolean;
   /** New work must not cover this (the driveway). */

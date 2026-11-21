@@ -119,6 +119,10 @@ export interface AppState {
   addDrawPoint: (p: Pt) => void;
   removeLastDrawPoint: () => void;
   finishDrawing: () => string | null;
+  /** Keep a drawing in progress if it already has enough points (switching tools never throws it away). */
+  commitDrawing: () => void;
+  /** Copy an element (offset slightly, as new work) and select the copy. */
+  duplicateElement: (id: string, offset?: Pt) => string | null;
   selectElement: (id: string | null) => void;
   updateElement: (id: string, patch: Partial<Omit<HardscapeElement, 'id'>>, opts?: { silent?: boolean }) => void;
   setElementMaterial: (id: string, materialId: string) => void;
@@ -307,7 +311,10 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setPlaying: (p) => set({ playing: p }),
       setView: (v) => set({ view: v }),
       setSunPeriod: (p) => set({ sunPeriod: p }),
-      setMeasureActive: (a) => set({ measureActive: a, measurePoints: [], placingSpeciesId: null, drawing: null }),
+      setMeasureActive: (a) => {
+        get().commitDrawing();
+        set({ measureActive: a, measurePoints: [], placingSpeciesId: null, drawing: null });
+      },
       addMeasurePoint: (p) => {
         const pts = get().measurePoints;
         set({ measurePoints: pts.length >= 2 ? [p] : [...pts, p] });
@@ -366,7 +373,10 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setTimelineMonth: (m) => set({ timelineMonth: Math.min(engine.timeline.maxYears * 12, Math.max(0, Math.round(m))) }),
       setTimelinePlaying: (p) => set({ timelinePlaying: p }),
       select: (id) => set({ selectedId: id, selectedElementId: id ? null : get().selectedElementId }),
-      setPlacing: (id) => set({ placingSpeciesId: get().mode === 'edit' ? id : null, measureActive: false, drawing: null }),
+      setPlacing: (id) => {
+        get().commitDrawing();
+        set({ placingSpeciesId: get().mode === 'edit' ? id : null, measureActive: false, drawing: null });
+      },
       setPlaceContainer: (c) => set({ placeContainer: c }),
       setHover: (p, kind) => set({ hover: p, hoverSnap: kind ?? 'grid' }),
 
@@ -397,6 +407,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       },
       startDrawing: (type) => {
         if (get().mode !== 'edit') return;
+        // Picking another type keeps what was drawn so far; Esc and Cancel (type null) discard it.
+        if (type) get().commitDrawing();
         set({ drawing: type ? { type, points: [] } : null, placingSpeciesId: null, measureActive: false, selectedId: null, selectedElementId: null });
       },
       addDrawPoint: (p) => {
@@ -425,6 +437,23 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         record();
         set({ hardscape: [...get().hardscape, el], drawing: null, selectedElementId: id, hover: null });
         return id;
+      },
+      commitDrawing: () => {
+        const d = get().drawing;
+        if (d) get().finishDrawing();
+      },
+      duplicateElement: (id, offset = [2, 2]) => {
+        const src = get().hardscape.find((e) => e.id === id);
+        if (!src || get().mode !== 'edit') return null;
+        const copyId = uid('h');
+        const { removed: _removed, keepClear: _keepClear, ...rest } = src;
+        void _removed; void _keepClear;
+        const copy: HardscapeElement = {
+          ...clone(rest), id: copyId, existing: false, points: src.points.map(([x, y]): Pt => [x + offset[0], y + offset[1]]),
+          name: src.name ? `${src.name} copy` : undefined,
+        };
+        scenario({ hardscape: [...get().hardscape, copy], selectedElementId: copyId, selectedId: null });
+        return copyId;
       },
       selectElement: (id) => set({ selectedElementId: id, selectedId: id ? null : get().selectedId }),
       updateElement: (id, patch, opts) => {

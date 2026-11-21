@@ -104,7 +104,7 @@ export function PlanSheet() {
               const b = bbox(poly);
               return (
                 <g key={e.id}>
-                  <polygon points={poly.map(([x, y]) => `${x},${Y(y)}`).join(' ')} fill={matColor(e.materialId)} fillOpacity={e.existing ? 0.45 : 0.7} stroke="#444" strokeWidth={0.2} strokeDasharray={e.existing ? '1 0.8' : undefined} />
+                  <polygon points={poly.map(([x, y]) => `${x},${Y(y)}`).join(' ')} fill={e.color ?? matColor(e.materialId)} fillOpacity={e.existing ? 0.45 : 0.7} stroke="#444" strokeWidth={0.2} strokeDasharray={e.existing ? '1 0.8' : undefined} />
                   {(() => {
                     const label = e.name ?? s.engine.hardscape.types[e.type].label;
                     const w = b.maxX - b.minX, h = b.maxY - b.minY;

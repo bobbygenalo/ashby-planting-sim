@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { placedPlants, sunFit } from '../engine/growth';
 import { filterSpecies, makeCustomSpecies, type CustomSpeciesInput, type LibraryFilter } from '../engine/library';
 import type { SunHoursResult } from '../engine/sunhours';
@@ -155,6 +155,11 @@ function Inspector({ growing }: { growing: SunHoursResult | null }) {
         </tbody>
       </table>
       <p className="muted small">{sp.notes}</p>
+      {sp.sheet && (
+        <p className="muted small">
+          <b>Data: {sp.sheet.confidence.toLowerCase()}.</b>{sp.sheet.verified ? ` Checked: ${sp.sheet.verified}.` : ''}{sp.sheet.toVerify ? ` Still to verify: ${sp.sheet.toVerify}.` : ''}
+        </p>
+      )}
 
       <h2>Edit this plant</h2>
       <div className="grid2">
@@ -199,6 +204,9 @@ export function PlantsPanel({ growing }: { growing: SunHoursResult | null }) {
   const edit = s.mode === 'edit';
   const [f, setF] = useState<LibraryFilter>({});
   const [adding, setAdding] = useState(false);
+  useEffect(() => {
+    if (s.selectedId) document.getElementById('plant-inspector')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [s.selectedId]);
   const list = useMemo(() => filterSpecies(s.library.species, f), [s.library, f]);
   const set = <K extends keyof LibraryFilter>(k: K, v: LibraryFilter[K] | '') => setF({ ...f, [k]: v === '' ? undefined : v });
   const active = s.instances.filter((i) => s.palette[i.speciesId]);
@@ -222,7 +230,7 @@ export function PlantsPanel({ growing }: { growing: SunHoursResult | null }) {
         {hidden > 0 && <span className="muted"> ({hidden} hidden by deselected species)</span>}; canopy {Math.round(canopy).toLocaleString()} sq ft at this point in the timeline.
       </p>
 
-      <h2>Inspector</h2>
+      <h2 id="plant-inspector">Inspector</h2>
       <Inspector growing={growing} />
 
       <h2>Library ({list.length} of {s.library.species.length})</h2>

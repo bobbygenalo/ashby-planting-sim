@@ -54,9 +54,9 @@ describe('growth curve', () => {
   });
 
   it('never starts bigger than the capped fraction of mature size', () => {
-    const s = sp('phyla-nodiflora'); // 0.3 ft tall mature
+    const s = sp('phyla-nodiflora'); // a very low groundcover
     const z = instanceSize(inst(s.id, { container: '24box' }), s, 0, engine.growth);
-    expect(z.height).toBeCloseTo(0.3 * engine.growth.maxStartFractionOfMature, 6);
+    expect(z.height).toBeCloseTo(s.matureHeight * engine.growth.maxStartFractionOfMature, 6);
   });
 });
 
@@ -128,14 +128,22 @@ describe('sun interaction', () => {
   it('flags light mismatches against the species need (SUN-6)', () => {
     expect(sunFit(sp('salvia-leucantha'), 3, engine.growth)).toBe('too-shaded');
     expect(sunFit(sp('salvia-leucantha'), 9, engine.growth)).toBe('ok');
-    expect(sunFit(sp('agapanthus-africanus'), 9.5, engine.growth)).toBe('too-sunny');
+    expect(sunFit(sp('heuchera-maxima'), 9.5, engine.growth)).toBe('too-sunny');
     expect(sunFit(sp('salvia-spathacea'), 9, engine.growth)).toBe('too-sunny');
   });
 });
 
 describe('library size and data quality', () => {
+  it('carries the owner\'s data sheet: 26 rows, each with a confidence note', () => {
+    const rows = lib.species.filter((s) => s.sheet);
+    expect(rows).toHaveLength(26);
+    expect(rows.every((s) => ['Recall only', 'Partly verified'].includes(s.sheet!.confidence))).toBe(true);
+    expect(lib.species.find((s) => s.id === 'olea-frantoio')!.matureHeight).toBe(25);
+    expect(lib.species.find((s) => s.id === 'eriogonum-grande-rubescens')!.botanical).toContain('rubescens');
+  });
+
   it('ships about 50 species with sane data', () => {
-    expect(lib.species.length).toBeGreaterThanOrEqual(50);
+    expect(lib.species.length).toBeGreaterThanOrEqual(55);
     for (const s of lib.species) {
       expect(s.matureHeight, s.id).toBeGreaterThan(0);
       expect(s.matureWidth, s.id).toBeGreaterThan(0);

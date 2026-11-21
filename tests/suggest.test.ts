@@ -144,7 +144,7 @@ describe('placement scoring (GR-7)', () => {
   });
 
   it('scores hydrozone match from neighbors within reach', () => {
-    const species = sp('salvia-clevelandii'); // very low water
+    const species = sp('salvia-bees-bliss'); // very low water
     const alone = suggestPlacements(input(species.id, 'back_yard'));
     const cell = alone.cells.find((c) => Math.abs(c.x - 40) < 0.51 && Math.abs(c.y - 100) < 0.51)!;
     expect(cell.terms.hydrozone).toBe(1);
@@ -154,7 +154,7 @@ describe('placement scoring (GR-7)', () => {
     const c2 = near.cells.find((c) => Math.abs(c.x - 40) < 0.51 && Math.abs(c.y - 100) < 0.51)!;
     expect(c2.terms.hydrozone).toBe(0);
     expect(c2.detail.waterStepGap).toBe(2);
-    const friend = placed([inst('arctostaphylos-howard-mcminn', 42, 100, { existing: true, currentHeight: 5, currentWidth: 5 })]); // same category
+    const friend = placed([inst('salvia-mellifera', 42, 100, { existing: true, currentHeight: 5, currentWidth: 5 })]); // same category
     const c3 = suggestPlacements(input(species.id, 'back_yard', { plants: friend })).cells.find((c) => Math.abs(c.x - 40) < 0.51 && Math.abs(c.y - 100) < 0.51)!;
     expect(c3.terms.hydrozone).toBe(1);
   });
@@ -180,9 +180,9 @@ describe('sun term', () => {
   it('rates sun hours against the light need', () => {
     expect(sunTerm(sp('salvia-clevelandii'), 9, engine.growth)).toBe(1);
     expect(sunTerm(sp('salvia-clevelandii'), 3, engine.growth)).toBeCloseTo(0.5, 9);
-    expect(sunTerm(sp('agapanthus-africanus'), 5, engine.growth)).toBe(1);
-    expect(sunTerm(sp('agapanthus-africanus'), 2, engine.growth)).toBeLessThan(1);
-    expect(sunTerm(sp('agapanthus-africanus'), 11, engine.growth)).toBeLessThan(1);
+    expect(sunTerm(sp('heuchera-maxima'), 5, engine.growth)).toBe(1);
+    expect(sunTerm(sp('heuchera-maxima'), 2, engine.growth)).toBeLessThan(1);
+    expect(sunTerm(sp('heuchera-maxima'), 11, engine.growth)).toBeLessThan(1);
     const shade = { ...sp('salvia-spathacea'), sun: 'shade' as const };
     expect(sunTerm(shade, 2, engine.growth)).toBe(1);
     expect(sunTerm(shade, 4.5, engine.growth)).toBe(1);

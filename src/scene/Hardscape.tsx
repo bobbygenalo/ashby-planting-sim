@@ -33,6 +33,7 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
   const selectElement = useApp((s) => s.selectElement);
   const setHsDrag = useApp((s) => s.setHsDrag);
   const beginGesture = useApp((s) => s.beginGesture);
+  const duplicateElement = useApp((s) => s.duplicateElement);
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
   const poly = useMemo(() => footprint(el, cfg), [el, cfg]);
   const geo = useMemo(() => {
@@ -48,7 +49,17 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
     selectElement(el.id);
   };
   const onDown = (e: ThreeEvent<PointerEvent>) => {
-    if (tool || !edit || !selected || el.existing) return;
+    if (tool || !edit) return;
+    if (e.nativeEvent.altKey) {
+      // Option-drag: leave this element where it is and drag a copy.
+      e.stopPropagation();
+      const copyId = duplicateElement(el.id, [0, 0]);
+      if (!copyId) return;
+      setHsDrag({ id: copyId, kind: 'move', last: [e.point.x, -e.point.z] });
+      if (controls) controls.enabled = false;
+      return;
+    }
+    if (!selected || el.existing) return;
     e.stopPropagation();
     beginGesture();
     setHsDrag({ id: el.id, kind: 'move', last: [e.point.x, -e.point.z] });
@@ -57,7 +68,7 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
   return (
     <group>
       <mesh geometry={geo} position={[0, 0, el.height > 0 ? 0 : z]} castShadow={el.height > 0} receiveShadow onClick={onClick} onPointerDown={onDown}>
-        <meshStandardMaterial color={ghost ? '#c0392b' : (mat?.color ?? '#aaa')} roughness={0.95} transparent={ghost} opacity={ghost ? 0.3 : 1} />
+        <meshStandardMaterial color={ghost ? '#c0392b' : (el.color ?? mat?.color ?? '#aaa')} roughness={0.95} transparent={ghost} opacity={ghost ? 0.3 : 1} />
       </mesh>
       {selected && (
         <Line points={[...poly, poly[0]].map(([x, y]): [number, number, number] => [x, y, el.height + 0.12])} color="#2563eb" lineWidth={2.5} />

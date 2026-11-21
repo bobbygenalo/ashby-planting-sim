@@ -24,6 +24,21 @@ export function restoreWorkspace(): boolean {
   return true;
 }
 
+/** Save right now (the Save button), and report the result in the save status. */
+export function saveNow(): boolean {
+  const set = appStore.getState().setSaveStatus;
+  const storage = browserStorage();
+  if (!storage) {
+    set({ state: 'error', at: null, message: 'This browser blocks saving. Export your scenarios to keep them.' });
+    return false;
+  }
+  appStore.getState().commitDrawing();
+  const r = saveWorkspace(storage, appStore.getState().toWorkspace());
+  if (r.ok) set({ state: 'saved', at: new Date().toISOString(), message: null });
+  else set({ state: 'error', at: null, message: `Could not save (${r.error}). Export your scenarios to keep them.` });
+  return r.ok;
+}
+
 const WATCHED: (keyof AppState)[] = [
   'instances', 'palette', 'hardscape', 'hydrozones', 'autoIrrigation', 'useRain', 'aduEnabled', 'scenarios', 'activeScenarioId', 'saved',
   'shares', 'soilProfiles', 'playZones', 'library',

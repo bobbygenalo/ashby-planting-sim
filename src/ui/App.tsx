@@ -300,6 +300,15 @@ function Planner() {
   const conflictCount = useApp((s) => s.conflicts.filter((c) => c.instanceIds.length > 0 && c.severity === 'error').length);
   const [tab, setTab] = useState<Tab>('plants');
   const [controlsOpen, setControlsOpen] = useState(true);
+  // Picking something in the yard opens the panel that can act on it (plants or hardscape), when one of those two is showing.
+  const selPlant = useApp((s) => s.selectedId);
+  const selElement = useApp((s) => s.selectedElementId);
+  useEffect(() => {
+    if (selElement) setTab((t) => (t === 'plants' ? 'hardscape' : t));
+  }, [selElement]);
+  useEffect(() => {
+    if (selPlant) setTab((t) => (t === 'hardscape' ? 'plants' : t));
+  }, [selPlant]);
   return (
     <>
     {shared && <div className="viewer-banner">Shared plan: {shared.name}. You are viewing a read-only copy; only the owner can change it.</div>}
@@ -323,7 +332,7 @@ function Planner() {
         <div className="tabs">
           <UndoRedo />
           {TABS.map(([id, label]) => (
-            <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}{id === 'layout' && conflictCount > 0 ? ` (${conflictCount})` : ''}</button>
+            <button key={id} className={tab === id ? 'on' : ''} onClick={() => { if (id !== 'hardscape') appStore.getState().commitDrawing(); setTab(id); }}>{label}{id === 'layout' && conflictCount > 0 ? ` (${conflictCount})` : ''}</button>
           ))}
         </div>
         {tab === 'plants' && <PlantsPanel growing={sun.growing} />}

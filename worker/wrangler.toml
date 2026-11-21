@@ -1,0 +1,12 @@
+name = "ashby-planner-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Browsers may call the API only from these origins. Add your own if the app moves.
+[vars]
+ALLOWED_ORIGINS = "https://bobbygenalo.com,https://bobbygenalo.github.io,http://localhost:5173,http://localhost:4173"
+
+# Create the namespace with `npx wrangler kv namespace create PLANNER`, then paste its id here.
+[[kv_namespaces]]
+binding = "PLANNER"
+id = "a1b51825beee48dea91a7917a4b3f4c8"

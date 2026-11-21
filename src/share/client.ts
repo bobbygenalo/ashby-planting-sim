@@ -1,4 +1,4 @@
-export type ShareErrorKind = 'not-found' | 'revoked' | 'forbidden' | 'too-large' | 'invalid' | 'network' | 'server';
+export type ShareErrorKind = 'not-found' | 'revoked' | 'forbidden' | 'unauthorized' | 'too-large' | 'invalid' | 'network' | 'server';
 
 export interface ShareError {
   kind: ShareErrorKind;
@@ -11,6 +11,7 @@ const MESSAGES: Record<ShareErrorKind, string> = {
   'not-found': 'This link does not exist.',
   revoked: 'The owner has turned this link off.',
   forbidden: 'This browser cannot change that link.',
+  unauthorized: 'Turn on Cloud backup (and let it save once) before sharing.',
   'too-large': 'The plan is too large to share.',
   invalid: 'The server did not accept this plan.',
   network: 'Could not reach the sharing service. Check the connection and try again.',
@@ -22,15 +23,18 @@ function kindFor(status: number): ShareErrorKind {
   if (status === 404) return 'not-found';
   if (status === 410) return 'revoked';
   if (status === 403) return 'forbidden';
+  if (status === 401) return 'unauthorized';
   if (status === 413) return 'too-large';
   if (status === 400) return 'invalid';
   return 'server';
 }
 
-export const DEFAULT_BASE = '/api/share';
+import { SHARE_BASE } from './config';
+
+export const DEFAULT_BASE = SHARE_BASE;
 
 /** Talks to the share API (docs/sharing-api.md). `base` and `fetchFn` are injectable for tests and hosting. */
-export function shareClient(base: string = DEFAULT_BASE, fetchFn: typeof fetch = (...a) => fetch(...a)) {
+export function shareClient(base: string = DEFAULT_BASE, fetchFn: typeof fetch = (...a) => fetch(...a), ownerKey: () => string | null = () => null) {
   async function call(path: string, init: RequestInit): Promise<ShareResult<unknown>> {
     let res: Response;
     try {
@@ -47,7 +51,12 @@ export function shareClient(base: string = DEFAULT_BASE, fetchFn: typeof fetch =
   }
   const json = (method: string, snapshot: unknown, key?: string): RequestInit => ({
     method,
-    headers: { 'Content-Type': 'application/json', ...(key ? { 'x-revoke-key': key } : {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(key ? { 'x-revoke-key': key } : {}),
+      // Creating a share on the hosted API proves you own a backed-up workspace.
+      ...(method === 'POST' && ownerKey() ? { Authorization: `Bearer ${ownerKey()}` } : {}),
+    },
     body: JSON.stringify({ snapshot }),
   });
   return {
@@ -72,7 +81,8 @@ export function shareClient(base: string = DEFAULT_BASE, fetchFn: typeof fetch =
   };
 }
 
-export const shareUrl = (origin: string, token: string) => `${origin}/?share=${token}`;
+/** The link to a shared plan. `appPath` is where the app is served (a Pages site lives under /<repo>/). */
+export const shareUrl = (origin: string, token: string, appPath: string = import.meta.env.BASE_URL ?? '/') => `${origin}${appPath}?share=${token}`;
 
 /** The share token in a page URL, if there is a well-formed one. */
 export function tokenFromSearch(search: string): string | null {

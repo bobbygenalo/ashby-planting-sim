@@ -39,7 +39,7 @@ export function saveNow(): boolean {
   return r.ok;
 }
 
-const WATCHED: (keyof AppState)[] = [
+export const WATCHED: (keyof AppState)[] = [
   'instances', 'palette', 'hardscape', 'hydrozones', 'autoIrrigation', 'useRain', 'aduEnabled', 'scenarios', 'activeScenarioId', 'saved',
   'shares', 'soilProfiles', 'playZones', 'library',
 ];

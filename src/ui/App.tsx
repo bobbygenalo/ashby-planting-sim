@@ -8,6 +8,7 @@ import { LayoutPanel } from './LayoutPanel';
 import { ScenariosPanel } from './ScenariosPanel';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
+import { startCloudSync } from '../store/cloudSync';
 import { loadSharedPlan, type LoadOutcome } from '../share/service';
 import { useAutosave } from '../store/persistence';
 import { SiteScene } from '../scene/SiteScene';
@@ -293,6 +294,7 @@ function useShortcuts() {
 function Planner() {
   const sun = useSunHours();
   useAutosave();
+  useEffect(() => startCloudSync(), []);
   const sheetOpen = useApp((s) => s.sheetOpen);
   const shared = useApp((s) => s.shared);
   useShortcuts();

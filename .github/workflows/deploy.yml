@@ -28,7 +28,8 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE: /ashby-planting-sim/
-          VITE_SHARING: 'off'
+          # Set the repository variable API_BASE to your Worker's URL to turn on share links and cloud backup.
+          VITE_API_BASE: ${{ vars.API_BASE }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

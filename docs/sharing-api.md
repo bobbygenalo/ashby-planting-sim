@@ -1,7 +1,7 @@
 # Sharing API
 
 Shared plans are read-only snapshots stored under an unguessable token. The app talks to this contract through `src/share/client.ts`.
-The dev server implements it as files (`server/shareStore.ts`, `.share-data/`). A hosted deployment needs the same four operations over any key-value store (for example Cloudflare Workers KV): nothing in the app changes.
+The dev server implements it as files (`server/shareStore.ts`, `.share-data/`). The Cloudflare Worker in `worker/` implements the same four operations over Workers KV (see `cloud-deploy.md`); nothing in the app changes.
 
 | Operation | Request | Success | Failure |
 | --- | --- | --- | --- |

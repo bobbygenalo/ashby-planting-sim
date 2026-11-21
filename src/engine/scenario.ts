@@ -98,15 +98,19 @@ export function saveWorkspace(storage: KeyValueStorage, ws: Workspace): { ok: tr
   }
 }
 
+/** A workspace read from storage or the cloud. Anything missing, malformed, or from another version returns null. */
+export function workspaceFromJson(value: unknown): Workspace | null {
+  const ws = value as Workspace | null;
+  if (!ws || typeof ws !== 'object' || ws.format !== 'ashby-workspace/1' || !Array.isArray(ws.scenarios) || ws.scenarios.length === 0) return null;
+  if (!ws.data || !ws.data[ws.activeId]) return null;
+  return ws;
+}
+
 /** Load the saved workspace. Anything missing, malformed, or from another version returns null. */
 export function loadWorkspace(storage: KeyValueStorage): Workspace | null {
   try {
     const raw = storage.getItem(WORKSPACE_KEY);
-    if (!raw) return null;
-    const ws = JSON.parse(raw) as Workspace;
-    if (ws.format !== 'ashby-workspace/1' || !Array.isArray(ws.scenarios) || ws.scenarios.length === 0) return null;
-    if (!ws.data || !ws.data[ws.activeId]) return null;
-    return ws;
+    return raw ? workspaceFromJson(JSON.parse(raw)) : null;
   } catch {
     return null;
   }

@@ -73,7 +73,7 @@ describe('placement scoring (GR-7)', () => {
     expect(at(30, 135).excluded).toBe('structure'); // ADU
     expect(at(4, 72).excluded).toBe('paving'); // driveway
     expect(at(4, 148).excluded).toBe('easement'); // 15 ft redbud under a 15 ft cap
-    expect(at(4, 112).excluded).toBe('root-zone'); // existing tree
+    expect(at(14, 126).excluded).toBe('root-zone'); // inside the mature ficus's root zone
     expect(at(30, 100).excluded).toBeNull();
     // A shorter plant is fine in the easement.
     const low = suggestPlacements(input('salvia-clevelandii', 'back_yard'));

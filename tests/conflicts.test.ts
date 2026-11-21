@@ -148,3 +148,74 @@ describe('conflict kinds', () => {
     expect(of(run([inst('bougainvillea', 10, 80.5)]), 'structure')).toEqual([]);
   });
 });
+
+describe('the mature ficus from the site file', () => {
+  const trees: ContextTree[] = site.contextObjects
+    .filter((o) => o.kind === 'tree' && o.position)
+    .map((o) => ({ id: o.id, name: o.name, x: o.position![0], y: o.position![1], height: o.height, width: o.canopyWidth ?? 10 }));
+  const ficus = trees.find((t) => t.id === 'ficus')!;
+  const parts = site.structures.filter((s) => s.group === 'adu');
+  const gapStart = garage.footprint[2][1]; // the garage's rear face
+  const gapEnd = Math.min(...parts.map((p) => p.footprint[0][1])); // the ADU's front wall
+
+  it('has its trunk where the owner marked it on the plan screenshot, in the gap between the garage and the ADU', () => {
+    expect(ficus).toBeDefined();
+    expect(ficus.x).toBeCloseTo(10.9, 1);
+    expect(ficus.y).toBeCloseTo(116.4, 1);
+    expect(ficus.y).toBeGreaterThan(gapStart);
+    expect(ficus.y).toBeLessThan(gapEnd);
+    expect(gapEnd - gapStart).toBeCloseTo(19.9, 1); // the gap printed on the plot plan
+    expect(ficus.y - gapStart).toBeGreaterThan(12); // about 13 ft north of the garage
+    expect(gapEnd - ficus.y).toBeGreaterThan(6); // about 7 ft south of the ADU
+  });
+
+  it('is one large tree, not two small placeholders', () => {
+    expect(ficus.width).toBeGreaterThan(gapEnd - gapStart); // the canopy spans the gap
+    expect(ficus.height).toBeGreaterThan(Math.max(...parts.map((p) => p.ridgeHeight)));
+    expect(trees.filter((t) => t.y > gapStart && t.y < gapEnd).length).toBe(1);
+    expect(trees.some((t) => t.id === 'tree-adu-corner' || t.id === 'tree-rear-1')).toBe(false);
+  });
+
+  it('is flagged as a placeholder until measured, and the scan reports its canopy reaching the garage', () => {
+    const obj = site.contextObjects.find((o) => o.id === 'ficus')!;
+    expect(obj.placeholder).toBe(true);
+    const found = detectConflicts({ instances: [], palette: {}, species: lib.species, structures: site.structures, elements: [], easements: site.easements, contextTrees: trees, lot: site.lot, cfg: engine, maxMonths: 12 });
+    const hits = found.filter((c) => c.subjects.includes('ctx:ficus') && c.kind === 'structure');
+    expect(hits.some((h) => h.message.includes('Garage'))).toBe(true);
+    expect(hits[0].message).toContain('Mature ficus');
+    expect(hits.every((h) => h.instanceIds.length === 0)).toBe(true); // a site tree, so listed apart from the owner's plants
+  });
+
+  it('flags a tree planted under its canopy, but treats a shrub there as understory', () => {
+    const scan = (id: string) => detectConflicts({ instances: [inst(id, 12, 125)], palette: { [id]: true }, species: lib.species, structures: [], elements: [], easements: [], contextTrees: trees, lot: site.lot, cfg: engine, maxMonths: 360 });
+    expect(scan('cercis-occidentalis').some((c) => c.kind === 'overlap' && c.subjects.includes('ctx:ficus'))).toBe(true);
+    expect(scan('ceanothus-concha').some((c) => c.kind === 'overlap' && c.subjects.includes('ctx:ficus'))).toBe(false);
+  });
+});
+
+describe('planting near the house', () => {
+  const house = site.structures.filter((s) => s.group === 'house');
+  const scan = (x: number, y: number) =>
+    detectConflicts({ instances: [inst('cercis-occidentalis', x, y)], palette: { 'cercis-occidentalis': true }, species: lib.species, structures: house, elements: [], easements: [], contextTrees: [], lot: site.lot, cfg: engine, maxMonths: 12 }).filter((c) => c.kind === 'foundation');
+
+  it('reports the house once, at its nearest wall, however many parts it has', () => {
+    // (12, 62) is in the northwest cut-out: 3.5 ft from the west wing's north wall, 5.5 ft from the rear wing's west wall.
+    const f = scan(12, 62);
+    expect(f.length).toBe(1);
+    expect(f[0].message).toContain('House (E) SFH');
+    expect(f[0].message).toContain('3.5 ft');
+    expect(f[0].message).not.toContain('wing'); // named for the building, not one of its wings
+  });
+
+  it('measures from the right wall elsewhere around the house', () => {
+    expect(scan(12, 70)[0].message).toContain('6.7 ft'); // north of the cut-out, from the rear wing's northwest corner
+    expect(scan(20, 22)[0].message).toContain('3.0 ft'); // south of the front porch
+    expect(scan(30, 5).length).toBe(0); // far from the house
+  });
+
+  it('reports a canopy touching the house once, not once per gable', () => {
+    const found = detectConflicts({ instances: [inst('cercis-occidentalis', 38, 22, { existing: true, currentHeight: 14, currentWidth: 16 })], palette: { 'cercis-occidentalis': true }, species: lib.species, structures: house, elements: [], easements: [], contextTrees: [], lot: site.lot, cfg: engine, maxMonths: 12 });
+    expect(found.filter((c) => c.kind === 'structure').length).toBe(1);
+    expect(found.filter((c) => c.kind === 'roof').length).toBe(1); // a 14 ft tree is above the eaves
+  });
+});

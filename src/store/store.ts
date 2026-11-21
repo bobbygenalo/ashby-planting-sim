@@ -5,6 +5,10 @@ import type { Conflict } from '../engine/conflicts';
 import { polygonArea, polylineLength } from '../engine/geometry';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { loadSite } from '../engine/site';
+import {
+  validateScenarioData, buildShareSnapshot, clone, emptyScenarioData, parseScenarioFile, serializeScenarioFile,
+  type ScenarioData, type ScenarioMeta, type ShareRecord, type ShareSnapshot, type SiteOverrides, type ValidationContext, type Workspace,
+} from '../engine/scenario';
 import { doyToMonthDay, monthDayToDoy } from '../engine/time';
 import speciesRaw from '../data/species.json';
 import materialsRaw from '../data/materials.json';
@@ -134,6 +138,33 @@ export interface AppState {
   suggestFocus: number | null;
   setSuggestFocus: (i: number | null) => void;
 
+  /** Scenarios (SC-1). The active one lives in the fields above; the others are held in `saved`. */
+  sheetOpen: boolean;
+  setSheetOpen: (o: boolean) => void;
+  scenarios: ScenarioMeta[];
+  activeScenarioId: string;
+  saved: Record<string, ScenarioData>;
+  shares: ShareRecord[];
+  /** Set when viewing someone's shared plan: its name and when it was published. */
+  shared: { name: string; hideAddress: boolean; createdAt: string } | null;
+  saveStatus: { state: 'idle' | 'saved' | 'error'; at: string | null; message: string | null };
+  setSaveStatus: (s: AppState['saveStatus']) => void;
+
+  createScenario: (name?: string, fromId?: string) => string | null;
+  renameScenario: (id: string, name: string) => void;
+  deleteScenario: (id: string) => boolean;
+  switchScenario: (id: string) => void;
+  importScenarioFile: (text: string) => { ok: true; id: string; name: string; warnings: string[] } | { ok: false; errors: string[] };
+  exportScenario: (id: string) => { name: string; text: string } | null;
+  toWorkspace: () => Workspace;
+  hydrateWorkspace: (ws: Workspace) => void;
+  /** Owner: the snapshot to publish for a scenario. */
+  buildSnapshot: (id: string, hideAddress: boolean) => ShareSnapshot | null;
+  addShare: (r: ShareRecord) => void;
+  patchShare: (token: string, patch: Partial<ShareRecord>) => void;
+  /** Viewer: show a shared plan. Switches the app to view mode. */
+  loadShared: (s: ShareSnapshot) => void;
+
   water: WaterConfig;
   soil: SoilConfig;
   hydrozones: Hydrozone[];
@@ -161,12 +192,15 @@ const library = speciesRaw as unknown as SpeciesLibrary;
 const materials = materialsRaw as unknown as Material[];
 const water = waterRaw as unknown as WaterConfig;
 const soil = soilRaw as unknown as SoilConfig;
-const OWNER_PICKS = ['salvia-leucantha','oenothera-lindheimeri','achillea-millefolium','lomandra-longifolia','bougainvillea','lantana-montevidensis','coleonema-pulchellum','coleonema-sunset-gold','polygala-myrtifolia','polygala-petite-butterflies','loropetalum-chinense','phormium-tenax','agapanthus-africanus','tulbaghia-violacea','phyla-nodiflora','juncus-patens','arctostaphylos-howard-mcminn'];
-let nextId = 1;
-let nextElementId = 1;
-let nextHydrozoneId = 1;
+const baseSpeciesIds = new Set(library.species.map((s) => s.id));
+let idCounter = 0;
+/** Ids stay unique across sessions: a restored workspace can hold ids a fresh counter would hand out again. */
+const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${(idCounter++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
 export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
+  const initial = emptyScenarioData(site);
+  const firstScenarioId = uid('s');
+  const stamp = () => new Date().toISOString();
   return createStore<AppState>()((set, get) => {
     // Plan mutations go through this guard; view mode cannot change them even if the UI is bypassed.
     const mutate = (patch: Partial<AppState>) => {
@@ -179,6 +213,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     });
     // Push an undo step. Repeated edits with the same key within a second count as one step.
     const record = (key?: string) => {
+      set({ scenarios: get().scenarios.map((s) => (s.id === get().activeScenarioId ? { ...s, modifiedAt: stamp() } : s)) });
       const h = get().history;
       const now = Date.now();
       if (key && h.key === key && now - h.t < 1000) {
@@ -202,6 +237,53 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         selectedElementId: s.hardscape.some((e) => e.id === selEl) ? selEl : null,
       });
     };
+    const currentData = (): ScenarioData => ({
+      palette: get().palette, instances: get().instances, hardscape: get().hardscape, hydrozones: get().hydrozones,
+      autoIrrigation: get().autoIrrigation, useRain: get().useRain, aduEnabled: get().aduEnabled,
+    });
+    // Replace the working fields with a scenario's data and clear everything tied to the old one.
+    const applyData = (d: ScenarioData) =>
+      set({
+        ...clone(d), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
+        hsDrag: null, dragId: null, measureActive: false, measurePoints: [], suggestion: null, suggestFocus: null,
+      });
+    const customSpeciesList = () => get().library.species.filter((s) => !baseSpeciesIds.has(s.id));
+    const siteOverrides = (): SiteOverrides => ({ soilProfiles: get().soilProfiles, playZones: get().playZones });
+    const validationContext = (extra: Species[] = []): ValidationContext => ({
+      speciesIds: new Set([...get().library.species.map((s) => s.id), ...extra.map((s) => s.id)]), containers: new Set(Object.keys(engine.growth.containers)),
+      hardscapeTypes: new Set(Object.keys(engine.hardscape.types)), materialIds: new Set(get().materials.map((m) => m.id)), zoneIds: new Set(get().site.zones.map((z) => z.id)),
+    });
+    const dataFor = (id: string): ScenarioData | undefined => (id === get().activeScenarioId ? currentData() : get().saved[id]);
+    const without = <T,>(rec: Record<string, T>, key: string) => Object.fromEntries(Object.entries(rec).filter(([k]) => k !== key));
+    // Add a scenario and make it the active one, parking the current one.
+    const addScenario = (name: string, data: ScenarioData): string => {
+      const id = uid('s');
+      const t = stamp();
+      set({
+        saved: { ...get().saved, [get().activeScenarioId]: clone(currentData()) },
+        scenarios: [...get().scenarios, { id, name, createdAt: t, modifiedAt: t }],
+        activeScenarioId: id,
+      });
+      applyData(data);
+      return id;
+    };
+    // Merge species an imported scenario brings. A different species with an id already in use is renamed, never overwritten.
+    const mergeCustomSpecies = (incoming: Species[]): Map<string, string> => {
+      const remap = new Map<string, string>();
+      const lib = [...get().library.species];
+      for (const s of incoming) {
+        const existing = lib.find((x) => x.id === s.id);
+        if (!existing) { lib.push(s); continue; }
+        if (JSON.stringify(existing) === JSON.stringify(s)) continue;
+        let n = 2;
+        while (lib.some((x) => x.id === `${s.id}-${n}`)) n++;
+        remap.set(s.id, `${s.id}-${n}`);
+        lib.push({ ...s, id: `${s.id}-${n}` });
+      }
+      set({ library: { ...get().library, species: lib } });
+      return remap;
+    };
+
     return {
       mode,
       site,
@@ -234,8 +316,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setSnap: (s) => set({ snap: s }),
 
       library,
-      palette: Object.fromEntries(OWNER_PICKS.map((id) => [id, true])),
-      instances: [],
+      palette: initial.palette,
+      instances: initial.instances,
       timelineMonth: 0,
       timelinePlaying: false,
       selectedId: null,
@@ -250,7 +332,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setPaletteSpecies: (id, on) => scenario({ palette: { ...get().palette, [id]: on } }),
       addInstance: (speciesId, position, opts = {}) => {
         if (get().mode !== 'edit' || !get().palette[speciesId]) return null;
-        const id = `p${nextId++}`;
+        const id = uid('p');
         const inst: PlantInstance = {
           id,
           speciesId,
@@ -272,7 +354,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       duplicateInstance: (id) => {
         const src = get().instances.find((i) => i.id === id);
         if (!src || get().mode !== 'edit') return;
-        const copy = { ...src, id: `p${nextId++}`, position: [src.position[0] + 2, src.position[1]] as Pt };
+        const copy = { ...src, id: uid('p'), position: [src.position[0] + 2, src.position[1]] as Pt };
         record();
         set({ instances: [...get().instances, copy], selectedId: copy.id, selectedElementId: null });
       },
@@ -289,7 +371,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setHover: (p, kind) => set({ hover: p, hoverSnap: kind ?? 'grid' }),
 
       materials,
-      hardscape: site.hardscape,
+      hardscape: initial.hardscape,
       drawing: null,
       selectedElementId: null,
       hsDrag: null,
@@ -336,7 +418,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         if (d.points.length < need) return null;
         // Reject collapsed shapes (all corners on one line, or a path with no length).
         if (cfgT.shape === 'line' ? polylineLength(d.points) < 0.5 : polygonArea(d.points) < 0.5) return null;
-        const id = `h${nextElementId++}`;
+        const id = uid('h');
         const el: HardscapeElement = {
           id, type: d.type, points: d.points, materialId: cfgT.material, height: cfgT.height, depthIn: cfgT.depthIn, width: cfgT.width, existing: false,
         };
@@ -377,6 +459,140 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       suggestFocus: null,
       setSuggestFocus: (i) => set({ suggestFocus: i }),
 
+      sheetOpen: false,
+      setSheetOpen: (o) => set({ sheetOpen: o }),
+      scenarios: [{ id: firstScenarioId, name: 'Scenario 1', createdAt: stamp(), modifiedAt: stamp() }],
+      activeScenarioId: firstScenarioId,
+      saved: {},
+      shares: [],
+      shared: null,
+      saveStatus: { state: 'idle', at: null, message: null },
+      setSaveStatus: (s) => set({ saveStatus: s }),
+
+      createScenario: (name, fromId) => {
+        if (get().mode !== 'edit') return null;
+        if (fromId) {
+          const src = dataFor(fromId);
+          const meta = get().scenarios.find((s) => s.id === fromId);
+          if (!src || !meta) return null;
+          return addScenario(name?.trim() || `${meta.name} copy`, clone(src));
+        }
+        return addScenario(name?.trim() || `Scenario ${get().scenarios.length + 1}`, emptyScenarioData(get().site));
+      },
+      renameScenario: (id, name) => {
+        if (get().mode !== 'edit' || !name.trim()) return;
+        set({ scenarios: get().scenarios.map((s) => (s.id === id ? { ...s, name: name.trim(), modifiedAt: stamp() } : s)) });
+      },
+      deleteScenario: (id) => {
+        const { scenarios, activeScenarioId, saved } = get();
+        if (get().mode !== 'edit' || scenarios.length <= 1 || !scenarios.some((s) => s.id === id)) return false;
+        const rest = scenarios.filter((s) => s.id !== id);
+        if (id === activeScenarioId) {
+          const next = rest[0].id;
+          set({ scenarios: rest, activeScenarioId: next, saved: without(saved, next) });
+          applyData(saved[next]);
+        } else {
+          set({ scenarios: rest, saved: without(saved, id) });
+        }
+        return true;
+      },
+      switchScenario: (id) => {
+        const { activeScenarioId, saved, scenarios } = get();
+        if (get().mode !== 'edit' || id === activeScenarioId || !saved[id] || !scenarios.some((s) => s.id === id)) return;
+        const target = saved[id];
+        set({ saved: { ...without(saved, id), [activeScenarioId]: clone(currentData()) }, activeScenarioId: id });
+        applyData(target);
+      },
+      importScenarioFile: (text) => {
+        if (get().mode !== 'edit') return { ok: false, errors: ['A shared view cannot import scenarios.'] };
+        const parsed = parseScenarioFile(text, validationContext());
+        if (!parsed.ok) return parsed;
+        const remap = mergeCustomSpecies(parsed.customSpecies);
+        const data = clone(parsed.data);
+        if (remap.size) {
+          data.instances = data.instances.map((i) => (remap.has(i.speciesId) ? { ...i, speciesId: remap.get(i.speciesId)! } : i));
+          data.palette = Object.fromEntries(Object.entries(data.palette).map(([k, v]) => [remap.get(k) ?? k, v]));
+        }
+        // The file's soil results fill zones the owner has not filled in. They never replace what the owner entered.
+        const profiles = { ...get().soilProfiles };
+        for (const [zone, p] of Object.entries(parsed.siteOverrides.soilProfiles)) if (profiles[zone]?.isDefault) profiles[zone] = p;
+        const play = { ...get().playZones };
+        for (const [zone, on] of Object.entries(parsed.siteOverrides.playZones)) if (play[zone] === undefined) play[zone] = on;
+        set({ soilProfiles: profiles, playZones: play });
+        const id = addScenario(parsed.name, data);
+        return { ok: true, id, name: parsed.name, warnings: parsed.warnings };
+      },
+      exportScenario: (id) => {
+        const data = dataFor(id);
+        const meta = get().scenarios.find((s) => s.id === id);
+        if (!data || !meta) return null;
+        return { name: meta.name, text: serializeScenarioFile({ name: meta.name, data, customSpecies: customSpeciesList(), siteOverrides: siteOverrides() }) };
+      },
+      toWorkspace: () => ({
+        format: 'ashby-workspace/1',
+        scenarios: get().scenarios,
+        data: { ...get().saved, [get().activeScenarioId]: currentData() },
+        activeId: get().activeScenarioId,
+        customSpecies: customSpeciesList(),
+        siteOverrides: siteOverrides(),
+        shares: get().shares,
+      }),
+      hydrateWorkspace: (ws) => {
+        if (get().mode !== 'edit') return;
+        // Saved data can be old or damaged. Keep only the scenarios that check out.
+        const ctx = validationContext(ws.customSpecies);
+        const good: { meta: ScenarioMeta; data: ScenarioData }[] = [];
+        for (const meta of ws.scenarios) {
+          const check = validateScenarioData(ws.data[meta.id], ctx);
+          if (check.data) good.push({ meta, data: check.data });
+        }
+        if (good.length === 0) return;
+        mergeCustomSpecies(Array.isArray(ws.customSpecies) ? ws.customSpecies : []);
+        const active = good.find((g) => g.meta.id === ws.activeId) ?? good[0];
+        const soilProfiles = { ...get().soilProfiles, ...(ws.siteOverrides?.soilProfiles ?? {}) };
+        set({
+          scenarios: good.map((g) => g.meta), activeScenarioId: active.meta.id,
+          saved: Object.fromEntries(good.filter((g) => g !== active).map((g) => [g.meta.id, g.data])),
+          shares: Array.isArray(ws.shares) ? ws.shares : [], soilProfiles, playZones: { ...(ws.siteOverrides?.playZones ?? {}) },
+        });
+        applyData(active.data);
+      },
+      buildSnapshot: (id, hideAddress) => {
+        const data = dataFor(id);
+        const meta = get().scenarios.find((s) => s.id === id);
+        if (!data || !meta) return null;
+        return buildShareSnapshot({
+          name: meta.name, site: get().site, data, customSpecies: customSpeciesList(), siteOverrides: siteOverrides(), hideAddress,
+          view: { timelineMonth: get().timelineMonth, doy: get().doy },
+        });
+      },
+      addShare: (r) => {
+        if (get().mode === 'edit') set({ shares: [...get().shares, r] });
+      },
+      patchShare: (token, patch) => {
+        if (get().mode === 'edit') set({ shares: get().shares.map((s) => (s.token === token ? { ...s, ...patch } : s)) });
+      },
+      loadShared: (snap) => {
+        const base = library.species;
+        const extra = snap.customSpecies.filter((s) => !baseSpeciesIds.has(s.id));
+        set({
+          mode: 'view',
+          site: snap.site,
+          library: { ...library, species: [...base, ...extra] },
+          soilProfiles: { ...Object.fromEntries(snap.site.zones.map((z) => [z.id, { ...soil.defaultProfile }])), ...snap.siteOverrides.soilProfiles },
+          playZones: { ...snap.siteOverrides.playZones },
+          timelineMonth: snap.view.timelineMonth,
+          doy: snap.view.doy,
+          view: 'orbit',
+          scenarios: [{ id: 'shared', name: snap.name, createdAt: snap.createdAt, modifiedAt: snap.createdAt }],
+          activeScenarioId: 'shared',
+          saved: {},
+          shares: [],
+          shared: { name: snap.name, hideAddress: snap.hideAddress, createdAt: snap.createdAt },
+        });
+        applyData(snap.scenario);
+      },
+
       water,
       soil,
       hydrozones: [],
@@ -387,7 +603,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
 
       addHydrozone: (name, irrigation) => {
         if (get().mode !== 'edit' || !name.trim()) return null;
-        const id = `z${nextHydrozoneId++}`;
+        const id = uid('z');
         scenario({ hydrozones: [...get().hydrozones, { id, name: name.trim(), irrigation }] });
         return id;
       },
@@ -410,8 +626,9 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
   });
 }
 
+// A page opened from a share link is always a viewer; so is `?mode=view`.
 const initialMode: Mode =
-  typeof location !== 'undefined' && new URLSearchParams(location.search).get('mode') === 'view' ? 'view' : 'edit';
+  typeof location !== 'undefined' && (new URLSearchParams(location.search).get('mode') === 'view' || new URLSearchParams(location.search).has('share')) ? 'view' : 'edit';
 
 export const appStore = makeAppStore(initialMode);
 // Dev-only handle for inspecting state from the browser console.

@@ -13,32 +13,303 @@
   },
   "structures": [
     {
-      "id": "house",
+      "id": "house-main",
       "name": "House (E) SFH",
       "footprint": [
         [
-          8,
-          24
+          9.9438,
+          29.3384
         ],
         [
-          46,
-          24
+          47.1562,
+          29.3384
         ],
         [
-          46,
-          66.229167
+          47.1562,
+          49.93
         ],
         [
-          8,
-          66.229167
+          9.9438,
+          49.93
         ]
       ],
-      "eaveHeight": 9,
-      "ridgeHeight": 15,
+      "roofFootprint": [
+        [
+          8.9125,
+          29.3384
+        ],
+        [
+          48.1874,
+          29.3384
+        ],
+        [
+          48.1874,
+          49.93
+        ],
+        [
+          8.9125,
+          49.93
+        ]
+      ],
+      "eaveHeight": 10.0,
+      "ridgeHeight": 13.8854,
       "roofForm": "gable",
+      "ridgeAxis": "x",
+      "ridgeAt": 39.7,
+      "note": "Main body: an east-west gable whose ridge is the top of the roof, 13'-10 5/8\" above grade. Its gable ends show on the east and west elevations, 20.5 ft wide, apex 39.7 ft from the street.",
+      "group": "house",
+      "groupName": "House (E) SFH",
       "status": "existing",
-      "toggleable": false,
-      "note": "Rear face derived from printed house-to-ADU separation. Front and sides scaled from photo (about 2 ft). Heights are placeholders."
+      "toggleable": false
+    },
+    {
+      "id": "house-front",
+      "name": "House (E) SFH front gable",
+      "footprint": [
+        [
+          27.0,
+          25.0384
+        ],
+        [
+          47.1562,
+          25.0384
+        ],
+        [
+          47.1562,
+          29.3384
+        ],
+        [
+          27.0,
+          29.3384
+        ]
+      ],
+      "roofFootprint": [
+        [
+          26.0,
+          24.0071
+        ],
+        [
+          48.1874,
+          24.0071
+        ],
+        [
+          48.1874,
+          39.7
+        ],
+        [
+          26.0,
+          39.7
+        ]
+      ],
+      "eaveHeight": 10.0,
+      "ridgeHeight": 13.8854,
+      "roofForm": "gable",
+      "ridgeAxis": "y",
+      "ridgeAt": 37.0937,
+      "note": "Front gable over the east half of the south front (stucco gable wall with the casement window). Its ridge runs north to south at the same height as the main ridge, and meets it.",
+      "group": "house",
+      "groupName": "House (E) SFH",
+      "status": "existing",
+      "toggleable": false
+    },
+    {
+      "id": "house-porch",
+      "name": "House (E) SFH front porch",
+      "footprint": [
+        [
+          9.9438,
+          25.0384
+        ],
+        [
+          27.0,
+          25.0384
+        ],
+        [
+          27.0,
+          29.3384
+        ],
+        [
+          9.9438,
+          29.3384
+        ]
+      ],
+      "roofFootprint": [
+        [
+          8.9125,
+          24.0071
+        ],
+        [
+          27.0,
+          24.0071
+        ],
+        [
+          27.0,
+          29.3384
+        ],
+        [
+          8.9125,
+          29.3384
+        ]
+      ],
+      "eaveHeight": 9.0,
+      "ridgeHeight": 10.0,
+      "roofForm": "shed",
+      "lowSide": "south",
+      "note": "Covered entry on the west half of the south front, under a lower roof (about 9 ft at the front edge, rising to the main roof's eave) with the slatted screen and the front door.",
+      "group": "house",
+      "groupName": "House (E) SFH",
+      "status": "existing",
+      "toggleable": false
+    },
+    {
+      "id": "house-westwing",
+      "name": "House (E) SFH west wing",
+      "footprint": [
+        [
+          9.9438,
+          49.93
+        ],
+        [
+          19.4562,
+          49.93
+        ],
+        [
+          19.4562,
+          58.4584
+        ],
+        [
+          9.9438,
+          58.4584
+        ]
+      ],
+      "roofFootprint": [
+        [
+          8.9125,
+          46.1
+        ],
+        [
+          20.4874,
+          46.1
+        ],
+        [
+          20.4874,
+          59.4896
+        ],
+        [
+          8.9125,
+          59.4896
+        ]
+      ],
+      "eaveHeight": 9.2,
+      "ridgeHeight": 11.4792,
+      "roofForm": "gable",
+      "ridgeAxis": "y",
+      "ridgeAt": 14.7,
+      "note": "Small north-south gable on the west side, ending at the cut-out. Ridge 11'-5 3/4\" above grade, eaves about 9 ft. Its roof meets the main roof's north slope in a valley about 46 ft from the street.",
+      "group": "house",
+      "groupName": "House (E) SFH",
+      "status": "existing",
+      "toggleable": false
+    },
+    {
+      "id": "house-rear-a",
+      "name": "House (E) SFH rear wing",
+      "footprint": [
+        [
+          19.4562,
+          49.93
+        ],
+        [
+          47.1562,
+          49.93
+        ],
+        [
+          47.1562,
+          58.4584
+        ],
+        [
+          19.4562,
+          58.4584
+        ]
+      ],
+      "roofFootprint": [
+        [
+          19.4562,
+          49.93
+        ],
+        [
+          48.1874,
+          49.93
+        ],
+        [
+          48.1874,
+          58.4584
+        ],
+        [
+          19.4562,
+          58.4584
+        ]
+      ],
+      "eaveHeight": 9.5,
+      "ridgeHeight": 11.2396,
+      "roofForm": "gable",
+      "ridgeAxis": "y",
+      "ridgeAt": 37.28,
+      "note": "Rear wing, south half. Low-pitch roof (about 1 in 12 falling west, steeper east) with the ridge 11'-2 7/8\" above grade about 20 ft east of the rear wing's west wall.",
+      "group": "house",
+      "groupName": "House (E) SFH",
+      "status": "existing",
+      "toggleable": false
+    },
+    {
+      "id": "house-rear-b",
+      "name": "House (E) SFH rear wing (north)",
+      "footprint": [
+        [
+          17.5271,
+          58.4584
+        ],
+        [
+          47.1562,
+          58.4584
+        ],
+        [
+          47.1562,
+          66.2292
+        ],
+        [
+          17.5271,
+          66.2292
+        ]
+      ],
+      "roofFootprint": [
+        [
+          17.1271,
+          58.4584
+        ],
+        [
+          48.1874,
+          58.4584
+        ],
+        [
+          48.1874,
+          67.7292
+        ],
+        [
+          17.1271,
+          67.7292
+        ]
+      ],
+      "eaveHeight": 9.5,
+      "ridgeHeight": 11.2396,
+      "roofForm": "gable",
+      "ridgeAxis": "y",
+      "ridgeAt": 37.28,
+      "note": "Rear wing, north half, up to the rear wall at grid 5. Its west wall is 7'-7\" east of the front body's, leaving the northwest cut-out that faces the garage. The roof edge runs about 1.5 ft north of the wall.",
+      "group": "house",
+      "groupName": "House (E) SFH",
+      "status": "existing",
+      "toggleable": false
     },
     {
       "id": "garage",
@@ -69,50 +340,258 @@
       "note": "Rear face derived from printed garage-to-ADU distance (19'-10 3/4\"). Front face scaled. Height is a placeholder."
     },
     {
-      "id": "adu",
-      "name": "ADU (proposed)",
+      "id": "adu-bedroom",
+      "name": "ADU bedroom wing",
+      "group": "adu",
       "footprint": [
         [
-          8.96,
-          123.364583
+          8.9583,
+          135.0938
         ],
         [
-          46.7204,
-          123.364583
+          25.0208,
+          135.0938
         ],
         [
-          46.7204,
-          146.46875
+          25.0208,
+          146.4688
         ],
         [
-          8.96,
-          146.46875
+          8.9583,
+          146.4688
+        ]
+      ],
+      "eaveHeight": 11.2167,
+      "ridgeHeight": 13.9042,
+      "roofForm": "shed",
+      "lowSide": "west",
+      "status": "proposed",
+      "toggleable": true,
+      "note": "Rear wing over grids 01 to 02. Shed roof sloping down to the west: 10'-5\" at the west gutter, 13'-1 1/4\" at the east edge (roof plan), measured from finished floor, plus 0.8 ft for the floor above grade.",
+      "groupName": "ADU (proposed)",
+      "roofThickness": 0.6,
+      "roofFootprint": [
+        [
+          8.9583,
+          132.6563
+        ],
+        [
+          25.0208,
+          132.6563
+        ],
+        [
+          25.0208,
+          146.4688
+        ],
+        [
+          8.9583,
+          146.4688
+        ]
+      ]
+    },
+    {
+      "id": "adu-link",
+      "name": "ADU bath and hall",
+      "group": "adu",
+      "footprint": [
+        [
+          25.0208,
+          135.5729
+        ],
+        [
+          35.4062,
+          135.5729
+        ],
+        [
+          35.4062,
+          146.4688
+        ],
+        [
+          25.0208,
+          146.4688
+        ]
+      ],
+      "eaveHeight": 9.8,
+      "ridgeHeight": 10.3,
+      "roofForm": "flat",
+      "status": "proposed",
+      "toggleable": true,
+      "note": "Bath and hallway between the wings, grids 02 to 03. Flat accessible roof at 9'-6\" above finished floor, plus 0.8 ft for the floor above grade.",
+      "groupName": "ADU (proposed)"
+    },
+    {
+      "id": "adu-great",
+      "name": "ADU great room",
+      "group": "adu",
+      "footprint": [
+        [
+          24.5417,
+          123.3646
+        ],
+        [
+          46.6875,
+          123.3646
+        ],
+        [
+          46.6875,
+          135.5729
+        ],
+        [
+          24.5417,
+          135.5729
         ]
       ],
       "roofFootprint": [
         [
-          8.96,
-          120.927083
+          24.5417,
+          120.9271
         ],
         [
-          46.7204,
-          120.927083
+          46.6875,
+          120.9271
         ],
         [
-          46.7204,
-          146.46875
+          46.6875,
+          135.5729
         ],
         [
-          8.96,
-          146.46875
+          24.5417,
+          135.5729
         ]
       ],
-      "eaveHeight": 9,
-      "ridgeHeight": 14,
-      "roofForm": "gable",
+      "eaveHeight": 10.1333,
+      "ridgeHeight": 13.8938,
+      "roofForm": "shed",
+      "lowSide": "west",
       "status": "proposed",
       "toggleable": true,
-      "note": "Modeled as one rectangle. The plan shows an L-shape and a 616 SF area, so this overstates the footprint (964 SF). Replace with the ADU floor plan outline. Roof reaches 2.44 ft toward the house (printed width 25'-6 1/2\" includes the overhang)."
+      "note": "Front wing over grids 02 to 04. Shed roof sloping down to the west: 9'-4\" at the west gutter, 13'-1 1/8\" at the east edge, plus 0.8 ft. The roof reaches 2'-5 1/4\" south of the front wall over the entry landing (printed width 25'-6 1/2\" includes it).",
+      "groupName": "ADU (proposed)",
+      "roofThickness": 0.6
+    },
+    {
+      "id": "adu-fin-great-w",
+      "name": "ADU front side wall",
+      "group": "adu-fins",
+      "groupName": "ADU (proposed)",
+      "footprint": [
+        [
+          24.5417,
+          120.9271
+        ],
+        [
+          25.0417,
+          120.9271
+        ],
+        [
+          25.0417,
+          123.3646
+        ],
+        [
+          24.5417,
+          123.3646
+        ]
+      ],
+      "eaveHeight": 10.1333,
+      "ridgeHeight": 10.2182,
+      "roofForm": "shed",
+      "lowSide": "west",
+      "status": "proposed",
+      "toggleable": true,
+      "note": "Side wall of the recessed front facade, ground to roof, projecting 2'-5 1/4\" past the front wall (ADU south elevation and floor plan). Bedroom-wing projection and wall thickness assumed equal to the great room's."
+    },
+    {
+      "id": "adu-fin-great-e",
+      "name": "ADU front side wall",
+      "group": "adu-fins",
+      "groupName": "ADU (proposed)",
+      "footprint": [
+        [
+          46.1875,
+          120.9271
+        ],
+        [
+          46.6875,
+          120.9271
+        ],
+        [
+          46.6875,
+          123.3646
+        ],
+        [
+          46.1875,
+          123.3646
+        ]
+      ],
+      "eaveHeight": 13.8089,
+      "ridgeHeight": 13.8938,
+      "roofForm": "shed",
+      "lowSide": "west",
+      "status": "proposed",
+      "toggleable": true,
+      "note": "Side wall of the recessed front facade, ground to roof, projecting 2'-5 1/4\" past the front wall (ADU south elevation and floor plan). Bedroom-wing projection and wall thickness assumed equal to the great room's."
+    },
+    {
+      "id": "adu-fin-bed-w",
+      "name": "ADU front side wall",
+      "group": "adu-fins",
+      "groupName": "ADU (proposed)",
+      "footprint": [
+        [
+          8.9583,
+          132.6563
+        ],
+        [
+          9.4583,
+          132.6563
+        ],
+        [
+          9.4583,
+          135.0938
+        ],
+        [
+          8.9583,
+          135.0938
+        ]
+      ],
+      "eaveHeight": 11.2167,
+      "ridgeHeight": 11.3004,
+      "roofForm": "shed",
+      "lowSide": "west",
+      "status": "proposed",
+      "toggleable": true,
+      "note": "Side wall of the recessed front facade, ground to roof, projecting 2'-5 1/4\" past the front wall (ADU south elevation and floor plan). Bedroom-wing projection and wall thickness assumed equal to the great room's."
+    },
+    {
+      "id": "adu-fin-bed-e",
+      "name": "ADU front side wall",
+      "group": "adu-fins",
+      "groupName": "ADU (proposed)",
+      "footprint": [
+        [
+          24.5417,
+          132.6563
+        ],
+        [
+          25.0208,
+          132.6563
+        ],
+        [
+          25.0208,
+          135.0938
+        ],
+        [
+          24.5417,
+          135.0938
+        ]
+      ],
+      "eaveHeight": 13.824,
+      "ridgeHeight": 13.9042,
+      "roofForm": "shed",
+      "lowSide": "west",
+      "status": "proposed",
+      "toggleable": true,
+      "note": "Tall east gable wall of the bedroom wing, carried south over the recess to meet the west wall of the great room (owner's note); ground to roof."
     }
   ],
   "hardscape": [
@@ -211,32 +690,19 @@
       "note": "Position along the rear line is a guess."
     },
     {
-      "id": "tree-adu-corner",
+      "id": "ficus",
       "kind": "tree",
-      "name": "Existing tree near ADU front corner",
+      "name": "Mature ficus (between garage and ADU)",
       "position": [
-        5,
-        122
+        10.9,
+        116.4
       ],
-      "height": 22,
-      "canopyWidth": 16,
-      "trunkHeight": 6,
-      "density": 0.75,
-      "placeholder": true
-    },
-    {
-      "id": "tree-rear-1",
-      "kind": "tree",
-      "name": "Rear tree 1",
-      "position": [
-        3,
-        112
-      ],
-      "height": 25,
-      "canopyWidth": 14,
-      "trunkHeight": 7,
-      "density": 0.75,
-      "placeholder": true
+      "height": 26,
+      "canopyWidth": 28,
+      "trunkHeight": 5,
+      "density": 0.9,
+      "placeholder": true,
+      "note": "One large evergreen between the garage and the ADU. The trunk position (about 10.9 ft from the west lot line, 116.4 ft from the street: roughly 13 ft north of the garage's rear face and 7 ft south of the ADU's front wall) was marked by the owner on a screenshot of the plan, and is good to about 1 ft. Canopy size (28 ft across, 26 ft tall) is read from a photo and assumed centered on the trunk. If the tree leans toward the ADU, give the canopy's reach in each direction. Confirm height."
     },
     {
       "id": "tree-rear-2",
@@ -609,38 +1075,48 @@
       "estimate": true
     },
     {
-      "id": "drive-side",
-      "text": "Driveway is on the left when facing the house from the street (so +X runs to the right). Unverified.",
-      "estimate": true
-    },
-    {
       "id": "location",
       "text": "Latitude and longitude are approximate for the street; confirm with a geocode.",
       "estimate": true
     },
     {
-      "id": "heights",
-      "text": "Structure heights are placeholders: house 9/15 ft, garage 9/11 ft, ADU 9/14 ft, fences 6 ft.",
-      "estimate": true
-    },
-    {
-      "id": "footprints",
-      "text": "House and garage footprints are scaled from one photo (about 2 ft). Printed dimensions override scaled ones where both exist.",
-      "estimate": true
-    },
-    {
-      "id": "adu-tol",
-      "text": "Printed ADU dimensions disagree by up to 0.9 in (9'-0\" + 37'-9 1/8\" + 4'-0\" exceeds the lot width by 0.9 in). The ADU is placed so both ends are within 0.5 in.",
+      "id": "ground",
+      "text": "Terrain is modeled flat.",
       "estimate": true
     },
     {
       "id": "trees",
-      "text": "Existing trees are placeholder positions and generic sizes from the plan.",
+      "text": "The mature ficus is one tree between the garage and the ADU. Its trunk is where the owner marked it, about 10.9 ft from the west lot line and 13 ft north of the garage's rear face. Its canopy (about 28 ft across, 26 ft tall) is read from a photo and assumed centered on the trunk. The other rear trees are still placeholder positions and generic sizes from the plan.",
       "estimate": true
     },
     {
-      "id": "ground",
-      "text": "Terrain is modeled flat.",
+      "id": "adu-source",
+      "text": "The ADU is three rectangles built from the owner's floor and roof plans: a rear wing (grids 01 to 03), and a front great room (grids 02 to 04), with an open yard notch to the southwest and an open courtyard to the northeast. Wall faces sit 2 7/8 in outside the grid (8'-11 1/2\" on the west). The footprint is about 566 sq ft; the printed 616 sq ft also counts the 12'-2 3/4\" by 4'-0\" entry landing.",
+      "estimate": false
+    },
+    {
+      "id": "adu-roof",
+      "text": "ADU roof heights come from the roof plan, above finished floor, plus 0.8 ft because the floor sits about 10 in above grade. The two shed roofs slope down to the west; the bath and hall roof is flat. The roof plan's gutters and overhang edges are approximated by the wall faces, except the 2'-5 1/4\" south overhang.",
+      "estimate": false
+    },
+    {
+      "id": "drive-side",
+      "text": "The driveway is on the left when facing the house from the street (so +X runs to the right). Confirmed by the ADU plan, which has 9'-7\" to the left lot line and 4'-2 7/8\" to the right.",
+      "estimate": false
+    },
+    {
+      "id": "footprints",
+      "text": "The garage footprint is scaled from one photo (about 2 ft). Printed dimensions override scaled ones where both exist. The ADU footprint is from its floor plan and the house's side and rear walls from its roof plan.",
+      "estimate": true
+    },
+    {
+      "id": "house-plan",
+      "text": "The house is six parts built from the owner's roof plan and four elevations: a main east-west gable, a front gable, a lower porch roof, a small west gable wing, and a rear wing in two parts with a 7'-7\" by 7'-9 1/4\" cut-out at the northwest corner facing the garage. Heights are above natural grade (the ground floor is 1'-3\" above it) and the roofs follow the elevations: top of roof 13'-10 5/8\", eaves about 9 to 10 ft, rear ridge 11'-2 7/8\", west wing ridge 11'-5 3/4\". Depth, from grid 1 to grid 5, is 41.1 ft (front wall about 25.0 ft from the street). Side walls are placed from the roof edge being about 2.5 ft from the east lot line, so they carry about 0.5 ft of uncertainty. The middle grid line B, and so the front gable's position, is good to about 0.6 ft.",
+      "estimate": true
+    },
+    {
+      "id": "heights",
+      "text": "Garage height and the 6 ft fences are placeholders (garage 9/11 ft). House and ADU heights come from the plans. Terrain is modeled flat; the house's natural grade rises about half a foot from front to back.",
       "estimate": true
     }
   ]

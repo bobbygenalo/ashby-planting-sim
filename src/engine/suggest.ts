@@ -113,8 +113,8 @@ function evaluateCell(x: number, y: number, input: SuggestInput): CellScore {
   const gap = cc.structureClearanceFt;
   for (const st of input.structures) {
     const outline = sp.matureHeight >= st.eaveHeight ? (st.roofFootprint ?? st.footprint) : st.footprint;
-    if (!(sp.habit === 'vine' && cc.ignoreVinesAtStructures)) add(distanceToPolygon(x, y, outline) - (R + gap), R, st.name);
-    add(distanceToPolygon(x, y, st.footprint) - sp.roots.minFoundationFt, sp.roots.minFoundationFt, `${st.name} (roots)`);
+    if (!(sp.habit === 'vine' && cc.ignoreVinesAtStructures)) add(distanceToPolygon(x, y, outline) - (R + gap), R, st.groupName ?? st.name);
+    add(distanceToPolygon(x, y, st.footprint) - sp.roots.minFoundationFt, sp.roots.minFoundationFt, `${st.groupName ?? st.name} (roots)`);
   }
   for (const e of avoid) add(distanceToPolygon(x, y, footprint(e, cfg.hardscape)) - sp.roots.minPavingFt, sp.roots.minPavingFt, e.name ?? e.type);
   add(Math.min(x, input.lot.width - x, y, input.lot.depth - y) - cc.lotLineMinFt[sp.type], cc.lotLineMinFt[sp.type], 'the lot line');

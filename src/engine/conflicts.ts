@@ -98,6 +98,11 @@ export function detectConflicts(input: ConflictInput): Conflict[] {
     if (!found.has(c.id)) found.set(c.id, { atPlanting: false, ...c });
   };
 
+  // A building made of several parts (the ADU's wings, the house's gables) is one thing to plant near: report it once.
+  const buildings = [...input.structures.reduce((m, st) => m.set(st.groupName ?? st.group ?? st.id, [...(m.get(st.groupName ?? st.group ?? st.id) ?? []), st]), new Map<string, StructureCfg[]>())].map(
+    ([key, parts]) => ({ key, name: parts[0].groupName ?? parts[0].name, parts }),
+  );
+
   const live = input.elements.filter((e) => !e.removed);
   const avoid = live.filter((e) => cc.trunkAvoidTypes.includes(e.type));
   const lot = input.lot;
@@ -108,12 +113,12 @@ export function detectConflicts(input: ConflictInput): Conflict[] {
     const sp = s.sp;
     const [x, y] = s.pos;
     const m0 = s.from;
-    for (const st of input.structures) {
-      const d = distanceToPolygon(x, y, st.footprint);
+    for (const b of buildings) {
+      const d = Math.min(...b.parts.map((p) => distanceToPolygon(x, y, p.footprint)));
       if (d < sp.roots.minFoundationFt) {
         record({
-          id: `foundation:${s.id}:${st.id}`, kind: 'foundation', severity: 'error', subjects: [s.id], instanceIds: [s.instanceId], firstMonth: m0, atPlanting: true,
-          message: `${s.name} is ${d.toFixed(1)} ft from ${st.name}; keep at least ${sp.roots.minFoundationFt} ft for its roots.`,
+          id: `foundation:${s.id}:${b.key}`, kind: 'foundation', severity: 'error', subjects: [s.id], instanceIds: [s.instanceId], firstMonth: m0, atPlanting: true,
+          message: `${s.name} is ${d.toFixed(1)} ft from ${b.name}; keep at least ${sp.roots.minFoundationFt} ft for its roots.`,
         });
       }
     }
@@ -148,17 +153,17 @@ export function detectConflicts(input: ConflictInput): Conflict[] {
 
       // Canopy against structures and roofs
       if (!(s.sp?.habit === 'vine' && cc.ignoreVinesAtStructures)) {
-        for (const st of input.structures) {
-          if (circleOverlapsPolygon(s.pos[0], s.pos[1], r + cc.structureClearanceFt, st.footprint)) {
+        for (const b of buildings) {
+          if (b.parts.some((p) => circleOverlapsPolygon(s.pos[0], s.pos[1], r + cc.structureClearanceFt, p.footprint))) {
             record({
-              id: `structure:${s.id}:${st.id}`, kind: 'structure', severity: 'error', subjects: [s.id], instanceIds: s.instanceId ? [s.instanceId] : [], firstMonth: m,
-              message: `${s.name}'s canopy touches ${st.name} ${fmtYear(m)}.`,
+              id: `structure:${s.id}:${b.key}`, kind: 'structure', severity: 'error', subjects: [s.id], instanceIds: s.instanceId ? [s.instanceId] : [], firstMonth: m,
+              message: `${s.name}'s canopy touches ${b.name} ${fmtYear(m)}.`,
             });
           }
-          if (a.height >= st.eaveHeight && circleOverlapsPolygon(s.pos[0], s.pos[1], r, st.roofFootprint ?? st.footprint)) {
+          if (b.parts.some((p) => a.height >= p.eaveHeight && circleOverlapsPolygon(s.pos[0], s.pos[1], r, p.roofFootprint ?? p.footprint))) {
             record({
-              id: `roof:${s.id}:${st.id}`, kind: 'roof', severity: 'error', subjects: [s.id], instanceIds: s.instanceId ? [s.instanceId] : [], firstMonth: m,
-              message: `${s.name} reaches the ${st.name} roof ${fmtYear(m)}.`,
+              id: `roof:${s.id}:${b.key}`, kind: 'roof', severity: 'error', subjects: [s.id], instanceIds: s.instanceId ? [s.instanceId] : [], firstMonth: m,
+              message: `${s.name} reaches the ${b.name} roof ${fmtYear(m)}.`,
             });
           }
         }

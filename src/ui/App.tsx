@@ -5,6 +5,11 @@ import { WaterSoilPanel } from './WaterSoilPanel';
 import { PollinatorPanel } from './PollinatorPanel';
 import { OutputsPanel } from './OutputsPanel';
 import { LayoutPanel } from './LayoutPanel';
+import { ScenariosPanel } from './ScenariosPanel';
+import { PlanSheet } from './PlanSheet';
+import { shareClient, tokenFromSearch } from '../share/client';
+import { loadSharedPlan, type LoadOutcome } from '../share/service';
+import { useAutosave } from '../store/persistence';
 import { SiteScene } from '../scene/SiteScene';
 import { solarPosition } from '../engine/solar';
 import { checkPrintedDimensions } from '../engine/site';
@@ -16,8 +21,8 @@ import { useSunHours } from '../store/useSunHours';
 import { useConflictSync } from '../store/derived';
 
 type SunHook = ReturnType<typeof useSunHours>;
-type Tab = 'plants' | 'hardscape' | 'layout' | 'water' | 'pollinators' | 'sun' | 'outputs';
-const TABS: [Tab, string][] = [['plants', 'Plants'], ['hardscape', 'Hardscape'], ['layout', 'Layout'], ['water', 'Water & soil'], ['pollinators', 'Pollinators'], ['sun', 'Sun hours'], ['outputs', 'Outputs']];
+type Tab = 'plants' | 'hardscape' | 'layout' | 'water' | 'pollinators' | 'sun' | 'outputs' | 'scenarios';
+const TABS: [Tab, string][] = [['plants', 'Plants'], ['hardscape', 'Hardscape'], ['layout', 'Layout'], ['water', 'Water & soil'], ['pollinators', 'Pollinators'], ['sun', 'Sun hours'], ['outputs', 'Outputs'], ['scenarios', 'Scenarios']];
 
 const CLASS_LABELS = ['Shade', 'Part shade', 'Part sun', 'Full sun'];
 const CLASS_COLORS = ['#2d2d69', '#5082cd', '#f5aa37', '#ffe650'];
@@ -285,14 +290,19 @@ function useShortcuts() {
   }, []);
 }
 
-export function App() {
+function Planner() {
   const sun = useSunHours();
+  useAutosave();
+  const sheetOpen = useApp((s) => s.sheetOpen);
+  const shared = useApp((s) => s.shared);
   useShortcuts();
   useConflictSync();
   const conflictCount = useApp((s) => s.conflicts.filter((c) => c.instanceIds.length > 0 && c.severity === 'error').length);
   const [tab, setTab] = useState<Tab>('plants');
   const [controlsOpen, setControlsOpen] = useState(true);
   return (
+    <>
+    {shared && <div className="viewer-banner">Shared plan: {shared.name}. You are viewing a read-only copy; only the owner can change it.</div>}
     <div className="app">
       <Sidebar />
       <main className="stage">
@@ -323,7 +333,60 @@ export function App() {
         {tab === 'pollinators' && <PollinatorPanel growing={sun.growing} />}
         {tab === 'sun' && <SunPanel sun={sun} />}
         {tab === 'outputs' && <OutputsPanel />}
+        {tab === 'scenarios' && <ScenariosPanel />}
       </aside>
     </div>
+    {sheetOpen && <PlanSheet />}
+    </>
   );
+}
+
+const SHARE_MESSAGES: Record<Exclude<LoadOutcome['status'], 'ready'>, { title: string; body: string }> = {
+  revoked: { title: 'This link has been turned off', body: 'The owner has stopped sharing this plan. Ask them for a new link if you still need to see it.' },
+  'not-found': { title: 'This link does not work', body: 'It may have been copied incompletely. Check the address, or ask the owner to send it again.' },
+  invalid: { title: 'This plan cannot be opened', body: 'The shared plan is damaged or was made by a newer version of this app.' },
+  network: { title: 'Could not reach the sharing service', body: 'Check your connection and try again.' },
+  error: { title: 'Something went wrong', body: 'Try again in a moment.' },
+};
+
+/**
+ * A page opened from a share link first fetches the plan and checks it. Until that works, nothing of
+ * the owner's plan is shown. Anyone else gets the app as normal.
+ */
+export function App() {
+  const token = useMemo(() => tokenFromSearch(window.location.search), []);
+  const wantsShare = useMemo(() => new URLSearchParams(window.location.search).has('share'), []);
+  const [state, setState] = useState<'loading' | LoadOutcome>(wantsShare ? 'loading' : { status: 'ready', warnings: [] });
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!wantsShare) return;
+    if (!token) {
+      setState({ status: 'not-found', message: '' });
+      return;
+    }
+    let cancelled = false;
+    setState('loading');
+    loadSharedPlan(appStore, shareClient(), token).then((r) => {
+      if (!cancelled) setState(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, wantsShare, attempt]);
+
+  if (state === 'loading') return <div className="gate" role="status"><div><h1>Opening the shared plan…</h1></div></div>;
+  if (state.status !== 'ready') {
+    const m = SHARE_MESSAGES[state.status];
+    return (
+      <div className="gate" role="alert">
+        <div>
+          <h1>{m.title}</h1>
+          <p>{m.body}</p>
+          {(state.status === 'network' || state.status === 'error') && <button className="on" onClick={() => setAttempt(attempt + 1)}>Try again</button>}
+        </div>
+      </div>
+    );
+  }
+  return <Planner />;
 }

@@ -3,7 +3,7 @@ import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html, Line, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry.js';
-import { activeStructures, roofPoints } from '../engine/site';
+import { activeStructures, overhangPoints, roofPoints } from '../engine/site';
 import { solarPosition, sunVectorSite } from '../engine/solar';
 import { classify, type SunHoursResult } from '../engine/sunhours';
 import { localToUtc, doyToMonthDay } from '../engine/time';
@@ -26,6 +26,7 @@ function StructureMesh({ s }: { s: StructureCfg }) {
     [s],
   );
   const roof = useMemo(() => new ConvexGeometry(roofPoints(s).map(([x, y, z]) => new THREE.Vector3(x, y, z))), [s]);
+  const slab = useMemo(() => { const p = overhangPoints(s); return p ? new ConvexGeometry(p.map(([x, y, z]) => new THREE.Vector3(x, y, z))) : null; }, [s]);
   const proposed = s.status === 'proposed';
   return (
     <group>
@@ -35,6 +36,11 @@ function StructureMesh({ s }: { s: StructureCfg }) {
       <mesh geometry={roof} castShadow receiveShadow>
         <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} />
       </mesh>
+      {slab && (
+        <mesh geometry={slab} castShadow receiveShadow>
+          <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -155,7 +161,7 @@ function Sun({ target }: { target: THREE.Object3D }) {
         target={target}
         intensity={up ? 2.6 : 0.15}
         castShadow
-        shadow-mapSize={[4096, 4096]}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-110}
         shadow-camera-right={110}
         shadow-camera-top={110}
@@ -379,7 +385,7 @@ function Cameras() {
           near={1}
           far={1200}
         />
-        <OrbitControls key="plan-ctl" makeDefault target={[cx, 0, -cyView]} enableRotate={false} screenSpacePanning />
+        <OrbitControls key="plan-ctl" makeDefault enableDamping={false} target={[cx, 0, -cyView]} enableRotate={false} screenSpacePanning />
       </>
     );
   }
@@ -388,7 +394,7 @@ function Cameras() {
   return (
     <>
       <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={48} near={0.5} far={2000} position={pos} />
-      <OrbitControls key={`ctl-${cfg.id}`} makeDefault target={tgt} maxPolarAngle={Math.PI / 2 - 0.02} />
+      <OrbitControls key={`ctl-${cfg.id}`} makeDefault enableDamping={false} target={tgt} maxPolarAngle={Math.PI / 2 - 0.02} />
     </>
   );
 }
@@ -401,7 +407,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
   const structures = activeStructures(site, { aduEnabled });
 
   return (
-    <Canvas shadows="soft" dpr={[1, 2]} gl={{ antialias: true }}>
+    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true }}>
       <color attach="background" args={['#dfe7ee']} />
       <Cameras />
       <Sun target={target} />

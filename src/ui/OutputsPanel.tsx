@@ -24,6 +24,10 @@ export function OutputsPanel() {
 
   return (
     <div className="outputs">
+      <h2>Plan sheet</h2>
+      <p className="small muted">A scaled top-down plan (1 in = 20 ft) with dimensions, north arrow, plant schedule, hardscape takeoff and the items still to verify. Print it or save it as a PDF for a designer, contractor or nursery.</p>
+      <div className="row"><button className="on" onClick={() => s.setSheetOpen(true)}>Open printable plan sheet</button></div>
+
       <h2>Plant schedule</h2>
       {rows.length === 0 ? (
         <p className="muted small">New plants appear here. Existing plants are left out.</p>

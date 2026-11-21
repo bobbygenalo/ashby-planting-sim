@@ -113,7 +113,9 @@ describe('permeable vs impervious (HS-5)', () => {
     const lot = all.find((r) => r.id === 'lot')!;
     // Sampled on a 0.5 ft grid, so the total is within half a percent of the true lot area.
     expect(Math.abs(lot.totalSf / (site.lot.width * site.lot.depth) - 1)).toBeLessThan(0.005);
-    expect(lot.imperviousSf).toBeGreaterThan(2500); // house + garage + ADU
+    // With no paving drawn, the impervious area is the roofs: the sum of every structure footprint, sampled on a 0.5 ft grid.
+    const footprints = structures.reduce((a, s) => a + polygonArea(s.footprint), 0);
+    expect(Math.abs(lot.imperviousSf / footprints - 1)).toBeLessThan(0.015);
   });
   it('removed existing hardscape no longer counts, and the top element wins where they overlap', () => {
     const drive = site.hardscape[0];
@@ -150,12 +152,13 @@ describe('warnings (HS-6)', () => {
 describe('snapping (HS-7)', () => {
   const anchors = snapAnchors(site, site.structures, [], cfg);
   it('prefers a corner, then an edge, then the grid', () => {
-    const house = site.structures.find((s) => s.id === 'house')!;
+    const house = site.structures.find((s) => s.id === 'house-main')!;
     const corner = house.footprint[0];
     expect(snapPoint([corner[0] + 0.4, corner[1] - 0.3], 0.5, anchors, 1)).toMatchObject({ kind: 'vertex', point: corner });
-    const e = snapPoint([20, 24.6], 0.5, anchors, 1);
+    const frontY = site.structures.find((s) => s.id === 'house-porch')!.footprint[0][1]; // the house's front wall
+    const e = snapPoint([20, frontY + 0.6], 0.5, anchors, 1);
     expect(e.kind).toBe('edge');
-    expect(e.point[1]).toBeCloseTo(24, 6);
+    expect(e.point[1]).toBeCloseTo(frontY, 6);
     expect(e.point[0]).toBeCloseTo(20, 6);
     expect(snapPoint([30.27, 100.8], 0.5, anchors, 0.3)).toEqual({ kind: 'grid', point: [30.5, 101] });
   });

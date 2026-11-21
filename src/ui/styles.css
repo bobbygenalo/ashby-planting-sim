@@ -184,3 +184,41 @@ details > summary { cursor: pointer; font-weight: 600; margin: 8px 0 2px; }
 .why { margin: 6px 0; }
 .why p { margin: 2px 0 0; }
 .layoutpanel .species li { cursor: default; }
+
+.linkrow { list-style: none; }
+.linkrow.off { opacity: 0.6; }
+.btnlink { display: inline-block; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; text-decoration: none; }
+.okmsg { background: color-mix(in srgb, var(--series-3) 18%, var(--panel)); border-radius: 6px; padding: 6px 8px; }
+.savestatus.error { color: var(--warn); }
+.savestatus.saved { color: var(--muted); }
+.viewer-banner { background: #8a6d1d; color: #fff; padding: 6px 12px; font-size: 12px; text-align: center; grid-column: 1 / -1; }
+.gate { display: grid; place-items: center; height: 100%; padding: 24px; text-align: center; }
+.gate > div { max-width: 420px; }
+.gate h1 { font-size: 20px; }
+
+.sheet-overlay { position: fixed; inset: 0; z-index: 2147483647; overflow: auto; background: #cfd3d6; padding: 14px; color: #111; }
+.sheet-toolbar { max-width: 8.5in; margin: 0 auto 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sheet-toolbar .muted { color: #444; }
+.sheet { background: #fff; color: #111; width: 8.5in; min-height: 11in; margin: 0 auto; padding: 0.45in; box-shadow: 0 2px 14px rgba(0,0,0,0.35); font-family: Helvetica, Arial, sans-serif; font-size: 9pt; }
+.sheet h1 { font-size: 15pt; margin: 0; }
+.sheet h2 { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.05em; margin: 10px 0 3px; color: #111; }
+.sheet p { margin: 1px 0; }
+.sheet-head { display: flex; justify-content: space-between; border-bottom: 2px solid #111; padding-bottom: 5px; margin-bottom: 6px; }
+.sheet-meta { text-align: right; }
+.sheet-body { display: flex; gap: 0.2in; align-items: flex-start; }
+.sheet-plan { flex: 0 0 auto; }
+.sheet-tables { flex: 1; min-width: 0; }
+.sheet table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+.sheet th, .sheet td { border-bottom: 0.5pt solid #bbb; padding: 1.5pt 2pt; text-align: left; vertical-align: top; }
+.sheet th { border-bottom: 1pt solid #111; }
+.sheet .small, .sheet ul { font-size: 7.5pt; line-height: 1.35; }
+.sheet ul { padding-left: 12pt; margin: 2px 0; }
+.sheet .verify li { margin-bottom: 2pt; }
+@media print {
+  @page { size: letter portrait; margin: 0; }
+  html, body, #root { height: auto; background: #fff; }
+  .app, .viewer-banner { display: none !important; }
+  .sheet-overlay { position: static; padding: 0; background: #fff; overflow: visible; }
+  .sheet-toolbar { display: none; }
+  .sheet { box-shadow: none; margin: 0; width: auto; min-height: 0; }
+}

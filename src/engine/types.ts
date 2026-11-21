@@ -1,7 +1,7 @@
 export type Pt = [number, number];
 export type Pt3 = [number, number, number];
 
-export type RoofForm = 'flat' | 'gable' | 'hip';
+export type RoofForm = 'flat' | 'gable' | 'hip' | 'shed';
 
 export interface StructureCfg {
   id: string;
@@ -9,9 +9,21 @@ export interface StructureCfg {
   footprint: Pt[];
   /** Roof outline when it differs from the walls (overhangs). */
   roofFootprint?: Pt[];
+  /** When set, the roof over the footprint is a wedge and the part of roofFootprint beyond it a thin slab of this thickness (ft), open underneath. */
+  roofThickness?: number;
   eaveHeight: number;
   ridgeHeight: number;
   roofForm: RoofForm;
+  /** For a shed roof, the side the roof slopes down toward. `eaveHeight` is the low edge and `ridgeHeight` the high edge. */
+  lowSide?: 'west' | 'east' | 'north' | 'south';
+  /** Which way a gable or hip ridge runs. Without it the ridge follows the longer side of the roof. */
+  ridgeAxis?: 'x' | 'y';
+  /** Where a gable ridge sits across the roof (an x for a ridge running along y, a y for one along x). Without it the ridge is centered. */
+  ridgeAt?: number;
+  /** Parts of one building (for example the ADU's wings) share a group, so printed dimensions can measure them together. */
+  group?: string;
+  /** What to call the whole building on drawings when it is made of several parts. */
+  groupName?: string;
   status: 'existing' | 'proposed';
   toggleable: boolean;
   note?: string;

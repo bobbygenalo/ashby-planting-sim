@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { makeCustomSpecies } from '../src/engine/library';
 import { makeAppStore } from '../src/store/store';
 
 describe('view mode', () => {
@@ -183,5 +184,237 @@ describe('hydrozones, soil, and settings (M5)', () => {
     expect(s.getState().useRain).toBe(true);
     s.getState().undo();
     expect(s.getState().useRain).toBe(false);
+  });
+});
+
+describe('scenarios (SC-1, SC-2)', () => {
+  const plant = (s: ReturnType<typeof makeAppStore>, id = 'salvia-leucantha', at: [number, number] = [38, 100]) => s.getState().addInstance(id, at)!;
+
+  it('starts with one scenario, active, holding the owner picks and the existing driveway', () => {
+    const s = makeAppStore('edit');
+    expect(s.getState().scenarios.length).toBe(1);
+    expect(s.getState().scenarios[0].name).toBe('Scenario 1');
+    expect(s.getState().activeScenarioId).toBe(s.getState().scenarios[0].id);
+    expect(s.getState().hardscape.map((e) => e.id)).toEqual(['driveway']);
+    expect(Object.keys(s.getState().palette).length).toBe(17);
+  });
+
+  it('creates a blank scenario, parks the old one, and switches back without losing anything', () => {
+    const s = makeAppStore('edit');
+    const first = s.getState().activeScenarioId;
+    plant(s);
+    s.getState().setUseRain(true);
+    const second = s.getState().createScenario('Natives only')!;
+    expect(s.getState().activeScenarioId).toBe(second);
+    expect(s.getState().instances).toEqual([]);
+    expect(s.getState().useRain).toBe(false);
+    expect(s.getState().scenarios.map((x) => x.name)).toEqual(['Scenario 1', 'Natives only']);
+    plant(s, 'salvia-leucantha', [30, 90]);
+    plant(s, 'salvia-leucantha', [34, 96]);
+    s.getState().switchScenario(first);
+    expect(s.getState().instances.length).toBe(1);
+    expect(s.getState().useRain).toBe(true);
+    s.getState().switchScenario(second);
+    expect(s.getState().instances.length).toBe(2);
+    expect(s.getState().useRain).toBe(false);
+  });
+
+  it('duplicates a scenario into an independent copy', () => {
+    const s = makeAppStore('edit');
+    const a = s.getState().activeScenarioId;
+    plant(s);
+    s.getState().startDrawing('patio');
+    [[30, 70], [40, 70], [40, 82], [30, 82]].forEach((p) => s.getState().addDrawPoint(p as [number, number]));
+    s.getState().finishDrawing();
+    const b = s.getState().createScenario(undefined, a)!;
+    expect(s.getState().scenarios.find((x) => x.id === b)!.name).toBe('Scenario 1 copy');
+    expect(s.getState().instances.length).toBe(1);
+    expect(s.getState().hardscape.length).toBe(2);
+    plant(s, 'phormium-tenax', [28, 110]);
+    s.getState().deleteElement(s.getState().hardscape[1].id);
+    s.getState().switchScenario(a);
+    expect(s.getState().instances.length).toBe(1);
+    expect(s.getState().hardscape.length).toBe(2); // the source is untouched by edits to the copy
+    // Duplicating a scenario that is not active works too.
+    const c = s.getState().createScenario('From parked', b)!;
+    expect(s.getState().scenarios.find((x) => x.id === c)!.name).toBe('From parked');
+    expect(s.getState().instances.length).toBe(2);
+  });
+
+  it('renames with trimming and ignores empty names', () => {
+    const s = makeAppStore('edit');
+    const id = s.getState().activeScenarioId;
+    s.getState().renameScenario(id, '  Drought plan  ');
+    expect(s.getState().scenarios[0].name).toBe('Drought plan');
+    s.getState().renameScenario(id, '   ');
+    expect(s.getState().scenarios[0].name).toBe('Drought plan');
+  });
+
+  it('deletes scenarios, never the last one, and moves off a deleted active scenario', () => {
+    const s = makeAppStore('edit');
+    const a = s.getState().activeScenarioId;
+    expect(s.getState().deleteScenario(a)).toBe(false);
+    plant(s);
+    const b = s.getState().createScenario('B')!;
+    plant(s, 'salvia-leucantha', [30, 90]);
+    plant(s, 'salvia-leucantha', [34, 96]);
+    expect(s.getState().deleteScenario(b)).toBe(true); // deleting the active one
+    expect(s.getState().activeScenarioId).toBe(a);
+    expect(s.getState().instances.length).toBe(1);
+    expect(s.getState().scenarios.length).toBe(1);
+    expect(s.getState().saved).toEqual({});
+    const c = s.getState().createScenario('C')!;
+    s.getState().switchScenario(a);
+    expect(s.getState().deleteScenario(c)).toBe(true); // deleting a parked one
+    expect(s.getState().saved[c]).toBeUndefined();
+    expect(s.getState().deleteScenario('nope')).toBe(false);
+  });
+
+  it('keeps undo inside one scenario, and clears selection when switching', () => {
+    const s = makeAppStore('edit');
+    const a = s.getState().activeScenarioId;
+    plant(s);
+    const b = s.getState().createScenario('B')!;
+    expect(s.getState().history.past.length).toBe(0);
+    s.getState().undo();
+    s.getState().switchScenario(a);
+    expect(s.getState().instances.length).toBe(1); // undoing in B did not reach into A
+    expect(s.getState().selectedId).toBeNull();
+    s.getState().switchScenario(b);
+    expect(s.getState().instances.length).toBe(0);
+  });
+
+  it('records when a scenario was last changed', async () => {
+    const s = makeAppStore('edit');
+    const before = s.getState().scenarios[0].modifiedAt;
+    await new Promise((r) => setTimeout(r, 5));
+    plant(s);
+    expect(s.getState().scenarios[0].modifiedAt > before).toBe(true);
+  });
+
+  it('exports a scenario and imports it as a new, active scenario with the same plan', () => {
+    const s = makeAppStore('edit');
+    plant(s);
+    plant(s, 'phormium-tenax', [28, 110]);
+    s.getState().addHydrozone('Back', 'spray');
+    const file = s.getState().exportScenario(s.getState().activeScenarioId)!;
+    expect(file.name).toBe('Scenario 1');
+    const t = makeAppStore('edit');
+    const r = t.getState().importScenarioFile(file.text);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(t.getState().scenarios.length).toBe(2);
+    expect(t.getState().activeScenarioId).toBe(r.id);
+    expect(t.getState().instances).toEqual(s.getState().instances);
+    expect(t.getState().hydrozones).toEqual(s.getState().hydrozones);
+    expect(t.getState().saved[t.getState().scenarios[0].id].instances).toEqual([]); // the original was parked, not replaced
+  });
+
+  it('rejects a bad import without changing anything', () => {
+    const s = makeAppStore('edit');
+    plant(s);
+    const before = JSON.stringify([s.getState().scenarios, s.getState().instances]);
+    const r = s.getState().importScenarioFile('{"format":"ashby-scenario/1","name":"x","scenario":{}}');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.length).toBeGreaterThan(0);
+    expect(JSON.stringify([s.getState().scenarios, s.getState().instances])).toBe(before);
+  });
+
+  it('carries a custom species through export and import, renaming rather than overwriting a different one', () => {
+    const a = makeAppStore('edit');
+    const mk = (matureHeight: number) => ({ common: 'Backyard Bush', type: 'shrub' as const, origin: 'other' as const, evergreen: true, matureHeight, matureWidth: 4, yearsToMaturity: 3, habit: 'round' as const, sun: 'full' as const, wucols: 'low' as const, bloomMonths: [5], bloomColor: '#ff00ff', pollinatorValue: 'high' as const, groups: [], invasive: false, toxic: false });
+    const spA = makeCustomSpecies(mk(4), []);
+    if (!spA.ok) throw new Error('bad');
+    a.getState().addSpecies(spA.species);
+    a.getState().addInstance(spA.species.id, [38, 100]);
+    const file = a.getState().exportScenario(a.getState().activeScenarioId)!;
+
+    const same = makeAppStore('edit');
+    expect(same.getState().importScenarioFile(file.text).ok).toBe(true);
+    expect(same.getState().library.species.filter((x) => x.id === spA.species.id).length).toBe(1);
+    expect(same.getState().instances[0].speciesId).toBe(spA.species.id);
+
+    // Same id, different plant: the imported one gets a new id and the plants follow it.
+    const other = makeAppStore('edit');
+    const spB = makeCustomSpecies(mk(9), []);
+    if (!spB.ok) throw new Error('bad');
+    other.getState().addSpecies(spB.species);
+    expect(spB.species.id).toBe(spA.species.id);
+    expect(other.getState().importScenarioFile(file.text).ok).toBe(true);
+    const ids = other.getState().library.species.filter((x) => x.common === 'Backyard Bush').map((x) => `${x.id}:${x.matureHeight}`).sort();
+    expect(ids).toEqual([`${spA.species.id}-2:4`, `${spA.species.id}:9`].sort());
+    expect(other.getState().instances[0].speciesId).toBe(`${spA.species.id}-2`);
+    expect(other.getState().palette[`${spA.species.id}-2`]).toBe(true);
+  });
+
+  it('fills soil results from an import only where the owner has not entered their own', () => {
+    const src = makeAppStore('edit');
+    src.getState().setSoilProfile('back_yard', { texture: 'clay', ph: 5.5 });
+    src.getState().setSoilProfile('front_yard', { texture: 'sand' });
+    src.getState().setPlayZone('front_yard', true);
+    const file = src.getState().exportScenario(src.getState().activeScenarioId)!;
+    const dest = makeAppStore('edit');
+    dest.getState().setSoilProfile('back_yard', { texture: 'silt loam', ph: 7.8 }); // the owner's own result
+    dest.getState().importScenarioFile(file.text);
+    expect(dest.getState().soilProfiles.back_yard).toMatchObject({ texture: 'silt loam', ph: 7.8 });
+    expect(dest.getState().soilProfiles.front_yard).toMatchObject({ texture: 'sand' });
+    expect(dest.getState().playZones.front_yard).toBe(true);
+  });
+
+  it('restores a saved workspace exactly, and new plants never reuse an id', () => {
+    const a = makeAppStore('edit');
+    const first = a.getState().activeScenarioId;
+    plant(a);
+    plant(a, 'phormium-tenax', [28, 110]);
+    a.getState().createScenario('Second');
+    plant(a, 'salvia-leucantha', [20, 100]);
+    a.getState().setSoilProfile('back_yard', { texture: 'clay' });
+    a.getState().addShare({ scenarioId: first, token: 'T'.repeat(22), revokeKey: 'k', createdAt: 'c', updatedAt: 'u', hideAddress: true, revoked: false });
+    const ws = JSON.parse(JSON.stringify(a.getState().toWorkspace()));
+
+    const b = makeAppStore('edit');
+    b.getState().hydrateWorkspace(ws);
+    expect(b.getState().scenarios).toEqual(a.getState().scenarios);
+    expect(b.getState().activeScenarioId).toBe(a.getState().activeScenarioId);
+    expect(b.getState().instances).toEqual(a.getState().instances);
+    expect(b.getState().saved).toEqual(a.getState().saved);
+    expect(b.getState().soilProfiles.back_yard.texture).toBe('clay');
+    expect(b.getState().shares).toEqual(a.getState().shares);
+    expect(b.getState().toWorkspace()).toEqual(ws);
+    const used = new Set([...b.getState().instances, ...Object.values(b.getState().saved).flatMap((d) => d.instances)].map((i) => i.id));
+    const fresh = plant(b, 'salvia-leucantha', [14, 100]);
+    expect(used.has(fresh)).toBe(false);
+  });
+
+  it('skips damaged scenarios in saved data instead of crashing, and ignores a workspace it cannot use at all', () => {
+    const a = makeAppStore('edit');
+    plant(a);
+    const second = a.getState().createScenario('Second')!;
+    plant(a, 'salvia-leucantha', [30, 90]);
+    const ws = JSON.parse(JSON.stringify(a.getState().toWorkspace()));
+    ws.data[second].instances[0].container = 'barrel'; // the active scenario is damaged
+    const b = makeAppStore('edit');
+    b.getState().hydrateWorkspace(ws);
+    expect(b.getState().scenarios.map((x) => x.name)).toEqual(['Scenario 1']);
+    expect(b.getState().instances.length).toBe(1);
+    const c = makeAppStore('edit');
+    const allBad = JSON.parse(JSON.stringify(ws));
+    for (const id of Object.keys(allBad.data)) allBad.data[id].palette = 'nope';
+    c.getState().hydrateWorkspace(allBad);
+    expect(c.getState().scenarios.length).toBe(1);
+    expect(c.getState().instances).toEqual([]);
+  });
+
+  it('a viewer ignores a saved workspace, and cannot manage scenarios', () => {
+    const owner = makeAppStore('edit');
+    plant(owner);
+    const ws = owner.getState().toWorkspace();
+    const v = makeAppStore('view');
+    v.getState().hydrateWorkspace(ws);
+    expect(v.getState().instances).toEqual([]);
+    expect(v.getState().createScenario('x')).toBeNull();
+    expect(v.getState().deleteScenario(v.getState().activeScenarioId)).toBe(false);
+    v.getState().switchScenario('anything');
+    expect(v.getState().scenarios.length).toBe(1);
   });
 });

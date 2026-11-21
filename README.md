@@ -1,1 +1,1 @@
-# ashby-sim
+# ashby-planting-sim

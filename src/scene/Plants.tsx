@@ -1,18 +1,28 @@
-import { useMemo } from 'react';
-import type { ThreeEvent } from '@react-three/fiber';
+import { useEffect, useMemo } from 'react';
+import { useThree, type ThreeEvent } from '@react-three/fiber';
+import * as THREE from 'three';
 import type { PlacedPlant } from '../engine/growth';
-import { placedPlants } from '../engine/growth';
+import { isBlooming, isLeafOff, placedPlants } from '../engine/growth';
+import { doyToMonthDay } from '../engine/time';
 import { useApp } from '../store/store';
 
-function Form({ p }: { p: PlacedPlant }) {
+function Form({ p, month }: { p: PlacedPlant; month: number }) {
   const trunkFrac = useApp((s) => s.engine.growth.trunkClearanceFraction[p.species.type] ?? 0);
+  const tintFrac = useApp((s) => s.engine.growth.bloomTintFraction);
+  const showBloom = useApp((s) => s.layers.bloom);
+  const leafOff = isLeafOff(p.species, month);
+  const blooming = showBloom && isBlooming(p.species, month) && !leafOff;
   const { species: s, size } = p;
   const h = Math.max(size.height, 0.05);
   const r = Math.max(size.width / 2, 0.05);
   const base = h * trunkFrac;
   const canopyH = h - base;
-  const color = s.foliageColor;
-  const mat = <meshStandardMaterial color={color} roughness={1} />;
+  const color = useMemo(() => {
+    const c = new THREE.Color(s.foliageColor);
+    return blooming ? c.lerp(new THREE.Color(s.bloomColor), tintFrac) : c;
+  }, [s.foliageColor, s.bloomColor, blooming, tintFrac]);
+  // Leafless deciduous plants are drawn as a faint ghost of the canopy (GR-4).
+  const mat = <meshStandardMaterial color={color} roughness={1} transparent={leafOff} opacity={leafOff ? 0.22 : 1} depthWrite={!leafOff} />;
   const trunk =
     base > 0.4 ? (
       <mesh position={[0, 0, base / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
@@ -123,6 +133,21 @@ export function PlantLayer() {
   const hover = useApp((s) => s.hover);
   const measureActive = useApp((s) => s.measureActive);
   const select = useApp((s) => s.select);
+  const edit = useApp((s) => s.mode === 'edit');
+  const setDrag = useApp((s) => s.setDrag);
+  const doy = useApp((s) => s.doy);
+  const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
+  const calMonth = doyToMonthDay(doy)[0];
+
+  // End a drag wherever the pointer is released, and give the camera back.
+  useEffect(() => {
+    const up = () => {
+      setDrag(null);
+      if (controls) controls.enabled = true;
+    };
+    window.addEventListener('pointerup', up);
+    return () => window.removeEventListener('pointerup', up);
+  }, [controls, setDrag]);
 
   const plants = useMemo(
     () => placedPlants(instances, palette, library.species, month, engine.growth),
@@ -136,12 +161,20 @@ export function PlantLayer() {
     e.stopPropagation();
     select(id);
   };
+  // Pressing on a plant selects it and starts a drag (edit mode); the ground then moves it.
+  const onDown = (id: string) => (e: ThreeEvent<PointerEvent>) => {
+    if (measureActive || placing || !edit) return;
+    e.stopPropagation();
+    select(id);
+    setDrag(id);
+    if (controls) controls.enabled = false;
+  };
 
   return (
     <group>
       {plants.map((p) => (
-        <group key={p.inst.id} position={[p.inst.position[0], p.inst.position[1], 0]} onClick={onClick(p.inst.id)}>
-          <Form p={p} />
+        <group key={p.inst.id} position={[p.inst.position[0], p.inst.position[1], 0]} onClick={onClick(p.inst.id)} onPointerDown={onDown(p.inst.id)}>
+          <Form p={p} month={calMonth} />
         </group>
       ))}
       {selected && (

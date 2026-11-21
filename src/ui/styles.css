@@ -120,3 +120,5 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (prefers-color-scheme: dark) { .banner, .tag { background: #4a3a10; color: #fbe7ae; } .pill.poll-high { background: #17402a; color: #bff0d0; border-color: #25623f; } .pill.poll-moderate { background: #4a3a10; color: #fbe7ae; border-color: #6b5518; } .pill.poll-low { background: #2a2f31; color: #c4ccc8; } .pill.native { background: #1c2d52; color: #c4d8fb; border-color: #2d4a85; } .pill.warn, .pill.conf-low, .warnings { background: #4a1e19; color: #ffc9c2; border-color: #7a2f27; } }
 
 .ctl-toggle { justify-self: start; font-size: 11px; padding: 3px 8px; opacity: 0.9; }
+.custom { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 8px; }
+.custom .row.wrap button { font-size: 11px; padding: 2px 6px; }

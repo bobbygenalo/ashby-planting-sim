@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { placedPlants, sunFit } from '../engine/growth';
-import { filterSpecies, type LibraryFilter } from '../engine/library';
+import { filterSpecies, makeCustomSpecies, type CustomSpeciesInput, type LibraryFilter } from '../engine/library';
 import type { SunHoursResult } from '../engine/sunhours';
 import { formatFeetInches } from '../engine/units';
 import type { ContainerId, Species } from '../engine/types';
@@ -27,6 +27,71 @@ function sunAt(result: SunHoursResult | null, x: number, y: number): number | nu
   if (i < 0 || j < 0 || i >= result.nx || j >= result.ny) return null;
   const k = j * result.nx + i;
   return result.mask[k] === 1 ? result.hours[k] : null;
+}
+
+
+const BLANK: CustomSpeciesInput = {
+  common: '', botanical: '', type: 'shrub', origin: 'other', evergreen: true, matureHeight: 4, matureWidth: 4,
+  yearsToMaturity: 4, habit: 'round', sun: 'full', wucols: 'low', bloomMonths: [], bloomColor: '#c026d3',
+  pollinatorValue: 'moderate', groups: [], invasive: false, toxic: false,
+};
+
+function CustomSpeciesForm({ onDone }: { onDone: () => void }) {
+  const addSpecies = useApp((s) => s.addSpecies);
+  const ids = useApp((s) => s.library.species.map((x) => x.id));
+  const [v, setV] = useState<CustomSpeciesInput>(BLANK);
+  const [errors, setErrors] = useState<string[]>([]);
+  const up = <K extends keyof CustomSpeciesInput>(k: K, val: CustomSpeciesInput[K]) => setV({ ...v, [k]: val });
+  const toggle = <T,>(list: T[], item: T) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
+  const submit = () => {
+    const r = makeCustomSpecies(v, ids);
+    if (!r.ok) return setErrors(r.errors);
+    addSpecies(r.species);
+    setV(BLANK);
+    setErrors([]);
+    onDone();
+  };
+  const numField = (label: string, k: 'matureHeight' | 'matureWidth' | 'yearsToMaturity') => (
+    <label>{label}<input type="number" step="0.5" min="0" value={v[k]} onChange={(e) => up(k, Number(e.target.value))} /></label>
+  );
+  return (
+    <div className="custom">
+      <div className="grid2">
+        <label>Common name<input value={v.common} onChange={(e) => up('common', e.target.value)} /></label>
+        <label>Botanical name<input value={v.botanical} onChange={(e) => up('botanical', e.target.value)} /></label>
+        <label>Type<select value={v.type} onChange={(e) => up('type', e.target.value as never)}>{TYPES.map((x) => <option key={x}>{x}</option>)}</select></label>
+        <label>Origin<select value={v.origin} onChange={(e) => up('origin', e.target.value as never)}><option>california native</option><option>mediterranean</option><option>other</option></select></label>
+        {numField('Mature height (ft)', 'matureHeight')}
+        {numField('Mature width (ft)', 'matureWidth')}
+        {numField('Years to maturity', 'yearsToMaturity')}
+        <label>Habit<select value={v.habit} onChange={(e) => up('habit', e.target.value as never)}>{['columnar', 'round', 'vase', 'spreading', 'weeping', 'clump', 'mat', 'vine'].map((x) => <option key={x}>{x}</option>)}</select></label>
+        <label>Sun need<select value={v.sun} onChange={(e) => up('sun', e.target.value as never)}><option>full</option><option>part</option><option>shade</option></select></label>
+        <label>WUCOLS water<select value={v.wucols} onChange={(e) => up('wucols', e.target.value as never)}><option>very low</option><option>low</option><option>moderate</option><option>high</option></select></label>
+        <label>Pollinator value<select value={v.pollinatorValue} onChange={(e) => up('pollinatorValue', e.target.value as never)}><option>high</option><option>moderate</option><option>low</option></select></label>
+        <label>Bloom color<input type="color" value={v.bloomColor} onChange={(e) => up('bloomColor', e.target.value)} /></label>
+      </div>
+      <p className="muted small">Bloom months</p>
+      <div className="row wrap">
+        {MONTHS.map((m, i) => (
+          <button key={m} type="button" className={v.bloomMonths.includes(i + 1) ? 'on' : ''} onClick={() => up('bloomMonths', toggle(v.bloomMonths, i + 1))}>{m}</button>
+        ))}
+      </div>
+      <p className="muted small">Groups served</p>
+      <div className="row wrap">
+        {GROUPS.map((g) => (
+          <button key={g} type="button" className={v.groups.includes(g) ? 'on' : ''} onClick={() => up('groups', toggle(v.groups, g))}>{g}</button>
+        ))}
+      </div>
+      <label className="check"><input type="checkbox" checked={v.evergreen} onChange={(e) => up('evergreen', e.target.checked)} />Evergreen (deciduous plants lose leaves Dec to Feb)</label>
+      <label className="check"><input type="checkbox" checked={v.invasive} onChange={(e) => up('invasive', e.target.checked)} />Invasive</label>
+      <label className="check"><input type="checkbox" checked={v.toxic} onChange={(e) => up('toxic', e.target.checked)} />Toxic to children or pets</label>
+      {errors.length > 0 && <ul className="warnings">{errors.map((e) => <li key={e}>{e}</li>)}</ul>}
+      <div className="row">
+        <button className="on" onClick={submit}>Add to library and palette</button>
+        <button onClick={onDone}>Cancel</button>
+      </div>
+    </div>
+  );
 }
 
 function Inspector({ growing }: { growing: SunHoursResult | null }) {
@@ -117,6 +182,7 @@ export function PlantsPanel({ growing }: { growing: SunHoursResult | null }) {
   const s = useApp((x) => x);
   const edit = s.mode === 'edit';
   const [f, setF] = useState<LibraryFilter>({});
+  const [adding, setAdding] = useState(false);
   const list = useMemo(() => filterSpecies(s.library.species, f), [s.library, f]);
   const set = <K extends keyof LibraryFilter>(k: K, v: LibraryFilter[K] | '') => setF({ ...f, [k]: v === '' ? undefined : v });
   const active = s.instances.filter((i) => s.palette[i.speciesId]);
@@ -144,6 +210,7 @@ export function PlantsPanel({ growing }: { growing: SunHoursResult | null }) {
       <Inspector growing={growing} />
 
       <h2>Library ({list.length} of {s.library.species.length})</h2>
+      {edit && (adding ? <CustomSpeciesForm onDone={() => setAdding(false)} /> : <button onClick={() => setAdding(true)}>+ Add custom species</button>)}
       <input className="search" placeholder="Search name…" value={f.text ?? ''} onChange={(e) => set('text', e.target.value)} />
       <div className="filters">
         <select value={sel(f.type)} onChange={(e) => set('type', e.target.value as never)}><option value="">Any type</option>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>

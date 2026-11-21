@@ -177,6 +177,8 @@ function Ground() {
   const addInstance = useApp((s) => s.addInstance);
   const setHover = useApp((s) => s.setHover);
   const select = useApp((s) => s.select);
+  const dragId = useApp((s) => s.dragId);
+  const updateInstance = useApp((s) => s.updateInstance);
   const { width, depth } = site.lot;
   const snapPoint = (e: ThreeEvent<MouseEvent | PointerEvent>): [number, number] => [
     Math.round(e.point.x / snap) * snap,
@@ -196,6 +198,10 @@ function Ground() {
   };
   const onMove = (e: ThreeEvent<PointerEvent>) => {
     if (placing) setHover(snapPoint(e));
+    if (dragId) {
+      const [x, y] = snapPoint(e);
+      updateInstance(dragId, { position: [Math.min(width, Math.max(0, x)), Math.min(depth, Math.max(0, y))] });
+    }
   };
   return (
     <>

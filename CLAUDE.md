@@ -4,7 +4,7 @@ Browser-based 3D planner for the 10641 Ashby Ave lot. Build brief: `Ashby Yard P
 
 ## Status
 - M1 (site model) and M2 (sunlight) are built.
-- M3 (plants and growth) is partly built: growth curve, 33-species library (all values unverified, low confidence), palette select/deselect, placement, inspector, timeline to year 30, plant forms by habit, mature-width ring, plant shadows in the sun map, sun-need mismatch flags. Not yet done: ~17 more species to reach 50, custom species form (P1), leaf-off density (GR-4), bloom color on plants (POL-7), drag-to-move (move is by X/Y fields), bloom calendar and pollinator summary (M5).
+- M3 (plants and growth) is built: growth curve, 50-species library (all values unverified, low confidence), custom species form, palette select/deselect, placement with drag-to-move, inspector, timeline to year 30, plant forms by habit, mature-width ring, plant shadows in the sun map, leaf-off shade and drawing for deciduous plants, bloom color on plants, sun-need mismatch flags. Bloom calendar and pollinator summary are M5. Custom species are not persisted until M7.
 - M4 to M7 (hardscape, water and soil, conflicts and suggestions, scenarios and sharing) are not started.
 - Sharing will sit behind a local stub until hosting is chosen.
 

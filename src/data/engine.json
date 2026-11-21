@@ -181,7 +181,9 @@
       "low": 0.2,
       "moderate": 0.5,
       "high": 0.8
-    }
+    },
+    "leafOffDensityFactor": 0.25,
+    "bloomTintFraction": 0.55
   },
   "timeline": {
     "maxYears": 30,

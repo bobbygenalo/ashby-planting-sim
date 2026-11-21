@@ -75,7 +75,8 @@ export function computeSunHours(scene: SunScene, params: Params): SunHoursResult
         const i1 = Math.min(nx - 1, Math.floor(maxX / cell));
         const j0 = Math.max(0, Math.floor(minY / cell));
         const j1 = Math.min(ny - 1, Math.floor(maxY / cell));
-        const pass = 1 - solid.density;
+        const density = solid.leafOffMonths?.includes(month) ? (solid.leafOffDensity ?? solid.density) : solid.density;
+        const pass = 1 - density;
         for (let j = j0; j <= j1; j++) {
           const y = (j + 0.5) * cell;
           for (let i = i0; i <= i1; i++) {

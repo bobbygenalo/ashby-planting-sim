@@ -37,3 +37,75 @@ export function filterSpecies(all: Species[], f: LibraryFilter): Species[] {
 export function activeInstances(instances: PlantInstance[], palette: Record<string, boolean>): PlantInstance[] {
   return instances.filter((i) => palette[i.speciesId]);
 }
+
+export interface CustomSpeciesInput {
+  common: string;
+  botanical?: string;
+  type: Species['type'];
+  origin: Species['origin'];
+  evergreen: boolean;
+  matureHeight: number;
+  matureWidth: number;
+  yearsToMaturity: number;
+  habit: Species['habit'];
+  sun: Species['sun'];
+  wucols: Species['wucols'];
+  bloomMonths: number[];
+  bloomColor: string;
+  pollinatorValue: PollinatorValue;
+  groups: PollinatorGroup[];
+  invasive: boolean;
+  toxic: boolean;
+  notes?: string;
+}
+
+const DEFAULT_FOLIAGE: Record<Species['type'], string> = {
+  tree: '#4f7d45', shrub: '#5f8f4f', perennial: '#7a9a6a', grass: '#8fae7a',
+  groundcover: '#7bb06a', vine: '#4f7d45', succulent: '#7fb09a', edible: '#4f7d45',
+};
+
+/** Validate owner input and build a Species record (PL-8). Pure, so the form stays thin. */
+export function makeCustomSpecies(
+  input: CustomSpeciesInput,
+  existingIds: string[],
+): { ok: true; species: Species } | { ok: false; errors: string[] } {
+  const errors: string[] = [];
+  if (!input.common.trim()) errors.push('Enter a common name.');
+  if (!(input.matureHeight > 0)) errors.push('Mature height must be more than 0.');
+  if (!(input.matureWidth > 0)) errors.push('Mature width must be more than 0.');
+  if (!(input.yearsToMaturity > 0)) errors.push('Years to maturity must be more than 0.');
+  if (input.bloomMonths.some((m) => !Number.isInteger(m) || m < 1 || m > 12)) errors.push('Bloom months must be 1 to 12.');
+  if (errors.length) return { ok: false, errors };
+
+  const slug = input.common.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  let id = `custom-${slug}`;
+  for (let n = 2; existingIds.includes(id); n++) id = `custom-${slug}-${n}`;
+  const prov = { source: 'Entered by the owner', confidence: 'medium' as const };
+  return {
+    ok: true,
+    species: {
+      id,
+      botanical: input.botanical?.trim() || input.common.trim(),
+      common: input.common.trim(),
+      type: input.type,
+      origin: input.origin,
+      evergreen: input.evergreen,
+      leafOffMonths: input.evergreen ? [] : [12, 1, 2],
+      matureHeight: input.matureHeight,
+      matureWidth: input.matureWidth,
+      yearsToMaturity: input.yearsToMaturity,
+      habit: input.habit,
+      sun: input.sun,
+      wucols: input.wucols,
+      bloomMonths: [...new Set(input.bloomMonths)].sort((a, b) => a - b),
+      bloomColor: input.bloomColor,
+      foliageColor: DEFAULT_FOLIAGE[input.type],
+      pollinator: { value: input.pollinatorValue, groups: input.groups, larvalHost: [] },
+      invasive: input.invasive,
+      toxic: input.toxic,
+      maintenance: 'moderate',
+      notes: input.notes?.trim() || 'Custom species entered by the owner.',
+      provenance: { size: prov, light: prov, water: prov, pollinator: prov },
+    },
+  };
+}

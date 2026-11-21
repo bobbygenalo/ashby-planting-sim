@@ -1194,6 +1194,623 @@
    "toxic": true,
    "maintenance": "moderate",
    "notes": "Edible. Dwarf rootstock keeps it smaller."
+  },
+  {
+   "id": "cistus-purpureus",
+   "botanical": "Cistus x purpureus",
+   "common": "Orchid rockrose",
+   "type": "shrub",
+   "origin": "mediterranean",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 4,
+   "matureWidth": 5,
+   "yearsToMaturity": 3,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6
+   ],
+   "bloomColor": "#c026d3",
+   "foliageColor": "#6f8f6a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Magenta flowers last a day each; fine for the palette."
+  },
+  {
+   "id": "salvia-greggii",
+   "botanical": "Salvia greggii",
+   "common": "Autumn sage",
+   "type": "perennial",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 3,
+   "yearsToMaturity": 2,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "bloomColor": "#e11d48",
+   "foliageColor": "#7a9a6a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "hummingbirds",
+     "native bees",
+     "butterflies"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Cultivar sets color: choose pink or magenta."
+  },
+  {
+   "id": "verbena-lilacina",
+   "botanical": "Verbena lilacina 'De La Mina'",
+   "common": "Lilac verbena",
+   "type": "perennial",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 2,
+   "matureWidth": 3,
+   "yearsToMaturity": 2,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "bloomColor": "#a78bfa",
+   "foliageColor": "#7a9a6a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "butterflies",
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Long bloom season."
+  },
+  {
+   "id": "penstemon-margarita-bop",
+   "botanical": "Penstemon heterophyllus 'Margarita BOP'",
+   "common": "Margarita BOP penstemon",
+   "type": "perennial",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 2,
+   "matureWidth": 3,
+   "yearsToMaturity": 2,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "bloomColor": "#6366f1",
+   "foliageColor": "#8fae7a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "hummingbirds",
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native cultivar."
+  },
+  {
+   "id": "heuchera-maxima",
+   "botanical": "Heuchera maxima",
+   "common": "Island alumroot",
+   "type": "perennial",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 1.5,
+   "matureWidth": 2,
+   "yearsToMaturity": 2,
+   "habit": "clump",
+   "sun": "part",
+   "wucols": "moderate",
+   "bloomMonths": [
+    3,
+    4,
+    5
+   ],
+   "bloomColor": "#fbcfe8",
+   "foliageColor": "#5f8f4f",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "hummingbirds",
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Good under the ADU eave or house shade."
+  },
+  {
+   "id": "diplacus-aurantiacus",
+   "botanical": "Diplacus aurantiacus",
+   "common": "Sticky monkeyflower",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 4,
+   "yearsToMaturity": 3,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "bloomColor": "#fb923c",
+   "foliageColor": "#7a9a6a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "hummingbirds",
+     "native bees"
+    ],
+    "larvalHost": [
+     "common buckeye (unverified)"
+    ]
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Orange flowers; leaves go dormant in dry summers."
+  },
+  {
+   "id": "salvia-mellifera",
+   "botanical": "Salvia mellifera",
+   "common": "Black sage",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 5,
+   "matureWidth": 6,
+   "yearsToMaturity": 5,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    4,
+    5,
+    6
+   ],
+   "bloomColor": "#c4b5fd",
+   "foliageColor": "#8fa88a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Needs sharp drainage."
+  },
+  {
+   "id": "eschscholzia-californica",
+   "botanical": "Eschscholzia californica",
+   "common": "California poppy",
+   "type": "perennial",
+   "origin": "california native",
+   "evergreen": false,
+   "leafOffMonths": [],
+   "matureHeight": 1,
+   "matureWidth": 1.5,
+   "yearsToMaturity": 1,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloomColor": "#fb923c",
+   "foliageColor": "#9db39a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Summer-dormant; self-seeds."
+  },
+  {
+   "id": "asclepias-fascicularis",
+   "botanical": "Asclepias fascicularis",
+   "common": "Narrowleaf milkweed",
+   "type": "perennial",
+   "origin": "california native",
+   "evergreen": false,
+   "leafOffMonths": [
+    11,
+    12,
+    1,
+    2
+   ],
+   "matureHeight": 3,
+   "matureWidth": 2,
+   "yearsToMaturity": 2,
+   "habit": "columnar",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloomColor": "#fbcfe8",
+   "foliageColor": "#8fae7a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "butterflies",
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": [
+     "monarch"
+    ]
+   },
+   "invasive": false,
+   "toxic": true,
+   "maintenance": "low",
+   "notes": "Monarch larval host. Toxic to pets and children if eaten. Dies back in winter."
+  },
+  {
+   "id": "frangula-eve-case",
+   "botanical": "Frangula californica 'Eve Case'",
+   "common": "Coffeeberry 'Eve Case'",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 6,
+   "matureWidth": 6,
+   "yearsToMaturity": 6,
+   "habit": "round",
+   "sun": "part",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6
+   ],
+   "bloomColor": "#d9f99d",
+   "foliageColor": "#3d6b45",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "butterflies"
+    ],
+    "larvalHost": [
+     "pale swallowtail (unverified)"
+    ]
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Berries for birds."
+  },
+  {
+   "id": "festuca-glauca",
+   "botanical": "Festuca glauca 'Elijah Blue'",
+   "common": "Blue fescue",
+   "type": "grass",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 1,
+   "matureWidth": 1,
+   "yearsToMaturity": 2,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    5,
+    6
+   ],
+   "bloomColor": "#d6d3a0",
+   "foliageColor": "#8fb0c0",
+   "pollinator": {
+    "value": "low",
+    "groups": [],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "moderate",
+   "notes": "Fine-textured edging; short-lived."
+  },
+  {
+   "id": "sedum-spurium",
+   "botanical": "Sedum spurium 'Dragon's Blood'",
+   "common": "Dragon's blood sedum",
+   "type": "succulent",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 0.5,
+   "matureWidth": 2,
+   "yearsToMaturity": 2,
+   "habit": "mat",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    6,
+    7,
+    8
+   ],
+   "bloomColor": "#e11d48",
+   "foliageColor": "#7a2f3f",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Burgundy foliage groundcover."
+  },
+  {
+   "id": "dymondia-margaretae",
+   "botanical": "Dymondia margaretae",
+   "common": "Silver carpet",
+   "type": "groundcover",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 0.2,
+   "matureWidth": 3,
+   "yearsToMaturity": 2,
+   "habit": "mat",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    5,
+    6,
+    7
+   ],
+   "bloomColor": "#fde68a",
+   "foliageColor": "#9db3b0",
+   "pollinator": {
+    "value": "low",
+    "groups": [],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Tolerates foot traffic."
+  },
+  {
+   "id": "grevillea-noellii",
+   "botanical": "Grevillea 'Noellii'",
+   "common": "Noellii grevillea",
+   "type": "shrub",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 4,
+   "matureWidth": 6,
+   "yearsToMaturity": 4,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "bloomColor": "#f472b6",
+   "foliageColor": "#5f8f4f",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "hummingbirds",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Pink and white spider flowers."
+  },
+  {
+   "id": "cuphea-hyssopifolia",
+   "botanical": "Cuphea hyssopifolia",
+   "common": "Mexican heather",
+   "type": "shrub",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 1.5,
+   "matureWidth": 2,
+   "yearsToMaturity": 2,
+   "habit": "round",
+   "sun": "part",
+   "wucols": "moderate",
+   "bloomMonths": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "bloomColor": "#a855f7",
+   "foliageColor": "#4f7d45",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "butterflies"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Very fine texture; frost tender."
+  },
+  {
+   "id": "salvia-pozo-blue",
+   "botanical": "Salvia 'Pozo Blue'",
+   "common": "Pozo Blue sage",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 5,
+   "matureWidth": 6,
+   "yearsToMaturity": 4,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "bloomColor": "#6366f1",
+   "foliageColor": "#8fa88a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "hummingbirds"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native hybrid."
+  },
+  {
+   "id": "aloe-striata",
+   "botanical": "Aloe striata",
+   "common": "Coral aloe",
+   "type": "succulent",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 2,
+   "matureWidth": 2,
+   "yearsToMaturity": 3,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "bloomColor": "#fb7185",
+   "foliageColor": "#7fb09a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "hummingbirds"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Winter hummingbird nectar."
   }
  ]
 }

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import engineRaw from '../src/data/engine.json';
 import speciesRaw from '../src/data/species.json';
 import siteRaw from '../src/data/site.json';
-import { instanceSize, placedPlants, plantSolid, sizeAt, sunFit } from '../src/engine/growth';
-import { activeInstances, filterSpecies } from '../src/engine/library';
+import { instanceSize, isBlooming, isLeafOff, placedPlants, plantSolid, sizeAt, sunFit } from '../src/engine/growth';
+import { activeInstances, filterSpecies, makeCustomSpecies, type CustomSpeciesInput } from '../src/engine/library';
 import { buildSunScene, loadSite } from '../src/engine/site';
 import { computeSunHours } from '../src/engine/sunhours';
 import type { EngineConfig, PlantInstance, SpeciesLibrary } from '../src/engine/types';
@@ -130,5 +130,104 @@ describe('sun interaction', () => {
     expect(sunFit(sp('salvia-leucantha'), 9, engine.growth)).toBe('ok');
     expect(sunFit(sp('agapanthus-africanus'), 9.5, engine.growth)).toBe('too-sunny');
     expect(sunFit(sp('salvia-spathacea'), 9, engine.growth)).toBe('too-sunny');
+  });
+});
+
+describe('library size and data quality', () => {
+  it('ships about 50 species with sane data', () => {
+    expect(lib.species.length).toBeGreaterThanOrEqual(50);
+    for (const s of lib.species) {
+      expect(s.matureHeight, s.id).toBeGreaterThan(0);
+      expect(s.matureWidth, s.id).toBeGreaterThan(0);
+      expect(s.yearsToMaturity, s.id).toBeGreaterThan(0);
+      expect(s.bloomMonths.every((m) => m >= 1 && m <= 12), s.id).toBe(true);
+      expect(['very low', 'low', 'moderate', 'high']).toContain(s.wucols);
+      expect(engine.growth.wucolsPlantFactor[s.wucols], s.id).toBeDefined();
+      if (!s.evergreen && s.type === 'tree') expect(s.leafOffMonths.length, s.id).toBeGreaterThan(0);
+    }
+    // The owner's named picks are all present.
+    for (const id of ['salvia-leucantha', 'oenothera-lindheimeri', 'lomandra-longifolia', 'phyla-nodiflora', 'juncus-patens', 'tulbaghia-violacea']) {
+      expect(lib.species.some((s) => s.id === id), id).toBe(true);
+    }
+  });
+
+  it('covers every calendar month with at least one high-value bloom', () => {
+    for (let m = 1; m <= 12; m++) {
+      expect(lib.species.some((s) => s.pollinator.value === 'high' && isBlooming(s, m)), `month ${m}`).toBe(true);
+    }
+  });
+});
+
+describe('leaf-off (GR-4)', () => {
+  const redbud = sp('cercis-occidentalis');
+  const toyon = sp('heteromeles-arbutifolia');
+  const cfg = engine.growth;
+
+  it('flags deciduous species as leafless only in their leaf-off months', () => {
+    expect(isLeafOff(redbud, 1)).toBe(true);
+    expect(isLeafOff(redbud, 7)).toBe(false);
+    expect(isLeafOff(toyon, 1)).toBe(false);
+  });
+
+  it('shadow solids carry a lower winter density for deciduous plants only', () => {
+    const big = { planted: true, height: 15, width: 15 };
+    const a = plantSolid(inst(redbud.id), redbud, big, cfg, 12)!;
+    expect(a.leafOffMonths).toEqual(redbud.leafOffMonths);
+    expect(a.leafOffDensity).toBeCloseTo(a.density * cfg.leafOffDensityFactor, 9);
+    const b = plantSolid(inst(toyon.id), toyon, big, cfg, 12)!;
+    expect(b.leafOffMonths).toBeUndefined();
+  });
+
+  it('a leafless tree casts less shade than a leafy one on the same cell', () => {
+    const solids = (id: string) => {
+      const s = sp(id);
+      const so = plantSolid(inst(id, { position: [28, 100] }), s, { planted: true, height: 18, width: 16 }, cfg, 12)!;
+      return [{ ...so, leafOffMonths: s.evergreen ? undefined : [1], leafOffDensity: so.leafOffDensity }];
+    };
+    const total = (extra: ReturnType<typeof solids>, month: number, day: number) => {
+      const scene = buildSunScene(site, { aduEnabled: true }, engine, extra);
+      const r = computeSunHours(scene, { period: { kind: 'day', month, day }, year: 2026, config: engine.sun });
+      let sum = 0;
+      for (let k = 0; k < r.hours.length; k++) if (r.mask[k] === 1) sum += r.hours[k];
+      return sum;
+    };
+    const none = total([], 1, 15);
+    const leafless = total(solids('cercis-occidentalis'), 1, 15);
+    const leafy = total(solids('heteromeles-arbutifolia'), 1, 15);
+    expect(none - leafless).toBeLessThan((none - leafy) * 0.6);
+    expect(none - leafy).toBeGreaterThan(1);
+  });
+});
+
+describe('custom species (PL-8)', () => {
+  const good: CustomSpeciesInput = {
+    common: 'My Test Shrub', type: 'shrub', origin: 'other', evergreen: true, matureHeight: 4, matureWidth: 5,
+    yearsToMaturity: 4, habit: 'round', sun: 'full', wucols: 'low', bloomMonths: [5, 4, 4], bloomColor: '#ff00ff',
+    pollinatorValue: 'moderate', groups: ['native bees'], invasive: false, toxic: false,
+  };
+  it('builds a species with owner provenance and unique id', () => {
+    const r = makeCustomSpecies(good, ['custom-my-test-shrub']);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.species.id).toBe('custom-my-test-shrub-2');
+      expect(r.species.bloomMonths).toEqual([4, 5]);
+      expect(r.species.provenance?.size?.source).toBe('Entered by the owner');
+    }
+  });
+  it('rejects missing names and non-positive sizes', () => {
+    const r = makeCustomSpecies({ ...good, common: ' ', matureHeight: 0, yearsToMaturity: -1 }, []);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.length).toBe(3);
+  });
+  it('the store accepts custom species only in edit mode and selects them into the palette', () => {
+    const r = makeCustomSpecies(good, []);
+    if (!r.ok) throw new Error('unexpected');
+    const view = makeAppStore('view');
+    view.getState().addSpecies(r.species);
+    expect(view.getState().library.species.some((s) => s.id === r.species.id)).toBe(false);
+    const edit = makeAppStore('edit');
+    edit.getState().addSpecies(r.species);
+    expect(edit.getState().library.species.some((s) => s.id === r.species.id)).toBe(true);
+    expect(edit.getState().palette[r.species.id]).toBe(true);
   });
 });

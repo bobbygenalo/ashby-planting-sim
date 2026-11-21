@@ -58,7 +58,14 @@ export function plantSolid(inst: PlantInstance, sp: Species, size: PlantSize, cf
   ring(base, r * 0.6);
   ring(mid, r);
   ring(size.height, r * (sp.habit === 'columnar' ? 0.7 : 0.45));
-  return { id: `plant:${inst.id}`, points: pts, density: cfg.shadowDensityByType[sp.type] ?? 0.7 };
+  const density = cfg.shadowDensityByType[sp.type] ?? 0.7;
+  const deciduous = !sp.evergreen && sp.leafOffMonths.length > 0;
+  return {
+    id: `plant:${inst.id}`,
+    points: pts,
+    density,
+    ...(deciduous ? { leafOffMonths: sp.leafOffMonths, leafOffDensity: density * cfg.leafOffDensityFactor } : {}),
+  };
 }
 
 export type SunFit = 'ok' | 'too-shaded' | 'too-sunny';
@@ -95,4 +102,14 @@ export function placedPlants(
     if (size.planted) out.push({ inst, species: sp, size });
   }
   return out;
+}
+
+/** True when a deciduous species is leafless in this calendar month (GR-4). */
+export function isLeafOff(sp: Species, month: number): boolean {
+  return !sp.evergreen && sp.leafOffMonths.includes(month);
+}
+
+/** True when a species is in bloom in this calendar month (POL-7). */
+export function isBlooming(sp: Species, month: number): boolean {
+  return sp.bloomMonths.includes(month);
 }

@@ -31,6 +31,7 @@ function Sidebar() {
     ['setbacks', 'Setback lines'],
     ['easements', 'Easement'],
     ['context', 'Trees, fences, pole'],
+    ['bloom', 'Bloom color on plants'],
   ];
   return (
     <aside className="sidebar">

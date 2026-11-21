@@ -138,6 +138,10 @@ export interface EngineConfig {
     minShadowHeightFt: number;
     sunNeedHours: { full: { min: number }; part: { min: number; max: number }; shade: { max: number } };
     wucolsPlantFactor: Record<string, number>;
+    /** Share of normal canopy density left when a deciduous plant is leafless. */
+    leafOffDensityFactor: number;
+    /** How far a blooming plant's foliage color moves toward its bloom color (0-1). */
+    bloomTintFraction: number;
   };
   timeline: { maxYears: number; presets: number[] };
 }

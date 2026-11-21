@@ -4,7 +4,7 @@ import engineRaw from '../data/engine.json';
 import { loadSite } from '../engine/site';
 import { doyToMonthDay, monthDayToDoy } from '../engine/time';
 import speciesRaw from '../data/species.json';
-import type { ContainerId, EngineConfig, PlantInstance, Pt, SiteConfig, SpeciesLibrary } from '../engine/types';
+import type { ContainerId, EngineConfig, PlantInstance, Pt, SiteConfig, Species, SpeciesLibrary } from '../engine/types';
 
 export type Mode = 'edit' | 'view';
 
@@ -14,6 +14,8 @@ export interface Layers {
   setbacks: boolean;
   easements: boolean;
   context: boolean;
+  /** Tint blooming plants with their bloom color (POL-7). */
+  bloom: boolean;
 }
 
 export interface AppState {
@@ -57,7 +59,10 @@ export interface AppState {
   placingSpeciesId: string | null;
   placeContainer: ContainerId;
   hover: Pt | null;
+  dragId: string | null;
 
+  addSpecies: (sp: Species) => void;
+  setDrag: (id: string | null) => void;
   setPaletteSpecies: (id: string, on: boolean) => void;
   addInstance: (speciesId: string, position: Pt, opts?: Partial<PlantInstance>) => string | null;
   updateInstance: (id: string, patch: Partial<Omit<PlantInstance, 'id'>>) => void;
@@ -88,7 +93,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true },
+      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,
@@ -123,7 +128,11 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       placingSpeciesId: null,
       placeContainer: '5gal',
       hover: null,
+      dragId: null,
 
+      addSpecies: (sp) =>
+        mutate({ library: { ...get().library, species: [...get().library.species, sp] }, palette: { ...get().palette, [sp.id]: true } }),
+      setDrag: (id) => set({ dragId: get().mode === 'edit' ? id : null }),
       setPaletteSpecies: (id, on) => mutate({ palette: { ...get().palette, [id]: on } }),
       addInstance: (speciesId, position, opts = {}) => {
         if (get().mode !== 'edit' || !get().palette[speciesId]) return null;

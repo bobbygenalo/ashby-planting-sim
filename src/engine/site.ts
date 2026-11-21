@@ -54,6 +54,9 @@ export interface Solid {
   points: Pt3[];
   /** Share of sunlight blocked (1 = opaque). */
   density: number;
+  /** Months (1-12) when the solid is leafless, and the density to use then. */
+  leafOffMonths?: number[];
+  leafOffDensity?: number;
 }
 
 export interface SunScene {

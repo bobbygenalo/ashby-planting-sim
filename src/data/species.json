@@ -51,6 +51,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -102,6 +107,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -154,6 +164,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 0.5,
+    "minPavingFt": 0
    }
   },
   {
@@ -198,6 +213,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -248,6 +268,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "sensitive",
+    "minFoundationFt": 4,
+    "minPavingFt": 2
    }
   },
   {
@@ -301,6 +326,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 0.5,
+    "minPavingFt": 0
    }
   },
   {
@@ -348,6 +378,11 @@
     ],
     "phMin": 5.5,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -394,6 +429,11 @@
     ],
     "phMin": 5.5,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -448,6 +488,11 @@
     ],
     "phMin": 5.5,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -502,6 +547,11 @@
     ],
     "phMin": 5.5,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -545,6 +595,11 @@
     ],
     "phMin": 5.0,
     "phMax": 6.5
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -588,6 +643,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -636,6 +696,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -688,6 +753,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -740,6 +810,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 0.5,
+    "minPavingFt": 0
    }
   },
   {
@@ -784,6 +859,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -831,6 +911,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 5,
+    "minPavingFt": 2
    }
   },
   {
@@ -879,6 +964,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -924,6 +1014,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -975,6 +1070,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -1023,6 +1123,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 5,
+    "minPavingFt": 2
    }
   },
   {
@@ -1071,6 +1176,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 2,
+    "minPavingFt": 1
    }
   },
   {
@@ -1117,6 +1227,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -1166,6 +1281,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -1211,6 +1331,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -1257,6 +1382,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 0.5,
+    "minPavingFt": 0
    }
   },
   {
@@ -1302,6 +1432,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 0.5,
+    "minPavingFt": 0
    }
   },
   {
@@ -1350,6 +1485,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "moderate",
+    "minFoundationFt": 10,
+    "minPavingFt": 5
    }
   },
   {
@@ -1396,6 +1536,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "moderate",
+    "minFoundationFt": 10,
+    "minPavingFt": 5
    }
   },
   {
@@ -1447,6 +1592,11 @@
     ],
     "phMin": 5.5,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "moderate",
+    "minFoundationFt": 8,
+    "minPavingFt": 4
    }
   },
   {
@@ -1488,6 +1638,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -1533,6 +1688,11 @@
     ],
     "phMin": 6.0,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "moderate",
+    "minFoundationFt": 8,
+    "minPavingFt": 4
    }
   },
   {
@@ -1576,6 +1736,11 @@
     ],
     "phMin": 6.0,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "moderate",
+    "minFoundationFt": 8,
+    "minPavingFt": 4
    }
   },
   {
@@ -1621,6 +1786,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -1672,6 +1842,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -1723,6 +1898,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -1769,6 +1949,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -1814,6 +1999,11 @@
     ],
     "phMin": 6.0,
     "phMax": 7.5
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -1862,6 +2052,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -1907,6 +2102,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -1956,6 +2156,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -2012,6 +2217,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -2062,6 +2272,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "moderate",
+    "minFoundationFt": 5,
+    "minPavingFt": 2.5
    }
   },
   {
@@ -2103,6 +2318,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -2148,6 +2368,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   },
   {
@@ -2190,6 +2415,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 0.5,
+    "minPavingFt": 0
    }
   },
   {
@@ -2238,6 +2468,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -2292,6 +2527,11 @@
     ],
     "phMin": 5.5,
     "phMax": 7.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -2339,6 +2579,11 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 3,
+    "minPavingFt": 1.5
    }
   },
   {
@@ -2384,8 +2629,14 @@
     ],
     "phMin": 6.0,
     "phMax": 8.0
+   },
+   "roots": {
+    "behavior": "shallow",
+    "minFoundationFt": 1,
+    "minPavingFt": 0.5
    }
   }
  ],
- "soilNote": "Soil needs (drainage, texture, pH) are general horticultural expectations, unverified: confidence low."
+ "soilNote": "Soil needs (drainage, texture, pH) are general horticultural expectations, unverified: confidence low.",
+ "rootsNote": "Root behavior and minimum distances from foundations and paving follow general guidance by plant size. Unverified: confidence low. Check with an arborist before planting a tree near a building."
 }

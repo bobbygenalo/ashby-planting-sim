@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useDeferredValue, useEffect, useMemo } from 'react';
+import { detectConflicts } from '../engine/conflicts';
+import { activeStructures } from '../engine/site';
 import { pointInPolygon } from '../engine/geometry';
 import { placedPlants, type PlacedPlant } from '../engine/growth';
 import { waterDemand } from '../engine/water';
-import { useApp } from './store';
+import { appStore, useApp } from './store';
 
 /** Plants in the palette that exist at the timeline month, with their simulated size. */
 export function usePlaced(): PlacedPlant[] {
@@ -46,4 +48,39 @@ export function useWaterDemand() {
 /** Id of the yard zone containing a point, or null. */
 export function zoneIdAt(zones: { id: string; polygon: [number, number][] }[], x: number, y: number): string | null {
   return zones.find((z) => pointInPolygon(x, y, z.polygon))?.id ?? null;
+}
+
+/**
+ * Keep the conflict list current: scan the whole timeline whenever the plan changes (GR-6).
+ * Inputs are deferred so dragging a plant stays smooth.
+ */
+export function useConflictSync() {
+  const instances = useDeferredValue(useApp((s) => s.instances));
+  const palette = useDeferredValue(useApp((s) => s.palette));
+  const hardscape = useDeferredValue(useApp((s) => s.hardscape));
+  const library = useApp((s) => s.library);
+  const site = useApp((s) => s.site);
+  const engine = useApp((s) => s.engine);
+  const aduEnabled = useApp((s) => s.aduEnabled);
+  const conflicts = useMemo(
+    () =>
+      detectConflicts({
+        instances,
+        palette,
+        species: library.species,
+        structures: activeStructures(site, { aduEnabled }),
+        elements: hardscape,
+        easements: site.easements,
+        contextTrees: site.contextObjects
+          .filter((o) => o.kind === 'tree' && o.position)
+          .map((o) => ({ id: o.id, name: o.name, x: o.position![0], y: o.position![1], height: o.height, width: o.canopyWidth ?? 10 })),
+        lot: site.lot,
+        cfg: engine,
+        maxMonths: engine.timeline.maxYears * 12,
+      }),
+    [instances, palette, hardscape, library, site, engine, aduEnabled],
+  );
+  useEffect(() => {
+    appStore.getState().setConflicts(conflicts);
+  }, [conflicts]);
 }

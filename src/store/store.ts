@@ -1,7 +1,9 @@
 import { createStore, useStore } from 'zustand';
 import siteRaw from '../data/site.json';
 import engineRaw from '../data/engine.json';
+import type { Conflict } from '../engine/conflicts';
 import { polygonArea, polylineLength } from '../engine/geometry';
+import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { loadSite } from '../engine/site';
 import { doyToMonthDay, monthDayToDoy } from '../engine/time';
 import speciesRaw from '../data/species.json';
@@ -35,6 +37,10 @@ export interface Layers {
   context: boolean;
   /** Tint blooming plants with their bloom color (POL-7). */
   bloom: boolean;
+  /** Placement heatmap and the top spots. */
+  suggestions: boolean;
+  /** Red rings on plants that have a conflict. */
+  conflicts: boolean;
 }
 
 export interface AppState {
@@ -117,6 +123,17 @@ export interface AppState {
   deleteElement: (id: string) => void;
   setHsDrag: (d: HsDrag | null) => void;
 
+  /** Latest conflict scan over the whole timeline. Derived, so it is not part of undo. */
+  conflicts: Conflict[];
+  setConflicts: (c: Conflict[]) => void;
+  suggestWeights: SuggestWeights;
+  setSuggestWeights: (w: SuggestWeights) => void;
+  suggestion: { result: SuggestResult; speciesId: string } | null;
+  setSuggestion: (s: { result: SuggestResult; speciesId: string } | null) => void;
+  /** Which of the top spots is highlighted in the yard. */
+  suggestFocus: number | null;
+  setSuggestFocus: (i: number | null) => void;
+
   water: WaterConfig;
   soil: SoilConfig;
   hydrozones: Hydrozone[];
@@ -190,7 +207,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true },
+      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, suggestions: true, conflicts: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,
@@ -350,6 +367,15 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         else scenario({ hardscape: get().hardscape.filter((e) => e.id !== id), selectedElementId: get().selectedElementId === id ? null : get().selectedElementId });
       },
       setHsDrag: (d) => set({ hsDrag: get().mode === 'edit' ? d : null }),
+
+      conflicts: [],
+      setConflicts: (c) => set({ conflicts: c }),
+      suggestWeights: { ...engine.suggest.weights },
+      setSuggestWeights: (w) => set({ suggestWeights: w }),
+      suggestion: null,
+      setSuggestion: (s) => set({ suggestion: s, suggestFocus: s ? 0 : null }),
+      suggestFocus: null,
+      setSuggestFocus: (i) => set({ suggestFocus: i }),
 
       water,
       soil,

@@ -64,6 +64,18 @@ const DEFAULT_FOLIAGE: Record<Species['type'], string> = {
   groundcover: '#7bb06a', vine: '#4f7d45', succulent: '#7fb09a', edible: '#4f7d45',
 };
 
+/** Root clearances by plant size, used when the owner adds a species without root data. */
+export function defaultRoots(type: Species['type'], matureHeight: number): Species['roots'] {
+  switch (type) {
+    case 'tree': return { behavior: 'moderate', minFoundationFt: 10, minPavingFt: 5 };
+    case 'shrub': return { behavior: 'shallow', minFoundationFt: 3, minPavingFt: 1.5 };
+    case 'groundcover': return { behavior: 'shallow', minFoundationFt: 0.5, minPavingFt: 0 };
+    case 'vine': return { behavior: 'moderate', minFoundationFt: 3, minPavingFt: 2 };
+    case 'edible': return matureHeight >= 8 ? { behavior: 'moderate', minFoundationFt: 8, minPavingFt: 4 } : { behavior: 'shallow', minFoundationFt: 3, minPavingFt: 1.5 };
+    default: return { behavior: 'shallow', minFoundationFt: 1, minPavingFt: 0.5 };
+  }
+}
+
 /** Validate owner input and build a Species record (PL-8). Pure, so the form stays thin. */
 export function makeCustomSpecies(
   input: CustomSpeciesInput,
@@ -105,6 +117,7 @@ export function makeCustomSpecies(
       toxic: input.toxic,
       maintenance: 'moderate',
       notes: input.notes?.trim() || 'Custom species entered by the owner.',
+      roots: defaultRoots(input.type, input.matureHeight),
       soil: { drainageNeed: 'moderate', textures: ['sandy loam', 'loam', 'silt loam', 'clay loam'], phMin: 6, phMax: 8 },
       provenance: { size: prov, light: prov, water: prov, pollinator: prov, soil: prov },
     },

@@ -4,6 +4,7 @@ import { HardscapePanel } from './HardscapePanel';
 import { WaterSoilPanel } from './WaterSoilPanel';
 import { PollinatorPanel } from './PollinatorPanel';
 import { OutputsPanel } from './OutputsPanel';
+import { LayoutPanel } from './LayoutPanel';
 import { SiteScene } from '../scene/SiteScene';
 import { solarPosition } from '../engine/solar';
 import { checkPrintedDimensions } from '../engine/site';
@@ -12,10 +13,11 @@ import { doyToMonthDay, localToUtc, monthDayToDoy, monthName, tzAbbrev } from '.
 import { formatFeetInches } from '../engine/units';
 import { appStore, useApp } from '../store/store';
 import { useSunHours } from '../store/useSunHours';
+import { useConflictSync } from '../store/derived';
 
 type SunHook = ReturnType<typeof useSunHours>;
-type Tab = 'plants' | 'hardscape' | 'water' | 'pollinators' | 'sun' | 'outputs';
-const TABS: [Tab, string][] = [['plants', 'Plants'], ['hardscape', 'Hardscape'], ['water', 'Water & soil'], ['pollinators', 'Pollinators'], ['sun', 'Sun hours'], ['outputs', 'Outputs']];
+type Tab = 'plants' | 'hardscape' | 'layout' | 'water' | 'pollinators' | 'sun' | 'outputs';
+const TABS: [Tab, string][] = [['plants', 'Plants'], ['hardscape', 'Hardscape'], ['layout', 'Layout'], ['water', 'Water & soil'], ['pollinators', 'Pollinators'], ['sun', 'Sun hours'], ['outputs', 'Outputs']];
 
 const CLASS_LABELS = ['Shade', 'Part shade', 'Part sun', 'Full sun'];
 const CLASS_COLORS = ['#2d2d69', '#5082cd', '#f5aa37', '#ffe650'];
@@ -38,6 +40,8 @@ function Sidebar() {
     ['easements', 'Easement'],
     ['context', 'Trees, fences, pole'],
     ['bloom', 'Bloom color on plants'],
+    ['conflicts', 'Conflict rings'],
+    ['suggestions', 'Placement heatmap'],
   ];
   return (
     <aside className="sidebar">
@@ -284,6 +288,8 @@ function useShortcuts() {
 export function App() {
   const sun = useSunHours();
   useShortcuts();
+  useConflictSync();
+  const conflictCount = useApp((s) => s.conflicts.filter((c) => c.instanceIds.length > 0 && c.severity === 'error').length);
   const [tab, setTab] = useState<Tab>('plants');
   const [controlsOpen, setControlsOpen] = useState(true);
   return (
@@ -307,11 +313,12 @@ export function App() {
         <div className="tabs">
           <UndoRedo />
           {TABS.map(([id, label]) => (
-            <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}</button>
+            <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}{id === 'layout' && conflictCount > 0 ? ` (${conflictCount})` : ''}</button>
           ))}
         </div>
         {tab === 'plants' && <PlantsPanel growing={sun.growing} />}
         {tab === 'hardscape' && <HardscapePanel />}
+        {tab === 'layout' && <LayoutPanel growing={sun.growing} />}
         {tab === 'water' && <WaterSoilPanel />}
         {tab === 'pollinators' && <PollinatorPanel growing={sun.growing} />}
         {tab === 'sun' && <SunPanel sun={sun} />}

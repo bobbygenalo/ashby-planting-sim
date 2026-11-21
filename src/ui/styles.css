@@ -169,3 +169,18 @@ button.link { background: none; border: 0; color: var(--accent); padding: 2px 0;
 .assume-list dd { margin: 2px 0 0; font-size: 12px; }
 details > summary { cursor: pointer; font-weight: 600; margin: 8px 0 2px; }
 .gapbox { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+
+.spot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; background: #0b6b2e; color: #fff; font-weight: 700; font-size: 10px; padding: 0; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+.spot.on { background: #f59e0b; color: #1a1300; transform: scale(1.25); }
+.spot.static { box-shadow: none; flex: 0 0 auto; }
+.conflict { list-style: none; border: 1px solid var(--line); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+.conflict.error { border-left-color: #dc2626; }
+.conflict p { margin: 4px 0; }
+.weights { display: grid; gap: 4px; margin: 8px 0; }
+.weights label { display: grid; grid-template-columns: 140px 1fr 36px; align-items: center; gap: 8px; font-size: 12px; }
+.legend-bar { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin: 8px 0 4px; }
+.legend-bar i { display: inline-block; width: 90px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, #e8f5e0, #0b6b2e); border: 1px solid var(--line); }
+.legend-bar em { margin-left: auto; font-style: normal; }
+.why { margin: 6px 0; }
+.why p { margin: 2px 0 0; }
+.layoutpanel .species li { cursor: default; }

@@ -285,5 +285,43 @@
         "width": 0.2
       }
     }
+  },
+  "conflicts": {
+    "overlapToleranceFt": 1.0,
+    "understoryHeightRatio": 0.4,
+    "ignoreHabits": [
+      "mat"
+    ],
+    "structureClearanceFt": 0.5,
+    "trunkAvoidTypes": [
+      "patio",
+      "path",
+      "deck",
+      "wall",
+      "fence"
+    ],
+    "lotLineMinFt": {
+      "tree": 4,
+      "edible": 3,
+      "shrub": 1.5,
+      "vine": 1,
+      "perennial": 0.5,
+      "grass": 0.5,
+      "groundcover": 0,
+      "succulent": 0.5
+    },
+    "ignoreVinesAtStructures": true,
+    "source": "Design choices, not code requirements. Distances are adjustable here."
+  },
+  "suggest": {
+    "weights": {
+      "sun": 1.0,
+      "clearance": 1.0,
+      "hydrozone": 0.5
+    },
+    "gridFt": 1,
+    "hydrozoneRadiusFt": 12,
+    "minSeparationFt": 6,
+    "topCount": 5
   }
 }

@@ -197,3 +197,14 @@ export function triangulate(poly: Pt[]): [Pt, Pt, Pt][] {
   if (idx.length === 3) tris.push([poly[idx[0]], poly[idx[1]], poly[idx[2]]]);
   return tris;
 }
+
+/** Distance from a point to a polygon: 0 inside, otherwise to the nearest edge. */
+export function distanceToPolygon(x: number, y: number, poly: Pt[]): number {
+  if (poly.length < 3) return Infinity;
+  if (pointInPolygon(x, y, poly)) return 0;
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    best = Math.min(best, distanceToSegment([x, y], poly[i], poly[(i + 1) % poly.length]).dist);
+  }
+  return best;
+}

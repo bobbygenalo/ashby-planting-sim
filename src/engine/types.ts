@@ -140,6 +140,23 @@ export interface EngineConfig {
     bloomTintFraction: number;
   };
   timeline: { maxYears: number; presets: number[] };
+  conflicts: {
+    overlapToleranceFt: number;
+    understoryHeightRatio: number;
+    ignoreHabits: string[];
+    structureClearanceFt: number;
+    trunkAvoidTypes: HardscapeType[];
+    lotLineMinFt: Record<PlantType, number>;
+    ignoreVinesAtStructures: boolean;
+    source: string;
+  };
+  suggest: {
+    weights: { sun: number; clearance: number; hydrozone: number };
+    gridFt: number;
+    hydrozoneRadiusFt: number;
+    minSeparationFt: number;
+    topCount: number;
+  };
   hardscape: {
     permeableThreshold: number;
     sampleCellFt: number;
@@ -183,6 +200,7 @@ export interface Species {
   maintenance: 'low' | 'moderate' | 'high';
   notes?: string;
   /** Source and confidence per group of fields. Falls back to the library default. */
+  roots: { behavior: 'shallow' | 'moderate' | 'sensitive' | 'aggressive'; minFoundationFt: number; minPavingFt: number };
   soil: { drainageNeed: 'fast' | 'moderate' | 'tolerant'; textures: string[]; phMin: number; phMax: number };
   provenance?: Partial<Record<'size' | 'light' | 'water' | 'pollinator' | 'soil', { source: string; confidence: Confidence }>>;
 }
@@ -191,6 +209,7 @@ export interface SpeciesLibrary {
   version: string;
   provenanceDefault: { source: string; confidence: Confidence };
   soilNote?: string;
+  rootsNote?: string;
   species: Species[];
 }
 

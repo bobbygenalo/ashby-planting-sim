@@ -12,6 +12,7 @@ import type { ContextObjectCfg, Pt, StructureCfg } from '../engine/types';
 import { useApp } from '../store/store';
 import { PlantLayer } from './Plants';
 import { HardscapeLayer, useSnapper } from './Hardscape';
+import { ConflictRings, SuggestionLayer } from './Suggestions';
 
 const SITE_TO_THREE = (x: number, y: number, z: number): [number, number, number] => [x, z, -y];
 
@@ -424,6 +425,8 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
         {layers.dimensions && <Dimensions />}
         <HardscapeLayer />
         <PlantLayer />
+        <ConflictRings />
+        <SuggestionLayer />
         <Compass />
         <Measure />
       </group>

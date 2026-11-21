@@ -129,4 +129,67 @@ export interface EngineConfig {
     seasons: SeasonCfg[];
   };
   scene: { snapDefaultFt: number; snapOptionsFt: number[]; treeCanopyRings: number };
+  growth: {
+    steepness: number;
+    containers: Record<string, { label: string; height: number; width: number }>;
+    maxStartFractionOfMature: number;
+    shadowDensityByType: Record<string, number>;
+    trunkClearanceFraction: Record<string, number>;
+    minShadowHeightFt: number;
+    sunNeedHours: { full: { min: number }; part: { min: number; max: number }; shade: { max: number } };
+    wucolsPlantFactor: Record<string, number>;
+  };
+  timeline: { maxYears: number; presets: number[] };
+}
+
+export type PlantType = 'tree' | 'shrub' | 'perennial' | 'grass' | 'groundcover' | 'vine' | 'succulent' | 'edible';
+export type Habit = 'columnar' | 'round' | 'vase' | 'spreading' | 'weeping' | 'clump' | 'mat' | 'vine';
+export type ContainerId = '1gal' | '5gal' | '15gal' | '24box';
+export type Confidence = 'high' | 'medium' | 'low';
+export type PollinatorValue = 'high' | 'moderate' | 'low';
+export type PollinatorGroup = 'native bees' | 'honey bees' | 'butterflies' | 'moths' | 'hummingbirds';
+
+export interface Species {
+  id: string;
+  botanical: string;
+  common: string;
+  type: PlantType;
+  origin: 'california native' | 'mediterranean' | 'other';
+  evergreen: boolean;
+  leafOffMonths: number[];
+  matureHeight: number;
+  matureWidth: number;
+  yearsToMaturity: number;
+  habit: Habit;
+  sun: 'full' | 'part' | 'shade';
+  wucols: 'very low' | 'low' | 'moderate' | 'high';
+  bloomMonths: number[];
+  bloomColor: string;
+  foliageColor: string;
+  pollinator: { value: PollinatorValue; groups: PollinatorGroup[]; larvalHost: string[] };
+  invasive: boolean;
+  toxic: boolean;
+  maintenance: 'low' | 'moderate' | 'high';
+  notes?: string;
+  /** Source and confidence per group of fields. Falls back to the library default. */
+  provenance?: Partial<Record<'size' | 'light' | 'water' | 'pollinator', { source: string; confidence: Confidence }>>;
+}
+
+export interface SpeciesLibrary {
+  version: string;
+  provenanceDefault: { source: string; confidence: Confidence };
+  species: Species[];
+}
+
+export interface PlantInstance {
+  id: string;
+  speciesId: string;
+  position: Pt;
+  /** Months after project start (timeline month 0). */
+  plantedMonth: number;
+  container: ContainerId;
+  existing: boolean;
+  /** Entered by the owner for existing plants, in feet. */
+  currentHeight?: number;
+  currentWidth?: number;
 }

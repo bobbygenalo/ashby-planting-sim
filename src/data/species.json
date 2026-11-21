@@ -1,0 +1,1199 @@
+{
+ "version": "library/1",
+ "provenanceDefault": {
+  "source": "Compiled from general horticultural knowledge, not yet checked against WUCOLS (Region 3), Calscape or Cal-IPC. Verify before relying on any water, size or pollinator value.",
+  "confidence": "low"
+ },
+ "species": [
+  {
+   "id": "salvia-leucantha",
+   "botanical": "Salvia leucantha",
+   "common": "Mexican bush sage",
+   "type": "perennial",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 4,
+   "matureWidth": 5,
+   "yearsToMaturity": 3,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "bloomColor": "#8b5cf6",
+   "foliageColor": "#9db39a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "hummingbirds"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Cut back in late winter."
+  },
+  {
+   "id": "oenothera-lindheimeri",
+   "botanical": "Oenothera lindheimeri",
+   "common": "Gaura",
+   "type": "perennial",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 3,
+   "yearsToMaturity": 2,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloomColor": "#f9a8d4",
+   "foliageColor": "#8fae7a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "moths",
+     "native bees"
+    ],
+    "larvalHost": [
+     "evening primrose moths (unverified)"
+    ]
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Airy habit; may self-seed."
+  },
+  {
+   "id": "achillea-millefolium",
+   "botanical": "Achillea millefolium",
+   "common": "Yarrow",
+   "type": "groundcover",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 2,
+   "matureWidth": 3,
+   "yearsToMaturity": 2,
+   "habit": "mat",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "bloomColor": "#fde68a",
+   "foliageColor": "#9db39a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "butterflies",
+     "honey bees"
+    ],
+    "larvalHost": [
+     "several moths (unverified)"
+    ]
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Cultivars vary in color and size."
+  },
+  {
+   "id": "lomandra-longifolia",
+   "botanical": "Lomandra longifolia",
+   "common": "Lomandra",
+   "type": "grass",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 3,
+   "yearsToMaturity": 3,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4,
+    5
+   ],
+   "bloomColor": "#e7e0b0",
+   "foliageColor": "#6f9a5a",
+   "pollinator": {
+    "value": "low",
+    "groups": [],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick."
+  },
+  {
+   "id": "bougainvillea",
+   "botanical": "Bougainvillea spp.",
+   "common": "Bougainvillea",
+   "type": "vine",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 12,
+   "matureWidth": 10,
+   "yearsToMaturity": 5,
+   "habit": "vine",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "bloomColor": "#d946ef",
+   "foliageColor": "#4f7d45",
+   "pollinator": {
+    "value": "low",
+    "groups": [
+     "hummingbirds"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": true,
+   "maintenance": "moderate",
+   "notes": "Owner pick. Thorny; needs a support. Cultivar sets size."
+  },
+  {
+   "id": "lantana-montevidensis",
+   "botanical": "Lantana montevidensis",
+   "common": "Trailing lantana",
+   "type": "groundcover",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 1.5,
+   "matureWidth": 4,
+   "yearsToMaturity": 2,
+   "habit": "mat",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "bloomColor": "#c084fc",
+   "foliageColor": "#5f8f4f",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "butterflies",
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": true,
+   "maintenance": "low",
+   "notes": "Owner pick. Berries are toxic. Check invasive status of the chosen cultivar."
+  },
+  {
+   "id": "coleonema-pulchellum",
+   "botanical": "Coleonema pulchellum",
+   "common": "Pink breath of heaven",
+   "type": "shrub",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 5,
+   "matureWidth": 4,
+   "yearsToMaturity": 4,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "bloomColor": "#f9a8d4",
+   "foliageColor": "#6f9a5a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Fine texture."
+  },
+  {
+   "id": "coleonema-sunset-gold",
+   "botanical": "Coleonema pulchellum 'Sunset Gold'",
+   "common": "Golden breath of heaven",
+   "type": "shrub",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 3,
+   "yearsToMaturity": 3,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "bloomColor": "#f9a8d4",
+   "foliageColor": "#bfd24a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Chartreuse foliage."
+  },
+  {
+   "id": "polygala-myrtifolia",
+   "botanical": "Polygala myrtifolia",
+   "common": "Sweet pea shrub",
+   "type": "shrub",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 6,
+   "matureWidth": 5,
+   "yearsToMaturity": 4,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "bloomColor": "#a855f7",
+   "foliageColor": "#5f8f4f",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "moderate",
+   "notes": "Owner pick. Blooms most of the year."
+  },
+  {
+   "id": "polygala-petite-butterflies",
+   "botanical": "Polygala fruticosa 'Petite Butterflies'",
+   "common": "Petite Butterflies polygala",
+   "type": "shrub",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 3,
+   "yearsToMaturity": 3,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "bloomColor": "#a855f7",
+   "foliageColor": "#5f8f4f",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "moderate",
+   "notes": "Owner pick."
+  },
+  {
+   "id": "loropetalum-chinense",
+   "botanical": "Loropetalum chinense",
+   "common": "Purple fringe flower",
+   "type": "shrub",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 6,
+   "matureWidth": 6,
+   "yearsToMaturity": 5,
+   "habit": "spreading",
+   "sun": "part",
+   "wucols": "moderate",
+   "bloomMonths": [
+    2,
+    3,
+    4
+   ],
+   "bloomColor": "#db2777",
+   "foliageColor": "#6b2d4a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Burgundy foliage. Size varies a lot by cultivar."
+  },
+  {
+   "id": "phormium-tenax",
+   "botanical": "Phormium tenax",
+   "common": "New Zealand flax",
+   "type": "grass",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 5,
+   "matureWidth": 5,
+   "yearsToMaturity": 4,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    6,
+    7
+   ],
+   "bloomColor": "#ef4444",
+   "foliageColor": "#7a3b3b",
+   "pollinator": {
+    "value": "low",
+    "groups": [
+     "hummingbirds"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Cultivar sets color and size."
+  },
+  {
+   "id": "agapanthus-africanus",
+   "botanical": "Agapanthus africanus",
+   "common": "Agapanthus",
+   "type": "perennial",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 3,
+   "yearsToMaturity": 3,
+   "habit": "clump",
+   "sun": "part",
+   "wucols": "moderate",
+   "bloomMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "bloomColor": "#6366f1",
+   "foliageColor": "#3f7a4a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": true,
+   "maintenance": "low",
+   "notes": "Owner pick. Toxic if eaten."
+  },
+  {
+   "id": "tulbaghia-violacea",
+   "botanical": "Tulbaghia violacea",
+   "common": "Society garlic",
+   "type": "perennial",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 1.5,
+   "matureWidth": 1.5,
+   "yearsToMaturity": 2,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "bloomColor": "#c4b5fd",
+   "foliageColor": "#8fae7a",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "butterflies"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Leaves smell of garlic when crushed."
+  },
+  {
+   "id": "phyla-nodiflora",
+   "botanical": "Phyla nodiflora",
+   "common": "Lippia / Kurapia",
+   "type": "groundcover",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 0.3,
+   "matureWidth": 6,
+   "yearsToMaturity": 2,
+   "habit": "mat",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloomColor": "#f5d0fe",
+   "foliageColor": "#7bb06a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "butterflies"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "moderate",
+   "notes": "Owner pick. Bee-attracting: avoid play areas. Kurapia is a cultivar; confirm."
+  },
+  {
+   "id": "juncus-patens",
+   "botanical": "Juncus patens",
+   "common": "California gray rush",
+   "type": "grass",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 2,
+   "matureWidth": 2,
+   "yearsToMaturity": 2,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    5,
+    6,
+    7
+   ],
+   "bloomColor": "#d6d3a0",
+   "foliageColor": "#7f9aa0",
+   "pollinator": {
+    "value": "low",
+    "groups": [],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick."
+  },
+  {
+   "id": "arctostaphylos-howard-mcminn",
+   "botanical": "Arctostaphylos densiflora 'Howard McMinn'",
+   "common": "Manzanita 'Howard McMinn'",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 6,
+   "matureWidth": 8,
+   "yearsToMaturity": 6,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "bloomColor": "#fbcfe8",
+   "foliageColor": "#4f7d45",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "hummingbirds",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Owner pick. Cultivar is a placeholder: choose one."
+  },
+  {
+   "id": "salvia-clevelandii",
+   "botanical": "Salvia clevelandii",
+   "common": "Cleveland sage",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 4,
+   "matureWidth": 5,
+   "yearsToMaturity": 4,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "bloomColor": "#6366f1",
+   "foliageColor": "#8fa88a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "hummingbirds",
+     "butterflies"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native addition. Needs sharp drainage and no summer water once established."
+  },
+  {
+   "id": "epilobium-canum",
+   "botanical": "Epilobium canum",
+   "common": "California fuchsia",
+   "type": "perennial",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 2,
+   "matureWidth": 4,
+   "yearsToMaturity": 2,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    8,
+    9,
+    10
+   ],
+   "bloomColor": "#f97316",
+   "foliageColor": "#9db39a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "hummingbirds",
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native addition. Late-summer hummingbird plant."
+  },
+  {
+   "id": "eriogonum-fasciculatum",
+   "botanical": "Eriogonum fasciculatum",
+   "common": "California buckwheat",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 5,
+   "yearsToMaturity": 4,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloomColor": "#fde8e8",
+   "foliageColor": "#9aa98a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "butterflies"
+    ],
+    "larvalHost": [
+     "several blue and metalmark butterflies (unverified)"
+    ]
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native addition."
+  },
+  {
+   "id": "ceanothus-concha",
+   "botanical": "Ceanothus 'Concha'",
+   "common": "Ceanothus 'Concha'",
+   "type": "shrub",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 6,
+   "matureWidth": 6,
+   "yearsToMaturity": 5,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4,
+    5
+   ],
+   "bloomColor": "#4f46e5",
+   "foliageColor": "#3d6b45",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "butterflies"
+    ],
+    "larvalHost": [
+     "California tortoiseshell (unverified)"
+    ]
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native addition. Cultivar is a placeholder."
+  },
+  {
+   "id": "rosmarinus-officinalis",
+   "botanical": "Salvia rosmarinus",
+   "common": "Rosemary",
+   "type": "edible",
+   "origin": "mediterranean",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 4,
+   "matureWidth": 4,
+   "yearsToMaturity": 3,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    11,
+    12,
+    1,
+    2,
+    3,
+    4
+   ],
+   "bloomColor": "#60a5fa",
+   "foliageColor": "#6f8f6a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Culinary herb."
+  },
+  {
+   "id": "lavandula-stoechas",
+   "botanical": "Lavandula stoechas",
+   "common": "Spanish lavender",
+   "type": "shrub",
+   "origin": "mediterranean",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 3,
+   "matureWidth": 3,
+   "yearsToMaturity": 3,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4,
+    5,
+    6
+   ],
+   "bloomColor": "#7c3aed",
+   "foliageColor": "#9db39a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": true,
+   "maintenance": "low",
+   "notes": "Fits purple, fine-texture palette."
+  },
+  {
+   "id": "nepeta-faassenii",
+   "botanical": "Nepeta x faassenii",
+   "common": "Catmint",
+   "type": "perennial",
+   "origin": "mediterranean",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 2,
+   "matureWidth": 3,
+   "yearsToMaturity": 2,
+   "habit": "spreading",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloomColor": "#a78bfa",
+   "foliageColor": "#9db39a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Soft mounding; shear after bloom."
+  },
+  {
+   "id": "muhlenbergia-rigens",
+   "botanical": "Muhlenbergia rigens",
+   "common": "Deer grass",
+   "type": "grass",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 4,
+   "matureWidth": 4,
+   "yearsToMaturity": 3,
+   "habit": "clump",
+   "sun": "full",
+   "wucols": "low",
+   "bloomMonths": [
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloomColor": "#d6c9a0",
+   "foliageColor": "#8fae7a",
+   "pollinator": {
+    "value": "low",
+    "groups": [],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native grass."
+  },
+  {
+   "id": "salvia-bees-bliss",
+   "botanical": "Salvia 'Bee's Bliss'",
+   "common": "Bee's Bliss sage",
+   "type": "groundcover",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 1.5,
+   "matureWidth": 8,
+   "yearsToMaturity": 2,
+   "habit": "mat",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    4,
+    5,
+    6
+   ],
+   "bloomColor": "#a5b4fc",
+   "foliageColor": "#9db39a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees",
+     "hummingbirds"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Native hybrid groundcover."
+  },
+  {
+   "id": "salvia-spathacea",
+   "botanical": "Salvia spathacea",
+   "common": "Hummingbird sage",
+   "type": "groundcover",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 1.5,
+   "matureWidth": 4,
+   "yearsToMaturity": 2,
+   "habit": "mat",
+   "sun": "part",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4,
+    5
+   ],
+   "bloomColor": "#be185d",
+   "foliageColor": "#7bb06a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "hummingbirds",
+     "native bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Dry shade tolerant."
+  },
+  {
+   "id": "cercis-occidentalis",
+   "botanical": "Cercis occidentalis",
+   "common": "Western redbud",
+   "type": "tree",
+   "origin": "california native",
+   "evergreen": false,
+   "leafOffMonths": [
+    12,
+    1,
+    2
+   ],
+   "matureHeight": 15,
+   "matureWidth": 15,
+   "yearsToMaturity": 15,
+   "habit": "vase",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    3,
+    4
+   ],
+   "bloomColor": "#c026d3",
+   "foliageColor": "#6f9a5a",
+   "pollinator": {
+    "value": "high",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Deciduous. Magenta spring flowers."
+  },
+  {
+   "id": "heteromeles-arbutifolia",
+   "botanical": "Heteromeles arbutifolia",
+   "common": "Toyon",
+   "type": "tree",
+   "origin": "california native",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 12,
+   "matureWidth": 10,
+   "yearsToMaturity": 10,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "very low",
+   "bloomMonths": [
+    6,
+    7
+   ],
+   "bloomColor": "#fafafa",
+   "foliageColor": "#3d6b45",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "native bees",
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Berries for birds."
+  },
+  {
+   "id": "lagerstroemia-indica",
+   "botanical": "Lagerstroemia indica",
+   "common": "Crape myrtle",
+   "type": "tree",
+   "origin": "other",
+   "evergreen": false,
+   "leafOffMonths": [
+    12,
+    1,
+    2
+   ],
+   "matureHeight": 20,
+   "matureWidth": 18,
+   "yearsToMaturity": 12,
+   "habit": "vase",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloomColor": "#ec4899",
+   "foliageColor": "#4f7d45",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Deciduous. Cultivar sets size."
+  },
+  {
+   "id": "aeonium-zwartkop",
+   "botanical": "Aeonium arboreum 'Zwartkop'",
+   "common": "Black rose aeonium",
+   "type": "succulent",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 4,
+   "matureWidth": 3,
+   "yearsToMaturity": 4,
+   "habit": "round",
+   "sun": "part",
+   "wucols": "low",
+   "bloomMonths": [
+    3,
+    4
+   ],
+   "bloomColor": "#facc15",
+   "foliageColor": "#4a1d2e",
+   "pollinator": {
+    "value": "low",
+    "groups": [],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Burgundy rosettes. Frost tender."
+  },
+  {
+   "id": "feijoa-sellowiana",
+   "botanical": "Acca sellowiana",
+   "common": "Pineapple guava",
+   "type": "edible",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 10,
+   "matureWidth": 8,
+   "yearsToMaturity": 8,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    5,
+    6
+   ],
+   "bloomColor": "#fda4af",
+   "foliageColor": "#7f9aa0",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": false,
+   "maintenance": "low",
+   "notes": "Edible fruit and petals."
+  },
+  {
+   "id": "citrus-meyer-lemon",
+   "botanical": "Citrus x meyeri 'Improved Meyer'",
+   "common": "Meyer lemon",
+   "type": "edible",
+   "origin": "other",
+   "evergreen": true,
+   "leafOffMonths": [],
+   "matureHeight": 8,
+   "matureWidth": 8,
+   "yearsToMaturity": 8,
+   "habit": "round",
+   "sun": "full",
+   "wucols": "moderate",
+   "bloomMonths": [
+    3,
+    4,
+    5
+   ],
+   "bloomColor": "#fafafa",
+   "foliageColor": "#3d6b45",
+   "pollinator": {
+    "value": "moderate",
+    "groups": [
+     "honey bees"
+    ],
+    "larvalHost": []
+   },
+   "invasive": false,
+   "toxic": true,
+   "maintenance": "moderate",
+   "notes": "Edible. Dwarf rootstock keeps it smaller."
+  }
+ ]
+}

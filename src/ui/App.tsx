@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { PlantsPanel } from './PlantsPanel';
 import { SiteScene } from '../scene/SiteScene';
 import { solarPosition } from '../engine/solar';
 import { checkPrintedDimensions } from '../engine/site';
@@ -186,17 +187,69 @@ function SunBar() {
   );
 }
 
+function TimelineBar() {
+  const s = useApp((x) => x);
+  const maxM = s.engine.timeline.maxYears * 12;
+  const years = Math.floor(s.timelineMonth / 12);
+  const months = s.timelineMonth % 12;
+
+  useEffect(() => {
+    if (!s.timelinePlaying) return;
+    const id = setInterval(() => {
+      const next = s.timelineMonth + 1;
+      if (next > maxM) s.setTimelinePlaying(false);
+      else s.setTimelineMonth(next);
+    }, 90);
+    return () => clearInterval(id);
+  });
+
+  return (
+    <div className="sunbar">
+      <div className="row wrap">
+        <strong>Growth timeline</strong>
+        {s.engine.timeline.presets.map((y) => (
+          <button key={y} className={s.timelineMonth === y * 12 ? 'on' : ''} onClick={() => s.setTimelineMonth(y * 12)}>
+            Year {y}
+          </button>
+        ))}
+        <button onClick={() => s.setTimelineMonth(0)}>Today</button>
+        <button onClick={() => s.setTimelinePlaying(!s.timelinePlaying)}>{s.timelinePlaying ? '■ Stop' : '▶ Grow'}</button>
+        <strong className="readout">Year {years}, month {months}</strong>
+      </div>
+      <div className="sliders one">
+        <label>Years<input type="range" min={0} max={maxM} value={s.timelineMonth} onChange={(e) => s.setTimelineMonth(Number(e.target.value))} /></label>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   const sun = useSunHours();
+  const [tab, setTab] = useState<'plants' | 'sun'>('plants');
+  const [controlsOpen, setControlsOpen] = useState(true);
   return (
     <div className="app">
       <Sidebar />
       <main className="stage">
         <SiteScene sunResult={sun.result} />
-        <SunBar />
+        <div className="controls">
+          <button className="ctl-toggle" onClick={() => setControlsOpen(!controlsOpen)}>
+            {controlsOpen ? 'Hide timeline and sun controls' : 'Show timeline and sun controls'}
+          </button>
+          {controlsOpen && (
+            <>
+              <TimelineBar />
+              <SunBar />
+            </>
+          )}
+        </div>
       </main>
       <aside className="right">
-        <SunPanel sun={sun} />
+        <div className="tabs">
+          <button className={tab === 'plants' ? 'on' : ''} onClick={() => setTab('plants')}>Plants</button>
+          <button className={tab === 'sun' ? 'on' : ''} onClick={() => setTab('sun')}>Sun hours</button>
+        </div>
+        {tab === 'plants' ? <PlantsPanel growing={sun.growing} /> : <SunPanel sun={sun} />}
       </aside>
     </div>
   );

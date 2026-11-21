@@ -10,6 +10,7 @@ import { localToUtc, doyToMonthDay } from '../engine/time';
 import { formatFeetInches } from '../engine/units';
 import type { ContextObjectCfg, Pt, StructureCfg } from '../engine/types';
 import { useApp } from '../store/store';
+import { PlantLayer } from './Plants';
 
 const SITE_TO_THREE = (x: number, y: number, z: number): [number, number, number] => [x, z, -y];
 
@@ -172,13 +173,29 @@ function Ground() {
   const snap = useApp((s) => s.snap);
   const measureActive = useApp((s) => s.measureActive);
   const addMeasurePoint = useApp((s) => s.addMeasurePoint);
+  const placing = useApp((s) => s.placingSpeciesId);
+  const addInstance = useApp((s) => s.addInstance);
+  const setHover = useApp((s) => s.setHover);
+  const select = useApp((s) => s.select);
   const { width, depth } = site.lot;
+  const snapPoint = (e: ThreeEvent<MouseEvent | PointerEvent>): [number, number] => [
+    Math.round(e.point.x / snap) * snap,
+    Math.round(-e.point.z / snap) * snap,
+  ];
   const onClick = (e: ThreeEvent<MouseEvent>) => {
-    if (!measureActive) return;
-    e.stopPropagation();
-    const x = Math.round(e.point.x / snap) * snap;
-    const y = Math.round(-e.point.z / snap) * snap;
-    addMeasurePoint([x, y]);
+    if (measureActive) {
+      e.stopPropagation();
+      addMeasurePoint(snapPoint(e));
+    } else if (placing) {
+      e.stopPropagation();
+      const [x, y] = snapPoint(e);
+      if (x >= 0 && x <= width && y >= 0 && y <= depth) addInstance(placing, [x, y]);
+    } else {
+      select(null);
+    }
+  };
+  const onMove = (e: ThreeEvent<PointerEvent>) => {
+    if (placing) setHover(snapPoint(e));
   };
   return (
     <>
@@ -186,7 +203,7 @@ function Ground() {
         <planeGeometry args={[400, 500]} />
         <meshStandardMaterial color="#b9bdb0" />
       </mesh>
-      <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick}>
+      <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick} onPointerMove={onMove}>
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial color="#a9b98f" roughness={1} />
       </mesh>
@@ -364,6 +381,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
           )}
         {layers.sunHours && sunResult && <SunOverlay result={sunResult} />}
         {layers.dimensions && <Dimensions />}
+        <PlantLayer />
         <Compass />
         <Measure />
       </group>

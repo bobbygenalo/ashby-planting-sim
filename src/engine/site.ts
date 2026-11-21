@@ -113,8 +113,8 @@ function lineSolids(o: ContextObjectCfg): Solid[] {
   return out;
 }
 
-export function buildSunScene(site: SiteConfig, flags: SiteFlags, engine: EngineConfig): SunScene {
-  const solids: Solid[] = [];
+export function buildSunScene(site: SiteConfig, flags: SiteFlags, engine: EngineConfig, extraSolids: Solid[] = []): SunScene {
+  const solids: Solid[] = [...extraSolids];
   const footprints: Pt[][] = [];
   for (const s of activeStructures(site, flags)) {
     solids.push({ id: s.id, points: structureSolidPoints(s), density: 1 });

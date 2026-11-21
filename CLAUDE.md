@@ -3,7 +3,9 @@
 Browser-based 3D planner for the 10641 Ashby Ave lot. Build brief: `Ashby Yard Planner Requirements.md` (requirement IDs like SITE-1, SUN-4 refer to it).
 
 ## Status
-- M1 (site model) and M2 (sunlight) are built. M3 to M7 (plants, hardscape, water and soil, placement, scenarios and sharing) are not started.
+- M1 (site model) and M2 (sunlight) are built.
+- M3 (plants and growth) is partly built: growth curve, 33-species library (all values unverified, low confidence), palette select/deselect, placement, inspector, timeline to year 30, plant forms by habit, mature-width ring, plant shadows in the sun map, sun-need mismatch flags. Not yet done: ~17 more species to reach 50, custom species form (P1), leaf-off density (GR-4), bloom color on plants (POL-7), drag-to-move (move is by X/Y fields), bloom calendar and pollinator summary (M5).
+- M4 to M7 (hardscape, water and soil, conflicts and suggestions, scenarios and sharing) are not started.
 - Sharing will sit behind a local stub until hosting is chosen.
 
 ## Commands
@@ -20,6 +22,8 @@ Browser-based 3D planner for the 10641 Ashby Ave lot. Build brief: `Ashby Yard P
 - Site coordinates are decimal feet: X across the lot from the driveway side, Y from the street toward the rear, Z up. three.js gets (x, z, -y) through one rotated group in `SiteScene.tsx`.
 - `rearBearingDeg` is the compass bearing of the +Y axis. `driveSide` says which side the driveway is on facing the house from the street. Both are unverified assumptions.
 - Printed plan dimensions are listed in `site.json` under `printed`, each with a measure rule. `checkPrintedDimensions` verifies them to 1 inch, and the Plan check panel shows the result.
+- Plants: `engine/growth.ts` (size curve, shadow solids, sun-fit), `engine/library.ts` (filters, palette). Species data is `src/data/species.json`; every coefficient is in `engine.json` under `growth` and `timeline`.
+- SUN-6 fit uses a growing-season (Mar-Oct) sun map computed on the site without plants, so a plant is not judged by its own shade. The displayed map includes plant shade at the timeline year.
 - Sun model is clear-sky geometry (NOAA algorithm in `solar.ts`). Sun-hours rasterizes shadow hulls per time step in a web worker.
 
 ## Known gaps

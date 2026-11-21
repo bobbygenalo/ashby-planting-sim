@@ -58,13 +58,15 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 .assume { padding-left: 16px; margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
 .assume li { margin-bottom: 4px; }
 
+.controls { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; gap: 8px; }
 .sunbar {
-  position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 10px 12px;
+  padding: 8px 12px;
   background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line); border-radius: 10px;
   backdrop-filter: blur(6px);
 }
 .sunbar .readout { margin-left: 8px; font-variant-numeric: tabular-nums; }
 .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+.sliders.one { grid-template-columns: 1fr; }
 .sliders label { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 8px; color: var(--muted); }
 .sliders input { width: 100%; }
 
@@ -83,7 +85,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 1250px) {
   .app { grid-template-columns: 280px 1fr; grid-template-rows: minmax(0, 1fr) auto; }
   .sidebar { grid-row: 1 / span 2; }
-  .right { grid-column: 2; max-height: 34vh; border-left: 0; border-top: 1px solid var(--line); }
+  .right { grid-column: 2; max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); }
 }
 @media (max-width: 760px) {
   .app { grid-template-columns: 1fr; grid-template-rows: 62vh auto auto; height: auto; }
@@ -91,3 +93,30 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   .right { grid-column: 1; max-height: none; }
   .stage { height: 62vh; }
 }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; position: sticky; top: -14px; background: var(--panel); padding: 8px 0; z-index: 2; }
+.tabs button { flex: 1; }
+.banner { background: #fde7b0; color: #5b4300; border-radius: 6px; padding: 6px 8px; margin: 0 0 8px; line-height: 1.4; }
+.search { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
+.filters { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
+.filters select { width: 100%; font-size: 12px; }
+.species { list-style: none; padding: 0; margin: 8px 0 0; }
+.species li { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+.species li.sel { border-color: var(--accent); }
+.count { margin-left: 6px; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 6px; font-size: 11px; }
+.pill { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; font-size: 10.5px; white-space: nowrap; }
+.pill.poll-high { background: #d1f0dc; color: #14532d; border-color: #9bd8b2; }
+.pill.poll-moderate { background: #fdf0c4; color: #5b4300; border-color: #ecd68a; }
+.pill.poll-low { background: #ececec; color: #444; }
+.pill.native { background: #dbeafe; color: #1e3a8a; border-color: #a9c8f5; }
+.pill.warn { background: #fde0dc; color: #8a1c10; border-color: #f3b0a8; }
+.pill.conf-low { background: #fde0dc; color: #8a1c10; border-color: #f3b0a8; }
+.inspector h3 { margin: 0; font-size: 15px; }
+.warnings { margin: 8px 0; padding: 6px 8px 6px 22px; background: #fde0dc; color: #8a1c10; border-radius: 6px; font-size: 12px; }
+.kv td:first-child { color: var(--muted); width: 60px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0; }
+.grid2 label { display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
+.grid2 input, .grid2 select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; width: 100%; }
+@media (prefers-color-scheme: dark) { .banner, .tag { background: #4a3a10; color: #fbe7ae; } .pill.poll-high { background: #17402a; color: #bff0d0; border-color: #25623f; } .pill.poll-moderate { background: #4a3a10; color: #fbe7ae; border-color: #6b5518; } .pill.poll-low { background: #2a2f31; color: #c4ccc8; } .pill.native { background: #1c2d52; color: #c4d8fb; border-color: #2d4a85; } .pill.warn, .pill.conf-low, .warnings { background: #4a1e19; color: #ffc9c2; border-color: #7a2f27; } }
+
+.ctl-toggle { justify-self: start; font-size: 11px; padding: 3px 8px; opacity: 0.9; }

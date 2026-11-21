@@ -97,6 +97,46 @@ describe('cloud sync decisions', () => {
     expect(after).toEqual(before); // loading did not write back
   });
 
+  it('gives a browser a private key on its first edit, with nothing for the visitor to do', async () => {
+    const { cs, g } = await load();
+    cs.startCloudSync();
+    expect(store.get('ashby-planner/cloud/key')).toBeUndefined(); // looking around costs nothing
+    g().setPaletteSpecies('salvia-clevelandii', true);
+    g().addInstance('salvia-clevelandii', [38, 100]);
+    expect(store.get('ashby-planner/cloud/key')).toHaveLength(22);
+    expect(store.get('ashby-planner/cloud/dirty')).toBe('1');
+    expect(cs.getSyncKey()).toBe(store.get('ashby-planner/cloud/key'));
+  });
+
+  it('saves before a share is created, so the share needs no setup', async () => {
+    const { cs, g } = await load();
+    g().setPaletteSpecies('salvia-clevelandii', true);
+    g().addInstance('salvia-clevelandii', [38, 100]);
+    cs.startCloudSync();
+    const ready = await cs.ensureBackedUp();
+    expect(ready).toEqual({ ok: true });
+    const key = cs.getSyncKey()!;
+    const { shareClient } = await import('../src/share/client');
+    const made = await shareClient(`${API}/api/share`, wired(env), () => cs.getSyncKey()).create({ format: 'ashby-share/1' });
+    expect(made.ok).toBe(true);
+    // without a saved workspace the same call is refused
+    const stranger = await shareClient(`${API}/api/share`, wired(env), () => generateSyncKey()).create({ format: 'ashby-share/1' });
+    expect(stranger).toMatchObject({ ok: false, error: { kind: 'unauthorized' } });
+    expect(key).toHaveLength(22);
+  });
+
+  it('stays off after the owner stops saving online, until they share or turn it back on', async () => {
+    const { cs, g } = await load();
+    cs.startCloudSync();
+    expect(cs.enableCloud(null).ok).toBe(true);
+    cs.disableCloud();
+    g().setPaletteSpecies('lomandra-longifolia', true);
+    g().addInstance('lomandra-longifolia', [30, 90]);
+    expect(store.get('ashby-planner/cloud/key')).toBeUndefined();
+    expect(await cs.ensureBackedUp()).toEqual({ ok: true });
+    expect(store.get('ashby-planner/cloud/key')).toHaveLength(22);
+  });
+
   it('refuses a key that is too short and turns off cleanly', async () => {
     const { cs } = await load();
     cs.startCloudSync();

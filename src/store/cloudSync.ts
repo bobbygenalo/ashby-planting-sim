@@ -16,8 +16,11 @@ export interface CloudState {
 const KEY = 'ashby-planner/cloud/key';
 const SYNCED = 'ashby-planner/cloud/synced';
 const DIRTY = 'ashby-planner/cloud/dirty';
+const OFF = 'ashby-planner/cloud/off';
 // KV's free plan allows 1,000 writes a day, so wait for a quiet half minute rather than saving every edit.
 const PUSH_DELAY_MS = 30_000;
+// ...and never more often than every two minutes, so a few people editing at once stay well inside the daily limit.
+const MIN_PUSH_GAP_MS = 120_000;
 
 const read = (k: string) => {
   try {
@@ -56,12 +59,14 @@ const MESSAGES: Record<CloudErrorKind, string> = {
 let applying = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let started = false;
+let lastPushAt = 0;
 
 const client = () => (state.key ? cloudClient(API_BASE, state.key) : null);
 
 async function push(): Promise<void> {
   const c = client();
   if (!c || state.status === 'conflict') return;
+  lastPushAt = Date.now();
   set({ status: 'syncing', message: null });
   const r = await c.put(appStore.getState().toWorkspace(), read(SYNCED));
   if (r.ok) {
@@ -118,21 +123,44 @@ export function startCloudSync(): void {
     void reconcile();
   }
   appStore.subscribe((s, prev) => {
-    if (applying || !state.key || !WATCHED.some((k) => s[k] !== prev[k])) return;
+    if (applying || !WATCHED.some((k) => s[k] !== prev[k])) return;
+    // Nobody has to set backup up: the first real edit quietly gives this browser a private key.
+    if (!state.key && read(OFF) !== '1') adoptNewKey();
+    if (!state.key) return;
     write(DIRTY, '1');
     if (state.status === 'conflict') return;
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => void push(), PUSH_DELAY_MS);
+    timer = setTimeout(() => void push(), Math.max(PUSH_DELAY_MS, MIN_PUSH_GAP_MS - (Date.now() - lastPushAt)));
   });
   window.addEventListener('online', () => {
     if (state.key && state.status === 'error') void reconcile();
   });
 }
 
+function adoptNewKey(): void {
+  const k = generateSyncKey();
+  write(OFF, null);
+  write(KEY, k);
+  write(SYNCED, null);
+  set({ key: k, status: 'idle', message: null, syncedAt: null });
+}
+
+/** Make sure this browser's scenarios are saved in the cloud right now. Sharing a link needs that. */
+export async function ensureBackedUp(): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!CLOUD_ENABLED) return { ok: true };
+  if (!state.key) adoptNewKey();
+  if (state.status === 'conflict') return { ok: false, message: `${MESSAGES.conflict} Choose a copy under "Use on another device" first.` };
+  if (timer) clearTimeout(timer);
+  await push();
+  const now: CloudStatus = state.status;
+  return now === 'synced' ? { ok: true } : { ok: false, message: state.message ?? 'Could not save your plan online. Check the connection and try again.' };
+}
+
 /** Turn backup on with a new key (null) or one copied from another device. */
 export function enableCloud(key: string | null): { ok: true } | { ok: false; message: string } {
   const k = key === null ? generateSyncKey() : key.trim();
   if (!isSyncKey(k)) return { ok: false, message: 'A sync key is 22 or more letters, numbers, dashes or underscores.' };
+  write(OFF, null);
   write(KEY, k);
   write(SYNCED, null);
   write(DIRTY, '1');
@@ -143,6 +171,7 @@ export function enableCloud(key: string | null): { ok: true } | { ok: false; mes
 
 export function disableCloud(): void {
   if (timer) clearTimeout(timer);
+  write(OFF, '1');
   write(KEY, null);
   write(SYNCED, null);
   write(DIRTY, null);

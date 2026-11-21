@@ -3,7 +3,7 @@ import { compareMetrics, scenarioMetrics, type ShareRecord } from '../engine/sce
 import { publishShare, republishShare, revokeShare } from '../share/service';
 import { shareClient, shareUrl } from '../share/client';
 import { CLOUD_ENABLED, SHARING_ENABLED } from '../share/config';
-import { disableCloud, enableCloud, getSyncKey, keepThisBrowser, syncNow, useCloudCopy, useCloudState } from '../store/cloudSync';
+import { disableCloud, enableCloud, ensureBackedUp, getSyncKey, keepThisBrowser, syncNow, useCloudCopy, useCloudState } from '../store/cloudSync';
 import { appStore, useApp } from '../store/store';
 
 const fmt = (n: number, d = 0) => n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -27,57 +27,53 @@ function CloudBackup() {
   if (!CLOUD_ENABLED) {
     return (
       <>
-        <h2>Cloud backup</h2>
-        <p className="muted small">Cloud backup is not set up on this site. Scenarios are saved in this browser only; use Export to keep a copy.</p>
+        <h2>Saving</h2>
+        <p className="muted small">Scenarios are saved in this browser only; use Export to keep a copy.</p>
       </>
     );
   }
-  const label: Record<string, string> = {
-    off: 'Off', idle: 'Waiting…', syncing: 'Saving…', synced: c.syncedAt ? `Backed up ${when(c.syncedAt)}` : 'Backed up', conflict: 'Needs your decision', error: 'Problem',
-  };
+  const status =
+    c.status === 'conflict' ? 'Needs a decision below.'
+    : c.status === 'error' ? c.message
+    : c.status === 'syncing' ? 'Saving online…'
+    : c.syncedAt ? `Saved online ${when(c.syncedAt)}.`
+    : 'Saved in this browser. Changes are also saved online automatically.';
   return (
     <>
-      <h2>Cloud backup</h2>
-      {!c.key ? (
-        <>
-          <p className="small">Back up every scenario so you can open them on another computer. Anyone who has your sync key can read and change your scenarios, so keep it private.</p>
+      <h2>Saving</h2>
+      <p className={`small savestatus ${c.status === 'error' || c.status === 'conflict' ? 'error' : 'saved'}`} role="status">{status}</p>
+      {c.status === 'conflict' && (
+        <div className="drawbox">
+          <p className="small">Your scenarios online and the ones in this browser are different. Which should win? The other is replaced.</p>
           <div className="row wrap">
-            <button className="on" onClick={() => { setProblem(null); enableCloud(null); }}>Turn on backup</button>
+            <button className="on" onClick={() => void useCloudCopy()}>Use the online copy</button>
+            <button onClick={() => void keepThisBrowser()}>Keep this browser's</button>
           </div>
-          <label>Already have a sync key?
-            <input className="search" value={entry} placeholder="Paste it from your other computer" onChange={(e) => setEntry(e.target.value)} />
-          </label>
-          <div className="row">
-            <button disabled={!entry.trim()} onClick={() => { const r = enableCloud(entry); setProblem(r.ok ? null : r.message); if (r.ok) setEntry(''); }}>Use this key</button>
-          </div>
-          {problem && <p className="small warn" role="alert">{problem}</p>}
-        </>
-      ) : (
-        <>
-          <p className={`small savestatus ${c.status === 'error' || c.status === 'conflict' ? 'error' : 'saved'}`} role="status">{label[c.status]}{c.message ? `. ${c.message}` : ''}</p>
-          {c.status === 'conflict' && (
-            <div className="drawbox">
-              <p className="small">The cloud copy and this browser have different scenarios. Which one should win? The other is replaced.</p>
-              <div className="row wrap">
-                <button className="on" onClick={() => void useCloudCopy()}>Use the cloud copy</button>
-                <button onClick={() => void keepThisBrowser()}>Keep this browser's</button>
-              </div>
-            </div>
-          )}
-          <div className="row wrap">
-            <button disabled={c.status === 'syncing' || c.status === 'conflict'} onClick={() => void syncNow()}>Back up now</button>
-            <button onClick={() => setShowKey(!showKey)}>{showKey ? 'Hide sync key' : 'Show sync key'}</button>
-            <button onClick={() => { if (window.confirm('Turn off backup on this browser? The cloud copy stays until you delete it.')) disableCloud(); }}>Turn off</button>
-          </div>
-          {showKey && (
-            <>
-              <input className="search" readOnly value={c.key} onFocus={(e) => e.currentTarget.select()} aria-label="Sync key" />
-              <p className="muted small">Paste this key into "Already have a sync key?" on another computer to open the same scenarios there. Treat it like a password.</p>
-            </>
-          )}
-        </>
+        </div>
       )}
-      <p className="muted small">Changes back up about half a minute after you stop editing. If two computers change the same scenarios, you choose which copy to keep.</p>
+      <details>
+        <summary>Use on another device</summary>
+        <p className="muted small">To open these scenarios on another computer, copy this key there. Anyone who has it can read and change your scenarios, so keep it private.</p>
+        {c.key ? (
+          <>
+            <div className="row wrap">
+              <button onClick={() => setShowKey(!showKey)}>{showKey ? 'Hide key' : 'Show key'}</button>
+              <button disabled={c.status === 'syncing' || c.status === 'conflict'} onClick={() => void syncNow()}>Save online now</button>
+            </div>
+            {showKey && <input className="search" readOnly value={c.key} onFocus={(e) => e.currentTarget.select()} aria-label="Key for another device" />}
+          </>
+        ) : (
+          <p className="muted small">The key appears after your first change.</p>
+        )}
+        <label>On the other computer, paste the key here
+          <input className="search" value={entry} placeholder="Key from your other device" onChange={(e) => setEntry(e.target.value)} />
+        </label>
+        <div className="row wrap">
+          <button disabled={!entry.trim()} onClick={() => { const r = enableCloud(entry); setProblem(r.ok ? null : r.message); if (r.ok) setEntry(''); }}>Use this key</button>
+          {c.key && <button onClick={() => { if (window.confirm('Stop saving online from this browser? What is already online stays there.')) disableCloud(); }}>Stop saving online</button>}
+        </div>
+        {problem && <p className="small warn" role="alert">{problem}</p>}
+      </details>
     </>
   );
 }
@@ -97,8 +93,6 @@ export function ScenariosPanel() {
   const [cmpA, setCmpA] = useState('');
   const [cmpB, setCmpB] = useState('');
   const client = useMemo(() => shareClient(undefined, undefined, getSyncKey), []);
-  const cloud = useCloudState();
-  const needsBackup = CLOUD_ENABLED && !cloud.key;
   const nameOf = (id: string) => s.scenarios.find((x) => x.id === id)?.name ?? 'a deleted scenario';
 
   const onImport = async (file: File | undefined) => {
@@ -111,6 +105,12 @@ export function ScenariosPanel() {
 
   const share = async () => {
     setBusy('create');
+    const ready = await ensureBackedUp();
+    if (!ready.ok) {
+      setBusy(null);
+      setMessage({ kind: 'bad', text: ready.message });
+      return;
+    }
     const r = await publishShare(appStore, client, s.activeScenarioId, hideAddress);
     setBusy(null);
     setMessage(r.ok ? { kind: 'ok', text: 'Link created. Anyone with it can view this plan, and nobody can change it.' } : { kind: 'bad', text: r.error.message });
@@ -245,8 +245,7 @@ export function ScenariosPanel() {
       <p className="muted small">{hideAddress
         ? 'The shared plan carries no name or address, and its location is rounded to about 7 miles. The lot layout stays, since that is the plan.'
         : 'The shared plan shows the lot name and address.'}</p>
-      <div className="row"><button className="on" disabled={busy === 'create' || needsBackup} onClick={share}>{busy === 'create' ? 'Creating…' : 'Create link'}</button></div>
-      {needsBackup && <p className="small warn">Turn on Cloud backup above first. Sharing needs it, so only you can create links.</p>}
+      <div className="row"><button className="on" disabled={busy === 'create'} onClick={share}>{busy === 'create' ? 'Creating…' : 'Create link'}</button></div>
       {links.length > 0 && <ul className="species">{links.map(linkRow)}</ul>}
       {otherLinks.length > 0 && (
         <details>

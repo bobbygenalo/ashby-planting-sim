@@ -168,6 +168,9 @@ export function ScenariosPanel() {
       <p className="muted small">Each scenario holds its own palette, plants, hardscape, hydrozones and settings. Export saves one as a file you can keep, email, or import on another computer.</p>
 
       <h2>Share a read-only link</h2>
+      {import.meta.env.VITE_SHARING === 'off' ? (
+        <p className="muted small">Share links are not available on this site yet. Use Export above to send a scenario as a file.</p>
+      ) : (<>
       <p className="small">For <b>{nameOf(s.activeScenarioId)}</b>. Family and professionals open the link with no login. They can orbit, scrub time and seasons, switch layers, and inspect plants, but cannot change anything.</p>
       <label className="check"><input type="checkbox" checked={hideAddress} onChange={(e) => setHideAddress(e.target.checked)} />Hide the street address</label>
       <p className="muted small">{hideAddress
@@ -182,6 +185,7 @@ export function ScenariosPanel() {
         </details>
       )}
       <p className="muted small">A link shows a snapshot, so later edits stay private until you press "Update to today's plan". Turning a link off deletes the shared copy and stops it working at once. The key that lets you turn it off is saved in this browser, so keep using this browser for that. Anyone who has the link can pass it on.</p>
+      </>)}
 
       <h2>Compare two scenarios</h2>
       {s.scenarios.length < 2 ? (

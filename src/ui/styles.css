@@ -7,6 +7,8 @@
   --accent: #2f6f4e;
   --accent-ink: #ffffff;
   --warn: #b42318;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948; --series-other: #8d918c;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--ink);
 }
@@ -20,6 +22,8 @@
     --accent: #5fb88a;
     --accent-ink: #0d1411;
     --warn: #ff8a7a;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767; --series-other: #7b807a;
   }
 }
 * { box-sizing: border-box; }
@@ -94,8 +98,8 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   .stage { height: 62vh; }
 }
 
-.tabs { display: flex; gap: 6px; margin-bottom: 8px; position: sticky; top: -14px; background: var(--panel); padding: 8px 0; z-index: 2; }
-.tabs button { flex: 1; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; position: sticky; top: -14px; background: var(--panel); padding: 8px 0; z-index: 2; }
+.tabs button { flex: 1 1 28%; }
 .banner { background: #fde7b0; color: #5b4300; border-radius: 6px; padding: 6px 8px; margin: 0 0 8px; line-height: 1.4; }
 .search { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
 .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
@@ -128,3 +132,40 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 .tabs button { font-size: 12px; padding: 5px 6px; }
 .dim-label.live { background: #16a34a; color: #fff; border: 0; }
 .drawbox { border: 1px dashed var(--accent); border-radius: 8px; padding: 8px; margin: 8px 0; }
+
+.chart { margin: 8px 0 12px; }
+.chart figcaption { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+.chart-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 0; margin: 0 0 4px; font-size: 11.5px; }
+.chart-legend i, .chart-tip i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+.chart-wrap { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 10px; }
+.chart-tip { position: absolute; top: 0; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-size: 11.5px; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 3; }
+button.link { background: none; border: 0; color: var(--accent); padding: 2px 0; font-size: 11.5px; text-decoration: underline; }
+.bloom { border-collapse: collapse; font-size: 11px; width: 100%; }
+.bloom td, .bloom th { padding: 2px 3px; text-align: center; border-bottom: 1px solid var(--line); }
+.bloom td:first-child, .bloom th:first-child { text-align: left; white-space: nowrap; }
+.bloom .cell-high { background: var(--series-3); color: #fff; }
+.bloom .cell-moderate { background: color-mix(in srgb, var(--series-3) 45%, var(--panel)); }
+.bloom .cell-low { background: color-mix(in srgb, var(--series-3) 18%, var(--panel)); }
+.bloom .gap { background: color-mix(in srgb, #e11d48 22%, var(--panel)); font-weight: 700; }
+.bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--series-3); }
+.kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0; }
+.kpi div { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+.kpi b { display: block; font-size: 17px; }
+.kpi span { font-size: 11px; color: var(--muted); }
+
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+.scroll { overflow-x: auto; }
+.tbl.tight td, .tbl.tight th { padding: 2px 3px; font-size: 11px; }
+.soilcard { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 8px; }
+.waterpanel code { font-size: 11px; }
+
+.assume-list { margin: 6px 0 10px; }
+.assume-list > div { padding: 5px 0; border-bottom: 1px solid var(--line); }
+.assume-list dt { font-weight: 600; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+.assume-list dd { margin: 2px 0 0; font-size: 12px; }
+details > summary { cursor: pointer; font-weight: 600; margin: 8px 0 2px; }
+.gapbox { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }

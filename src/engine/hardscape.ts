@@ -86,6 +86,49 @@ export interface PermeabilityRow {
   totalSf: number;
 }
 
+export interface CoverGrid {
+  nx: number;
+  ny: number;
+  cell: number;
+  /** 0 open soil, 1 permeable cover, 2 impervious cover (roofs, sealed paving) */
+  cls: Uint8Array;
+}
+
+/** Rasterize what covers the lot: elements in draw order (topmost wins), then structures. */
+export function buildCoverGrid(
+  elements: HardscapeElement[],
+  materials: Material[],
+  structures: StructureCfg[],
+  lot: { width: number; depth: number },
+  cfg: HsCfg,
+): CoverGrid {
+  const cell = cfg.sampleCellFt;
+  const nx = Math.ceil(lot.width / cell);
+  const ny = Math.ceil(lot.depth / cell);
+  const byId = new Map(materials.map((m) => [m.id, m]));
+  const cls = new Uint8Array(nx * ny);
+  const paint = (poly: Pt[], value: number) => {
+    if (poly.length < 3) return;
+    const b = bbox(poly);
+    const i0 = Math.max(0, Math.floor(b.minX / cell)), i1 = Math.min(nx - 1, Math.floor(b.maxX / cell));
+    const j0 = Math.max(0, Math.floor(b.minY / cell)), j1 = Math.min(ny - 1, Math.floor(b.maxY / cell));
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        if (pointInPolygon((i + 0.5) * cell, (j + 0.5) * cell, poly)) cls[j * nx + i] = value;
+      }
+    }
+  };
+  const order = (e: HardscapeElement) => cfg.drawOrder.indexOf(e.type);
+  const live = elements.filter((e) => !e.removed).sort((a, b) => order(a) - order(b));
+  for (const el of live) {
+    const mat = byId.get(el.materialId);
+    if (!mat) continue;
+    paint(footprint(el, cfg), mat.permeability >= cfg.permeableThreshold ? 1 : 2);
+  }
+  for (const s of structures) paint(s.footprint, 2);
+  return { nx, ny, cell, cls };
+}
+
 /**
  * Permeable vs impervious area per yard zone and for the whole lot (HS-5). Samples the lot on a
  * grid. The element drawn on top wins, and structure footprints are impervious.
@@ -98,34 +141,7 @@ export function permeabilityReport(
   lot: { width: number; depth: number },
   cfg: HsCfg,
 ): PermeabilityRow[] {
-  const cell = cfg.sampleCellFt;
-  const nx = Math.ceil(lot.width / cell);
-  const ny = Math.ceil(lot.depth / cell);
-  const byId = new Map(materials.map((m) => [m.id, m]));
-  // 0 open soil, 1 permeable, 2 impervious
-  const cls = new Uint8Array(nx * ny);
-
-  const paint = (poly: Pt[], value: number) => {
-    if (poly.length < 3) return;
-    const b = bbox(poly);
-    const i0 = Math.max(0, Math.floor(b.minX / cell)), i1 = Math.min(nx - 1, Math.floor(b.maxX / cell));
-    const j0 = Math.max(0, Math.floor(b.minY / cell)), j1 = Math.min(ny - 1, Math.floor(b.maxY / cell));
-    for (let j = j0; j <= j1; j++) {
-      for (let i = i0; i <= i1; i++) {
-        if (pointInPolygon((i + 0.5) * cell, (j + 0.5) * cell, poly)) cls[j * nx + i] = value;
-      }
-    }
-  };
-
-  const order = (e: HardscapeElement) => cfg.drawOrder.indexOf(e.type);
-  const live = elements.filter((e) => !e.removed).sort((a, b) => order(a) - order(b));
-  for (const el of live) {
-    const mat = byId.get(el.materialId);
-    if (!mat) continue;
-    paint(footprint(el, cfg), mat.permeability >= cfg.permeableThreshold ? 1 : 2);
-  }
-  for (const s of structures) paint(s.footprint, 2);
-
+  const { nx, ny, cell, cls } = buildCoverGrid(elements, materials, structures, lot, cfg);
   const make = (id: string, name: string): PermeabilityRow => ({ id, name, imperviousSf: 0, permeableSf: 0, openSoilSf: 0, totalSf: 0 });
   const rows = zones.map((z) => make(z.id, z.name));
   const lotRow = make('lot', 'Whole lot');

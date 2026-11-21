@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PlantsPanel } from './PlantsPanel';
 import { HardscapePanel } from './HardscapePanel';
+import { WaterSoilPanel } from './WaterSoilPanel';
+import { PollinatorPanel } from './PollinatorPanel';
+import { OutputsPanel } from './OutputsPanel';
 import { SiteScene } from '../scene/SiteScene';
 import { solarPosition } from '../engine/solar';
 import { checkPrintedDimensions } from '../engine/site';
@@ -11,6 +14,8 @@ import { appStore, useApp } from '../store/store';
 import { useSunHours } from '../store/useSunHours';
 
 type SunHook = ReturnType<typeof useSunHours>;
+type Tab = 'plants' | 'hardscape' | 'water' | 'pollinators' | 'sun' | 'outputs';
+const TABS: [Tab, string][] = [['plants', 'Plants'], ['hardscape', 'Hardscape'], ['water', 'Water & soil'], ['pollinators', 'Pollinators'], ['sun', 'Sun hours'], ['outputs', 'Outputs']];
 
 const CLASS_LABELS = ['Shade', 'Part shade', 'Part sun', 'Full sun'];
 const CLASS_COLORS = ['#2d2d69', '#5082cd', '#f5aa37', '#ffe650'];
@@ -279,7 +284,7 @@ function useShortcuts() {
 export function App() {
   const sun = useSunHours();
   useShortcuts();
-  const [tab, setTab] = useState<'plants' | 'hardscape' | 'sun'>('plants');
+  const [tab, setTab] = useState<Tab>('plants');
   const [controlsOpen, setControlsOpen] = useState(true);
   return (
     <div className="app">
@@ -301,11 +306,16 @@ export function App() {
       <aside className="right">
         <div className="tabs">
           <UndoRedo />
-          <button className={tab === 'plants' ? 'on' : ''} onClick={() => setTab('plants')}>Plants</button>
-          <button className={tab === 'hardscape' ? 'on' : ''} onClick={() => setTab('hardscape')}>Hardscape</button>
-          <button className={tab === 'sun' ? 'on' : ''} onClick={() => setTab('sun')}>Sun hours</button>
+          {TABS.map(([id, label]) => (
+            <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}</button>
+          ))}
         </div>
-        {tab === 'plants' ? <PlantsPanel growing={sun.growing} /> : tab === 'hardscape' ? <HardscapePanel /> : <SunPanel sun={sun} />}
+        {tab === 'plants' && <PlantsPanel growing={sun.growing} />}
+        {tab === 'hardscape' && <HardscapePanel />}
+        {tab === 'water' && <WaterSoilPanel />}
+        {tab === 'pollinators' && <PollinatorPanel growing={sun.growing} />}
+        {tab === 'sun' && <SunPanel sun={sun} />}
+        {tab === 'outputs' && <OutputsPanel />}
       </aside>
     </div>
   );

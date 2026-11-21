@@ -183,12 +183,14 @@ export interface Species {
   maintenance: 'low' | 'moderate' | 'high';
   notes?: string;
   /** Source and confidence per group of fields. Falls back to the library default. */
-  provenance?: Partial<Record<'size' | 'light' | 'water' | 'pollinator', { source: string; confidence: Confidence }>>;
+  soil: { drainageNeed: 'fast' | 'moderate' | 'tolerant'; textures: string[]; phMin: number; phMax: number };
+  provenance?: Partial<Record<'size' | 'light' | 'water' | 'pollinator' | 'soil', { source: string; confidence: Confidence }>>;
 }
 
 export interface SpeciesLibrary {
   version: string;
   provenanceDefault: { source: string; confidence: Confidence };
+  soilNote?: string;
   species: Species[];
 }
 
@@ -203,6 +205,8 @@ export interface PlantInstance {
   /** Entered by the owner for existing plants, in feet. */
   currentHeight?: number;
   currentWidth?: number;
+  /** Explicit hydrozone. Without one, the plant joins an automatic zone for its water-use category. */
+  hydrozoneId?: string;
 }
 
 export type HardscapeType = 'patio' | 'path' | 'bed' | 'lawn' | 'deck' | 'gravel' | 'raisedBed' | 'wall' | 'fence';
@@ -240,4 +244,61 @@ export interface HardscapeElement {
   removed?: boolean;
   /** New work must not cover this (the driveway). */
   keepClear?: boolean;
+}
+
+export type Irrigation = 'drip' | 'spray' | 'hand' | 'none';
+
+export interface Hydrozone {
+  id: string;
+  name: string;
+  irrigation: Irrigation;
+}
+
+export interface SoilProfile {
+  texture: string;
+  /** Percolation rate in inches per hour. */
+  drainageInHr: number;
+  ph: number;
+  organicMatterPct: number;
+  compaction: string;
+  testDate: string | null;
+  /** True until the owner enters a test result. */
+  isDefault?: boolean;
+}
+
+export interface WaterConfig {
+  version: string;
+  formula: { conversion: number; source: string; confidence: Confidence };
+  eto: { station: string; monthly: number[]; status: 'verified' | 'unverified'; source: string; confidence: Confidence };
+  rainfall: {
+    station: string; monthly: number[]; source: string; confidence: Confidence;
+    effectiveFraction: number; effectiveFractionSource: string; effectiveFractionConfidence: Confidence;
+  };
+  daysInMonth: number[];
+  plantFactorRanges: Record<string, [number, number]>;
+  plantFactorSource: string;
+  irrigation: Record<Irrigation, { label: string; efficiency: number; source: string; confidence: Confidence }>;
+  defaultIrrigation: Record<PlantType, Irrigation>;
+  establishment: Record<PlantType, { months: number; multiplier: number }>;
+  establishmentSource: string;
+  lawn: { plantFactor: number; irrigation: Irrigation; source: string; confidence: Confidence };
+  budget: { etaf: number; source: string; confidence: Confidence };
+  pollinator: { weights: Record<PollinatorValue, number>; countCap: number; source: string; topSuggestions: number };
+  outputs: { spacingFactor: number; spacingSource: string };
+}
+
+export interface SoilConfig {
+  version: string;
+  textures: string[];
+  drainageClasses: { fastMinInHr: number; moderateMinInHr: number };
+  drainageSource: string;
+  defaultProfile: SoilProfile;
+  phTolerance: number;
+  containers: Record<string, { ballDiaIn: number; ballDepthIn: number }>;
+  containerSource: string;
+  hole: { widthFactor: number; depthFactor: number; source: string };
+  amendment: { fractionOfBackfill: number; skipForDrainageNeed: string[]; source: string };
+  mulch: { depthIn: number; ringDiameterFt: number; source: string };
+  rootableSoil: { cuFtPerSfCanopy: number; depthFt: number; searchRadiusFactor: number; source: string; confidence: Confidence };
+  raisedBed: { freeboardIn: number; source: string };
 }

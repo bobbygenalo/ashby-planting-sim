@@ -105,7 +105,8 @@ export function makeCustomSpecies(
       toxic: input.toxic,
       maintenance: 'moderate',
       notes: input.notes?.trim() || 'Custom species entered by the owner.',
-      provenance: { size: prov, light: prov, water: prov, pollinator: prov },
+      soil: { drainageNeed: 'moderate', textures: ['sandy loam', 'loam', 'silt loam', 'clay loam'], phMin: 6, phMax: 8 },
+      provenance: { size: prov, light: prov, water: prov, pollinator: prov, soil: prov },
     },
   };
 }

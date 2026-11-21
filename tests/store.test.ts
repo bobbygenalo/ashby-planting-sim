@@ -132,3 +132,56 @@ describe('hardscape drawing and history (M4)', () => {
     expect(v.getState().hardscape).toBe(before);
   });
 });
+
+describe('hydrozones, soil, and settings (M5)', () => {
+  it('creates, renames, assigns, and deletes hydrozones with undo', () => {
+    const s = makeAppStore('edit');
+    const plant = s.getState().addInstance('salvia-leucantha', [30, 90])!;
+    const id = s.getState().addHydrozone('Front beds', 'drip')!;
+    s.getState().assignHydrozone(plant, id);
+    expect(s.getState().instances[0].hydrozoneId).toBe(id);
+    s.getState().updateHydrozone(id, { irrigation: 'spray' });
+    expect(s.getState().hydrozones[0].irrigation).toBe('spray');
+    s.getState().deleteHydrozone(id);
+    expect(s.getState().hydrozones.length).toBe(0);
+    expect(s.getState().instances[0].hydrozoneId).toBeUndefined();
+    s.getState().undo();
+    expect(s.getState().hydrozones.length).toBe(1);
+    expect(s.getState().instances[0].hydrozoneId).toBe(id);
+  });
+
+  it('rejects empty hydrozone names', () => {
+    const s = makeAppStore('edit');
+    expect(s.getState().addHydrozone('  ', 'drip')).toBeNull();
+  });
+
+  it('starts every yard zone on the default loam profile and marks it as an edit once entered', () => {
+    const s = makeAppStore('edit');
+    const zones = s.getState().site.zones.map((z) => z.id);
+    expect(zones.every((z) => s.getState().soilProfiles[z].isDefault === true)).toBe(true);
+    s.getState().setSoilProfile(zones[0], { texture: 'clay', drainageInHr: 0.3 });
+    expect(s.getState().soilProfiles[zones[0]]).toMatchObject({ texture: 'clay', drainageInHr: 0.3, isDefault: false });
+    expect(s.getState().soilProfiles[zones[1]].isDefault).toBe(true);
+  });
+
+  it('view mode cannot change hydrozones, rain, soil, or play areas', () => {
+    const v = makeAppStore('view');
+    expect(v.getState().addHydrozone('Z', 'drip')).toBeNull();
+    v.getState().setUseRain(true);
+    v.getState().setAutoIrrigation('auto:low', 'none');
+    v.getState().setSoilProfile(v.getState().site.zones[0].id, { ph: 5 });
+    v.getState().setPlayZone('front_yard', true);
+    expect(v.getState().useRain).toBe(false);
+    expect(v.getState().autoIrrigation).toEqual({});
+    expect(v.getState().soilProfiles[v.getState().site.zones[0].id].ph).toBe(7);
+    expect(v.getState().playZones).toEqual({});
+  });
+
+  it('the rainfall toggle is undoable', () => {
+    const s = makeAppStore('edit');
+    s.getState().setUseRain(true);
+    expect(s.getState().useRain).toBe(true);
+    s.getState().undo();
+    expect(s.getState().useRain).toBe(false);
+  });
+});

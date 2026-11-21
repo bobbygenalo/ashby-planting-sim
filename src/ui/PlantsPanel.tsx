@@ -4,6 +4,8 @@ import { filterSpecies, makeCustomSpecies, type CustomSpeciesInput, type Library
 import type { SunHoursResult } from '../engine/sunhours';
 import { formatFeetInches } from '../engine/units';
 import type { ContainerId, Species } from '../engine/types';
+import { soilMismatches } from '../engine/soil';
+import { useWaterDemand, zoneIdAt } from '../store/derived';
 import { useApp } from '../store/store';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -96,6 +98,7 @@ function CustomSpeciesForm({ onDone }: { onDone: () => void }) {
 
 function Inspector({ growing }: { growing: SunHoursResult | null }) {
   const s = useApp((x) => x);
+  const demand = useWaterDemand();
   const edit = s.mode === 'edit';
   const plants = useMemo(
     () => placedPlants(s.instances, s.palette, s.library.species, s.timelineMonth, s.engine.growth),
@@ -115,6 +118,11 @@ function Inspector({ growing }: { growing: SunHoursResult | null }) {
   if (fit === 'too-sunny') warnings.push(`${hours!.toFixed(1)} h of growing-season sun here is more than ${sp.common} (${sp.sun} sun) likes.`);
   if (hours === null) warnings.push('This spot is under a structure or outside the lot.');
   const pf = s.engine.growth.wucolsPlantFactor[sp.wucols];
+  const zid = zoneIdAt(s.site.zones, inst.position[0], inst.position[1]);
+  const profile = (zid && s.soilProfiles[zid]) || s.soil.defaultProfile;
+  for (const m of soilMismatches(sp, profile, s.soil)) warnings.push(m);
+  const row = demand.rows.find((r) => r.id === inst.id);
+  const hzName = row ? demand.hydrozones.find((h) => h.id === row.hydrozoneId)?.name : undefined;
   const prov = sp.provenance?.size ?? s.library.provenanceDefault;
   const num = (v: number, set: (n: number) => void, step = 0.5) => (
     <input type="number" step={step} value={Number(v.toFixed(2))} disabled={!edit} onChange={(e) => set(Number(e.target.value))} />
@@ -139,7 +147,8 @@ function Inspector({ growing }: { growing: SunHoursResult | null }) {
           <tr><td>Mature</td><td>{formatFeetInches(sp.matureHeight, 4)} × {formatFeetInches(sp.matureWidth, 4)} in {sp.yearsToMaturity} yr</td></tr>
           <tr><td>Age</td><td>{inst.existing ? 'existing' : age < 0 ? `plants in ${(-age).toFixed(1)} yr` : `${age.toFixed(1)} yr`}</td></tr>
           <tr><td>Sun here</td><td>{hours === null ? 'n/a' : `${hours.toFixed(1)} h/day, Mar-Oct`} <small className="muted">(needs {sp.sun})</small></td></tr>
-          <tr><td>Water</td><td>WUCOLS {sp.wucols}, plant factor {pf}</td></tr>
+          <tr><td>Water</td><td>WUCOLS {sp.wucols}, plant factor {pf}{row && <>; about <b>{Math.round(row.annualGal).toLocaleString()} gal/yr</b> now{row.multiplier > 1 ? ` (establishing, x${row.multiplier})` : ''}</>}</td></tr>
+          {hzName && <tr><td>Zone</td><td>{hzName}</td></tr>}
           <tr><td>Blooms</td><td>{monthsLabel(sp.bloomMonths)}</td></tr>
           <tr><td>Hosts</td><td>{sp.pollinator.larvalHost.length ? sp.pollinator.larvalHost.join('; ') : 'no larval host recorded'}</td></tr>
           <tr><td>Data</td><td><span className={`pill conf-${prov.confidence}`}>{prov.confidence} confidence</span></td></tr>
@@ -158,6 +167,13 @@ function Inspector({ growing }: { growing: SunHoursResult | null }) {
         </label>
         <label>Planted (year){num(inst.plantedMonth / 12, (n) => s.updateInstance(inst.id, { plantedMonth: Math.round(n * 12) }), 0.25)}</label>
       </div>
+      <label className="grid2" style={{ display: 'grid', gridTemplateColumns: '1fr' }}>
+        Hydrozone
+        <select disabled={!edit} value={inst.hydrozoneId ?? ''} onChange={(e) => s.assignHydrozone(inst.id, e.target.value || null)}>
+          <option value="">Automatic (by water-use category)</option>
+          {s.hydrozones.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
+        </select>
+      </label>
       <label className="check">
         <input type="checkbox" disabled={!edit} checked={inst.existing} onChange={(e) => s.updateInstance(inst.id, e.target.checked ? { existing: true, currentHeight: placed?.size.height ?? sp.matureHeight, currentWidth: placed?.size.width ?? sp.matureWidth } : { existing: false })} />
         Existing plant (enter its current size)

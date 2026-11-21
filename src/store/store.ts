@@ -6,8 +6,11 @@ import { loadSite } from '../engine/site';
 import { doyToMonthDay, monthDayToDoy } from '../engine/time';
 import speciesRaw from '../data/species.json';
 import materialsRaw from '../data/materials.json';
+import waterRaw from '../data/water.json';
+import soilRaw from '../data/soil.json';
 import type {
-  ContainerId, EngineConfig, HardscapeElement, HardscapeType, Material, PlantInstance, Pt, SiteConfig, Species, SpeciesLibrary,
+  ContainerId, EngineConfig, HardscapeElement, HardscapeType, Hydrozone, Irrigation, Material, PlantInstance, Pt, SiteConfig, SoilConfig,
+  SoilProfile, Species, SpeciesLibrary, WaterConfig,
 } from '../engine/types';
 
 /** The parts of a scenario that undo and redo restore. */
@@ -15,6 +18,9 @@ export interface ScenarioSnapshot {
   instances: PlantInstance[];
   palette: Record<string, boolean>;
   hardscape: HardscapeElement[];
+  hydrozones: Hydrozone[];
+  autoIrrigation: Record<string, Irrigation>;
+  useRain: boolean;
 }
 
 export type HsDrag = { id: string; kind: 'vertex'; index: number } | { id: string; kind: 'move'; last: Pt };
@@ -110,15 +116,38 @@ export interface AppState {
   setVertex: (id: string, index: number, p: Pt) => void;
   deleteElement: (id: string) => void;
   setHsDrag: (d: HsDrag | null) => void;
+
+  water: WaterConfig;
+  soil: SoilConfig;
+  hydrozones: Hydrozone[];
+  /** Irrigation type for automatic hydrozones, keyed by their id (for example auto:low). */
+  autoIrrigation: Record<string, Irrigation>;
+  /** Subtract effective rainfall from demand (WS-8). */
+  useRain: boolean;
+  soilProfiles: Record<string, SoilProfile>;
+  /** Yard zones the owner tags as play areas (POL-6). */
+  playZones: Record<string, boolean>;
+
+  addHydrozone: (name: string, irrigation: Irrigation) => string | null;
+  updateHydrozone: (id: string, patch: Partial<Omit<Hydrozone, 'id'>>) => void;
+  deleteHydrozone: (id: string) => void;
+  assignHydrozone: (instanceId: string, hydrozoneId: string | null) => void;
+  setAutoIrrigation: (autoId: string, irrigation: Irrigation) => void;
+  setUseRain: (on: boolean) => void;
+  setSoilProfile: (zoneId: string, patch: Partial<SoilProfile>) => void;
+  setPlayZone: (zoneId: string, on: boolean) => void;
   setHover: (p: Pt | null, kind?: 'vertex' | 'edge' | 'grid') => void;
 }
 
 const engine = engineRaw as unknown as EngineConfig;
 const library = speciesRaw as unknown as SpeciesLibrary;
 const materials = materialsRaw as unknown as Material[];
+const water = waterRaw as unknown as WaterConfig;
+const soil = soilRaw as unknown as SoilConfig;
 const OWNER_PICKS = ['salvia-leucantha','oenothera-lindheimeri','achillea-millefolium','lomandra-longifolia','bougainvillea','lantana-montevidensis','coleonema-pulchellum','coleonema-sunset-gold','polygala-myrtifolia','polygala-petite-butterflies','loropetalum-chinense','phormium-tenax','agapanthus-africanus','tulbaghia-violacea','phyla-nodiflora','juncus-patens','arctostaphylos-howard-mcminn'];
 let nextId = 1;
 let nextElementId = 1;
+let nextHydrozoneId = 1;
 
 export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
   return createStore<AppState>()((set, get) => {
@@ -127,7 +156,10 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       if (get().mode !== 'edit') return;
       set(patch);
     };
-    const snapshot = (): ScenarioSnapshot => ({ instances: get().instances, palette: get().palette, hardscape: get().hardscape });
+    const snapshot = (): ScenarioSnapshot => ({
+      instances: get().instances, palette: get().palette, hardscape: get().hardscape,
+      hydrozones: get().hydrozones, autoIrrigation: get().autoIrrigation, useRain: get().useRain,
+    });
     // Push an undo step. Repeated edits with the same key within a second count as one step.
     const record = (key?: string) => {
       const h = get().history;
@@ -318,6 +350,36 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         else scenario({ hardscape: get().hardscape.filter((e) => e.id !== id), selectedElementId: get().selectedElementId === id ? null : get().selectedElementId });
       },
       setHsDrag: (d) => set({ hsDrag: get().mode === 'edit' ? d : null }),
+
+      water,
+      soil,
+      hydrozones: [],
+      autoIrrigation: {},
+      useRain: false,
+      soilProfiles: Object.fromEntries(site.zones.map((z) => [z.id, { ...soil.defaultProfile }])),
+      playZones: {},
+
+      addHydrozone: (name, irrigation) => {
+        if (get().mode !== 'edit' || !name.trim()) return null;
+        const id = `z${nextHydrozoneId++}`;
+        scenario({ hydrozones: [...get().hydrozones, { id, name: name.trim(), irrigation }] });
+        return id;
+      },
+      updateHydrozone: (id, patch) =>
+        scenario({ hydrozones: get().hydrozones.map((h) => (h.id === id ? { ...h, ...patch } : h)) }, `hz:${id}`),
+      deleteHydrozone: (id) =>
+        scenario({
+          hydrozones: get().hydrozones.filter((h) => h.id !== id),
+          instances: get().instances.map((i) => (i.hydrozoneId === id ? { ...i, hydrozoneId: undefined } : i)),
+        }),
+      assignHydrozone: (instanceId, hydrozoneId) =>
+        scenario({ instances: get().instances.map((i) => (i.id === instanceId ? { ...i, hydrozoneId: hydrozoneId ?? undefined } : i)) }),
+      setAutoIrrigation: (autoId, irrigation) => scenario({ autoIrrigation: { ...get().autoIrrigation, [autoId]: irrigation } }),
+      setUseRain: (on) => scenario({ useRain: on }),
+      // Soil results are site data the owner enters; they are not part of undo.
+      setSoilProfile: (zoneId, patch) =>
+        mutate({ soilProfiles: { ...get().soilProfiles, [zoneId]: { ...get().soilProfiles[zoneId], ...patch, isDefault: false } } }),
+      setPlayZone: (zoneId, on) => mutate({ playZones: { ...get().playZones, [zoneId]: on } }),
     };
   });
 }

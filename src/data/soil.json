@@ -1,0 +1,74 @@
+{
+ "version": "soil/1",
+ "textures": [
+  "sand",
+  "loamy sand",
+  "sandy loam",
+  "loam",
+  "silt loam",
+  "clay loam",
+  "clay"
+ ],
+ "drainageClasses": {
+  "fastMinInHr": 2.0,
+  "moderateMinInHr": 0.5
+ },
+ "drainageSource": "Design choice: percolation of 2 in/hr or more is fast, 0.5 to 2 moderate, under 0.5 slow.",
+ "defaultProfile": {
+  "texture": "loam",
+  "drainageInHr": 1.0,
+  "ph": 7.0,
+  "organicMatterPct": 3,
+  "compaction": "unknown",
+  "testDate": null,
+  "isDefault": true
+ },
+ "phTolerance": 0.3,
+ "containers": {
+  "1gal": {
+   "ballDiaIn": 6,
+   "ballDepthIn": 6
+  },
+  "5gal": {
+   "ballDiaIn": 11,
+   "ballDepthIn": 10
+  },
+  "15gal": {
+   "ballDiaIn": 16,
+   "ballDepthIn": 14
+  },
+  "24box": {
+   "ballDiaIn": 24,
+   "ballDepthIn": 18
+  }
+ },
+ "containerSource": "Assumption: typical nursery root ball sizes by container.",
+ "hole": {
+  "widthFactor": 2.0,
+  "depthFactor": 1.0,
+  "source": "Common planting guidance: dig about twice the root ball width and as deep as the root ball."
+ },
+ "amendment": {
+  "fractionOfBackfill": 0.25,
+  "skipForDrainageNeed": [
+   "fast"
+  ],
+  "source": "Assumption: 25% compost in the backfill, skipped for plants that need sharp drainage (many California natives resent amended soil)."
+ },
+ "mulch": {
+  "depthIn": 3,
+  "ringDiameterFt": 3,
+  "source": "Common guidance: 3 in of mulch. Plants outside a bed get a ring."
+ },
+ "rootableSoil": {
+  "cuFtPerSfCanopy": 2.0,
+  "depthFt": 3.0,
+  "searchRadiusFactor": 1.5,
+  "source": "Urban tree guidance often cited at about 2 cu ft of soil per sq ft of canopy. Verify before relying on it.",
+  "confidence": "low"
+ },
+ "raisedBed": {
+  "freeboardIn": 3,
+  "source": "Assumption: fill stops 3 in below the rim."
+ }
+}

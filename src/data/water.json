@@ -1,0 +1,179 @@
+{
+ "version": "water/1",
+ "formula": {
+  "conversion": 0.62,
+  "source": "MWELO (Cal. Code Regs. tit. 23, ch. 2.7): ETWU = ETo x 0.62 x [(PF x HA) / IE + SLA]. 0.62 converts inches over a square foot to gallons. Confirmed against city worksheets that reproduce the ordinance.",
+  "confidence": "high"
+ },
+ "eto": {
+  "station": "Los Angeles (PLACEHOLDER, not the official row)",
+  "monthly": [
+   1.9,
+   2.5,
+   3.4,
+   4.5,
+   5.1,
+   5.7,
+   6.0,
+   5.7,
+   4.4,
+   3.4,
+   2.4,
+   1.9
+  ],
+  "status": "unverified",
+  "source": "Placeholder typical of coastal Los Angeles, entered from memory. The official MWELO Appendix A row for Los Angeles could not be retrieved in this build. Replace these twelve values with that row.",
+  "confidence": "low"
+ },
+ "rainfall": {
+  "station": "Downtown Los Angeles (NWS), 1991-2020 normals",
+  "monthly": [
+   3.29,
+   3.64,
+   2.23,
+   0.69,
+   0.32,
+   0.09,
+   0.02,
+   0.0,
+   0.13,
+   0.58,
+   0.78,
+   2.48
+  ],
+  "source": "NWS Los Angeles/Oxnard Public Information Statement, 5 May 2021 (annual 14.25 in). Downtown, not the lot, so the Westside may differ.",
+  "confidence": "high",
+  "effectiveFraction": 0.6,
+  "effectiveFractionSource": "Assumption: share of rain that reaches the root zone. Not from MWELO.",
+  "effectiveFractionConfidence": "low"
+ },
+ "daysInMonth": [
+  31,
+  28,
+  31,
+  30,
+  31,
+  30,
+  31,
+  31,
+  30,
+  31,
+  30,
+  31
+ ],
+ "plantFactorRanges": {
+  "very low": [
+   0,
+   0.1
+  ],
+  "low": [
+   0.1,
+   0.3
+  ],
+  "moderate": [
+   0.4,
+   0.6
+  ],
+  "high": [
+   0.7,
+   1.0
+  ]
+ },
+ "plantFactorSource": "MWELO plant factor ranges (very low 0-0.1, low 0.1-0.3, moderate 0.4-0.6, high 0.7-1.0). Each species' category is unverified against WUCOLS Region 3; defaults sit inside the range.",
+ "irrigation": {
+  "drip": {
+   "label": "Drip",
+   "efficiency": 0.81,
+   "source": "MWELO irrigation efficiency, drip",
+   "confidence": "high"
+  },
+  "spray": {
+   "label": "Spray",
+   "efficiency": 0.75,
+   "source": "MWELO irrigation efficiency, overhead spray",
+   "confidence": "high"
+  },
+  "hand": {
+   "label": "Hand watering",
+   "efficiency": 0.6,
+   "source": "Assumption",
+   "confidence": "low"
+  },
+  "none": {
+   "label": "No irrigation",
+   "efficiency": 0,
+   "source": "Rain only: no applied water is counted",
+   "confidence": "high"
+  }
+ },
+ "defaultIrrigation": {
+  "tree": "drip",
+  "shrub": "drip",
+  "perennial": "drip",
+  "grass": "spray",
+  "groundcover": "drip",
+  "vine": "drip",
+  "succulent": "drip",
+  "edible": "drip"
+ },
+ "establishment": {
+  "tree": {
+   "months": 24,
+   "multiplier": 1.5
+  },
+  "shrub": {
+   "months": 12,
+   "multiplier": 1.5
+  },
+  "perennial": {
+   "months": 6,
+   "multiplier": 1.5
+  },
+  "grass": {
+   "months": 6,
+   "multiplier": 1.5
+  },
+  "groundcover": {
+   "months": 6,
+   "multiplier": 1.5
+  },
+  "vine": {
+   "months": 12,
+   "multiplier": 1.5
+  },
+  "succulent": {
+   "months": 3,
+   "multiplier": 1.25
+  },
+  "edible": {
+   "months": 12,
+   "multiplier": 1.5
+  }
+ },
+ "establishmentSource": "Assumption. The brief asks for a configurable period by plant type; these defaults are not from MWELO.",
+ "lawn": {
+  "plantFactor": 0.8,
+  "irrigation": "spray",
+  "source": "Assumption: high-water cool-season turf. Check WUCOLS Region 3.",
+  "confidence": "low"
+ },
+ "budget": {
+  "etaf": 0.55,
+  "source": "MWELO: ETAF for residential landscape projects must not exceed 0.55 (special landscape areas excluded).",
+  "confidence": "high"
+ },
+ "pollinator": {
+  "weights": {
+   "high": 1.0,
+   "moderate": 0.5,
+   "low": 0.1
+  },
+  "countCap": 3,
+  "source": "Design choice: a month scores each blooming species by its pollinator value, counting at most 3 plants per species so one species cannot dominate.",
+  "topSuggestions": 6
+ },
+ "outputs": {
+  "spacingFactor": 1.0,
+  "spacingSource": "Design choice: on-center spacing equals mature width."
+ }
+}

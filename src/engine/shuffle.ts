@@ -1,5 +1,5 @@
 import { distanceToPolygon, pointInPolygon } from './geometry';
-import { footprint } from './hardscape';
+import { drivewayBlocks, footprint } from './hardscape';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, Pt, SiteConfig, Species, StructureCfg } from './types';
 import type { ScenarioData } from './scenario';
 import { lightSuits, roomRatio, shadesRaisedBed, type Neighbor, type SunMap } from './placement';
@@ -162,6 +162,7 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
         if (p[0] < 0 || p[0] > width || p[1] < 0 || p[1] > depth) continue;
         if (ctx.structures.some((s) => pointInPolygon(p[0], p[1], s.footprint) || distanceToPolygon(p[0], p[1], s.footprint) < clearance - 1e-9)) continue;
         if (hardCover.some((poly) => pointInPolygon(p[0], p[1], poly))) continue;
+        if (drivewayBlocks(p, hardscape, ctx.engine.hardscape)) continue;
         if (instances.some((o, k) => k !== index && Math.hypot(o.position[0] - p[0], o.position[1] - p[1]) < cfg.minPlantGapFt)) continue;
         if (sp && wasFine && !suits(sp, p, index)) continue;
         changes.moved++;

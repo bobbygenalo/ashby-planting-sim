@@ -1,14 +1,14 @@
 import { overlapApplies, type ContextTree } from './conflicts';
 import { circleOverlapsPolygon, distanceToPolygon, pointInPolygon } from './geometry';
 import type { PlacedPlant } from './growth';
-import { footprint } from './hardscape';
+import { drivewayBlocks, footprint } from './hardscape';
 import type { SunHoursResult } from './sunhours';
 import type { EasementCfg, EngineConfig, HardscapeElement, Pt, Species, StructureCfg } from './types';
 import { WATER_ORDER } from './water';
 
 export type TermId = 'sun' | 'clearance' | 'hydrozone';
 export type SuggestWeights = Record<TermId, number>;
-export type Exclusion = 'structure' | 'paving' | 'easement' | 'root-zone';
+export type Exclusion = 'structure' | 'paving' | 'easement' | 'root-zone' | 'driveway';
 
 export interface CellScore {
   x: number;
@@ -93,6 +93,7 @@ function evaluateCell(x: number, y: number, input: SuggestInput): CellScore {
   if (input.structures.some((s) => pointInPolygon(x, y, s.footprint))) return dead('structure');
   const avoid = input.elements.filter((e) => !e.removed && cc.trunkAvoidTypes.includes(e.type));
   if (avoid.some((e) => pointInPolygon(x, y, footprint(e, cfg.hardscape)))) return dead('paving');
+  if (drivewayBlocks([x, y], input.elements, cfg.hardscape)) return dead('driveway');
   if (input.easements.some((e) => sp.matureHeight >= e.heightCap && circleOverlapsPolygon(x, y, R, e.polygon))) return dead('easement');
   const roots = [
     ...input.contextTrees.map((t) => ({ x: t.x, y: t.y, r: t.width / 2 })),
@@ -224,6 +225,7 @@ export function rescore(result: SuggestResult, weights: SuggestWeights, species:
 const EXCLUSION_TEXT: Record<Exclusion, string> = {
   structure: 'under a building',
   paving: 'on paving, a wall, or the driveway',
+  driveway: 'within 3 ft of the driveway',
   easement: 'in the easement, where this plant would pass the height cap',
   'root-zone': "inside an existing tree's root zone",
 };

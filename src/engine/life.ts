@@ -6,6 +6,8 @@ import { litterState } from './litter';
 import { sunHoursAt, type SunMap } from './placement';
 import { isBlooming, type PlacedPlant } from './growth';
 import { mulberry32 } from './shuffle';
+import { skyWatchSpots } from './fireworks';
+import type { SedanSpot } from './vehicle';
 import type { EngineConfig, HardscapeElement, Material, Pt, SiteConfig, StructureCfg } from './types';
 
 type Cfg = EngineConfig['life'];
@@ -53,6 +55,12 @@ export interface BirdFood {
   height: number;
 }
 
+/** A building's footprint and its highest point, so anything flying can be kept out of it. */
+export interface StructureTop {
+  poly: Pt[];
+  top: number;
+}
+
 export interface LifeWorld {
   lot: { width: number; depth: number };
   nx: number;
@@ -83,12 +91,16 @@ export interface LifeWorld {
   month: number;
   flowers: Flower[];
   /** Tops of plants a hummingbird can sit on. */
-  perches: { x: number; y: number; z: number }[];
+  perches: { x: number; y: number; z: number; r: number }[];
   wormSpots: WormSpot[];
   /** Plants with ripe fruit or berries now, which fruit-eating birds come for. */
   birdFood: BirdFood[];
+  /** Buildings: footprints and roof heights, for wildlife that flies over them and never through them. */
+  structureTops: StructureTop[];
   /** Open, reachable ground in the party yard (the back yard), where people gather on a birthday. */
   partyCells: number[];
+  /** Open ground to stand on and watch the fireworks over the back of the lot, spread out. */
+  skySpots: Pt[];
 }
 
 export interface LifeTable {
@@ -135,6 +147,8 @@ export interface LifeWorldInput {
   hiveAt?: { x: number; y: number } | null;
   /** Growing-season sun hours across the lot; butterflies keep to sunny flowers and worms to shade when it is given. */
   sunMap?: SunMap;
+  /** The white sedan on the driveway, when it is home: nobody walks through it. */
+  sedan?: SedanSpot | null;
 }
 
 const idx = (w: { nx: number }, i: number, j: number) => j * w.nx + i;
@@ -154,7 +168,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], partyCells: [],
+    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [],
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -196,6 +210,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
       if (x < cfg.margins.lotFt || y < cfg.margins.lotFt || x > width - cfg.margins.lotFt || y > depth - cfg.margins.lotFt) blocked[k] = 1;
       if (!blocked[k] && w.structures.some((s) => pointInPolygon(x, y, s) || distanceToPolygon(x, y, s) < cfg.margins.structureFt)) blocked[k] = 1;
       if (!blocked[k] && w.plants.some((p) => Math.hypot(p.x - x, p.y - y) < p.r + cfg.margins.plantFt)) blocked[k] = 1;
+      if (!blocked[k] && input.sedan && (pointInPolygon(x, y, input.sedan.poly) || distanceToPolygon(x, y, input.sedan.poly) < input.engine.vehicle.marginFt)) blocked[k] = 1;
     }
   }
   w.blooms = input.plants
@@ -208,7 +223,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
     .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3), groups: [...p.species.pollinator.groups], sun: sunAt(p.inst.position[0], p.inst.position[1]) }));
   w.perches = input.plants
     .filter((p) => p.size.planted && p.size.height >= 3 && ['tree', 'shrub', 'edible'].includes(p.species.type))
-    .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], z: p.size.height * 0.92 }));
+    .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], z: p.size.height * 0.92, r: Math.max(p.size.width / 2, 0.3) }));
   w.wormSpots = buildWormSpots(w, input, cfg, classes, sunAt);
   w.birdFood = input.plants
     .filter((p) => {
@@ -234,6 +249,10 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   if (yard) w.partyCells = w.reachable.filter((k) => pointInPolygon(((k % w.nx) + 0.5) * w.cell, (Math.floor(k / w.nx) + 0.5) * w.cell, yard.polygon));
   w.tables = buildTables(w, input, cfg);
   w.screen = buildScreen(w, input, cfg);
+  // Watching the fireworks: the party yard when it has room, otherwise anywhere in the back half of the lot.
+  const cellPt = (k: number): Pt => [((k % w.nx) + 0.5) * w.cell, (Math.floor(k / w.nx) + 0.5) * w.cell];
+  const pool = (w.partyCells.length ? w.partyCells : w.reachable.filter((k) => cellPt(k)[1] > depth / 2)).map(cellPt);
+  w.skySpots = skyWatchSpots(pool, cfg.fireworks.spotGapFt, mulberry32(11));
   return w;
 }
 
@@ -524,7 +543,7 @@ export function findRoute(w: LifeWorld, from: Pt, to: Pt): Pt[] | null {
 /** What a person is doing apart from walking: taking a seat at a table, or watching the movie. */
 export type Act =
   | { kind: 'dine'; seat: string; phase: 'to' | 'pull' | 'sit' | 'talk' | 'rise' | 'push'; t: number; left: number }
-  | { kind: 'watch'; phase: 'to' | 'watch'; spot: Pt }
+  | { kind: 'watch'; phase: 'to' | 'watch'; spot: Pt; /** The fireworks, not the film: face the sky beyond the back of the lot. */ sky?: boolean }
   | { kind: 'cake'; seat: string; phase: 'to' | 'gather' };
 
 export interface Walker {
@@ -552,6 +571,8 @@ export interface Walker {
   talking: boolean;
   /** True while they are cheering and clapping around the cake. */
   cheer: boolean;
+  /** Head tipped back to watch fireworks. */
+  lookUp: boolean;
   /** How far their head is turned from straight ahead, toward whoever is speaking, in radians. */
   headTurn: number;
   /** Age in years: a dog is 0. */
@@ -651,7 +672,7 @@ export class LifeSim {
       } else if (!person && this.counts.people > 0) leader = (n - this.counts.people) % this.counts.people;
       this.walkers.push({
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
-        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, talking: false, cheer: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
+        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, talking: false, cheer: false, lookUp: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
         replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
       });
     }
@@ -671,7 +692,7 @@ export class LifeSim {
       wk.route = [];
       // A seat, or the screen, that is gone ends what they were doing there; the rest carry on.
       if (wk.act) {
-        const ok = wk.act.kind === 'watch' ? !!world.screen : !!this.findSeat(wk.act.seat);
+        const ok = wk.act.kind === 'watch' ? (wk.act.sky ? world.skySpots.length > 0 : !!world.screen) : !!this.findSeat(wk.act.seat);
         if (!ok) this.endAct(wk);
         else if (wk.act.phase !== 'to') continue; // seated or watching: already where they are
       }
@@ -684,6 +705,7 @@ export class LifeSim {
       }
     }
     if (!world.screen && this.movieOn) this.movieOn = false;
+    if (!world.skySpots.length && this.fireworksOn) this.fireworksOn = false;
     if (!world.hive) this.bees = [];
     else if (this.counts.bees && this.bees.length === 0) this.populate();
   }
@@ -765,6 +787,7 @@ export class LifeSim {
     // Free to choose: the movie, if it is showing, or a seat at the table, now and then.
     if (this.idle(wk)) {
       if (this.cake && this.rng() < this.cfg.party.cakeBias && this.sendToCake(wk)) return;
+      if (this.fireworksOn && this.rng() < this.fireworksCfg.attendBias && this.assignSky(wk)) return;
       if (this.movieOn && this.rng() < this.cfg.movie.joinBias && this.assignWatch(wk)) return;
       if (this.world.tables.length && this.rng() < this.cfg.dining.bias && this.startDinner(wk)) return;
     }
@@ -867,6 +890,7 @@ export class LifeSim {
     }
     if (a?.kind === 'cake') this.seatTaken.delete(a.seat);
     wk.cheer = false;
+    wk.lookUp = false;
     wk.act = null;
     wk.sit = 0;
     wk.talking = false;
@@ -988,6 +1012,23 @@ export class LifeSim {
 
   /** Watching: turn to face the screen and stand there until the movie is over. */
   private stepWatch(wk: Walker, dt: number) {
+    const a = wk.act as Extract<Act, { kind: 'watch' }>;
+    if (a.sky) {
+      // The display is beyond the back of the lot: face it, head tipped back, and cheer at the bigger bursts now and then.
+      if (!this.fireworksOn) {
+        this.endAct(wk);
+        return;
+      }
+      const want = Math.PI / 2;
+      let diff = want - wk.heading;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      const turn = this.cfg.people.turnRate * dt;
+      wk.heading += Math.max(-turn, Math.min(turn, diff));
+      wk.speed = 0;
+      wk.lookUp = true;
+      wk.cheer = Math.sin(this.clock * 0.9 + wk.variant) > 0.82;
+      return;
+    }
     const sc = this.world.screen;
     if (!sc || !this.movieOn) {
       this.endAct(wk);
@@ -1099,6 +1140,51 @@ export class LifeSim {
   /** True between the configured night hours (11 pm to 6 am): everyone is indoors. */
   night = false;
 
+  /** It is the Fourth of July (set by the caller before `setClock`), and the display is on from 8 pm to 11 pm. */
+  fireworksDay = false;
+  fireworksOn = false;
+  private get fireworksCfg() {
+    return this.cfg.fireworks;
+  }
+
+  setFireworksDay(day: boolean) {
+    if (day === this.fireworksDay) return;
+    this.fireworksDay = day;
+    this.setClock(this.minutes);
+  }
+
+  private setFireworksOn(on: boolean) {
+    this.fireworksOn = on;
+    if (on) {
+      // Everyone outside who is free goes to watch; whoever is indoors comes out, spread over a few seconds.
+      for (const wk of this.walkers) {
+        if (wk.visit?.phase === 'inside' && !wk.visit.night) wk.visit.left = this.rng() * this.cfg.night.riseSpreadS * 0.5;
+        else if (this.idle(wk) && this.rng() < this.fireworksCfg.attendBias) this.assignSky(wk);
+      }
+    } else {
+      for (const wk of this.walkers) if (wk.act?.kind === 'watch' && wk.act.sky) this.endAct(wk);
+    }
+  }
+
+  /** Send someone to a free place on the open ground at the back of the lot. */
+  private assignSky(wk: Walker): boolean {
+    const spots = this.world.skySpots;
+    if (!spots.length) return false;
+    const taken = this.walkers.flatMap((o) => (o.act?.kind === 'watch' && o.act.sky ? [o.act.spot] : []));
+    for (let tries = 0; tries < 14; tries++) {
+      const spot = spots[Math.floor(this.rng() * spots.length)];
+      if (taken.some((t) => Math.hypot(t[0] - spot[0], t[1] - spot[1]) < 0.5)) continue;
+      const route = findRoute(this.world, [wk.x, wk.y], spot);
+      if (!route) continue;
+      wk.act = { kind: 'watch', phase: 'to', spot, sky: true };
+      wk.route = route.slice(1);
+      wk.pauseLeft = 0;
+      if (route.length <= 1) this.arrive(wk);
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Called with the minute of the day. The movie starts and ends with it, and people are drawn to it; at night people
    * and dogs go in and out of sight, walking to a door when time passes normally and all at once when the clock jumps.
@@ -1111,7 +1197,10 @@ export class LifeSim {
     const jumped = Math.abs(minutes - prev) > nc.jumpMin;
     const mc = this.cfg.movie;
     const movieStart = this.birthday ? Math.min(this.birthday.movieStart, mc.endMin) : mc.startMin;
-    const on = !night && !!this.world.screen && minutes >= movieStart && minutes < mc.endMin;
+    const fw = !night && this.fireworksDay && this.world.skySpots.length > 0 && minutes >= this.fireworksCfg.startMin && minutes < this.fireworksCfg.endMin;
+    if (fw !== this.fireworksOn) this.setFireworksOn(fw);
+    // No film on the night of the fireworks.
+    const on = !night && !fw && !!this.world.screen && minutes >= movieStart && minutes < mc.endMin;
     if (on !== this.movieOn) {
       this.movieOn = on;
       if (on) {
@@ -1330,7 +1419,11 @@ export class LifeSim {
             const f = blooms[Math.floor(this.rng() * blooms.length)];
             b.target = { x: f.x, y: f.y, z: f.height + 0.3, radius: f.radius };
           } else {
-            const a = this.rng() * Math.PI * 2, d = 3 + this.rng() * c.wanderFt;
+            let a = this.rng() * Math.PI * 2, d = 3 + this.rng() * c.wanderFt;
+            for (let k = 0; k < 8 && w.structureTops.some((st) => pointInPolygon(hive.x + Math.cos(a) * d, hive.y + Math.sin(a) * d, st.poly)); k++) {
+              a = this.rng() * Math.PI * 2;
+              d = 3 + this.rng() * c.wanderFt;
+            }
             b.target = { x: hive.x + Math.cos(a) * d, y: hive.y + Math.sin(a) * d, z: c.altitudeFt[0] + this.rng() * (c.altitudeFt[1] - c.altitudeFt[0]), radius: 1 };
           }
           b.phase = 'out';
@@ -1350,6 +1443,7 @@ export class LifeSim {
         b.x += (dx / (dist || 1)) * step + sx * sway;
         b.y += (dy / (dist || 1)) * step + sy * sway;
         b.z += (dz / (dist || 1)) * step;
+        keepOutOfStructures(w, b, dt); // over the roof, never through it
         if (dist < 0.4) {
           if (b.phase === 'out') {
             b.phase = 'forage';
@@ -1399,4 +1493,19 @@ export function hiveProblems(h: { x: number; y: number }, c: HiveCheck, cfg: Cfg
   if (c.plants.some((p) => Math.hypot(p.x - h.x, p.y - h.y) < p.r + hc.minFromPlantFt)) out.push('In or right beside a plant.');
   if (c.paths.some((p) => pointInPolygon(h.x, h.y, p) || distanceToPolygon(h.x, h.y, p) < hc.minFromPathFt)) out.push(`Within ${hc.minFromPathFt} ft of a path, where people walk.`);
   return out;
+}
+
+/**
+ * Keep something that flies out of the buildings: it never goes through a roof or wall, but climbs and passes over. It
+ * starts rising a few feet before it reaches a building and settles again beyond it (its own flight brings it back down).
+ */
+export function keepOutOfStructures(w: Pick<LifeWorld, 'structureTops'>, o: { x: number; y: number; z: number; heading: number }, dt: number, climbFtPerS = 14): void {
+  for (const s of w.structureTops) {
+    const inside = pointInPolygon(o.x, o.y, s.poly);
+    const entering = !inside && pointInPolygon(o.x + Math.cos(o.heading) * 4, o.y + Math.sin(o.heading) * 4, s.poly);
+    if (!inside && !entering) continue;
+    const clear = s.top + 1;
+    if (o.z < clear) o.z = Math.min(clear, o.z + climbFtPerS * dt);
+    if (inside && o.z < s.top + 0.2) o.z = s.top + 0.2;
+  }
 }

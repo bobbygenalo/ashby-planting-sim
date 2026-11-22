@@ -96,13 +96,13 @@ describe('library and palette', () => {
 
   it('view mode cannot add, move or delete plants', () => {
     const view = makeAppStore('view');
-    expect(view.getState().addInstance('salvia-leucantha', [10, 10])).toBeNull();
+    expect(view.getState().addInstance('salvia-leucantha', [30, 100])).toBeNull();
     const edit = makeAppStore('edit');
-    const id = edit.getState().addInstance('salvia-leucantha', [10, 10])!;
+    const id = edit.getState().addInstance('salvia-leucantha', [30, 100])!;
     edit.setState({ mode: 'view' });
-    edit.getState().updateInstance(id, { position: [1, 1] });
+    edit.getState().updateInstance(id, { position: [31, 101] });
     edit.getState().deleteInstance(id);
-    expect(edit.getState().instances[0].position).toEqual([10, 10]);
+    expect(edit.getState().instances[0].position).toEqual([30, 100]);
   });
 });
 

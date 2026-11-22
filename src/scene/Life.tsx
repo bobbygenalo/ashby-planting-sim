@@ -1,6 +1,11 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { fireworksDay } from '../engine/fireworks';
+import { sedanHome, sedanSpotFor } from '../engine/vehicle';
+import { footprint } from '../engine/hardscape';
+import { Fireworks } from './Fireworks';
+import { Sedan } from './Sedan';
 import { balloonBunches, birthdayDay, greeting, presentSpots, type BalloonBunch, type Present } from '../engine/birthday';
 import { CritterSim } from '../engine/critters';
 import { buildLifeWorld, isInside, LifeSim, type LifeScreen, type LifeWorld } from '../engine/life';
@@ -32,6 +37,7 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
   const dots = [useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null)];
   const hat = useRef<THREE.Group>(null);
   const hatCfg = useApp((s) => s.engine.birthday.hat);
+  const lookUpRad = useApp((s) => s.engine.life.fireworks.lookUpRad);
   const who = sim.current?.walkers[index];
   const variant = who?.variant ?? index;
   const f = useMemo(() => personProportions(who?.age ?? 30, who?.heightFt ?? 5.6), [who?.age, who?.heightFt]);
@@ -74,7 +80,7 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
     if (body.current) body.current.position.z = Math.abs(Math.sin(w.gait)) * 0.011 * f.height * Math.min(1, w.speed / 2) - drop * sit;
     if (head.current) {
       head.current.rotation.z = w.headTurn;
-      head.current.rotation.y = w.talking ? Math.sin(t * 7) * 0.07 : 0;
+      head.current.rotation.y = w.lookUp ? -lookUpRad : w.talking ? Math.sin(t * 7) * 0.07 : 0;
     }
     // Three dots over the head of whoever is talking, rising and falling in turn.
     dots.forEach((d, n) => {
@@ -890,11 +896,17 @@ export function LifeLayer() {
     const id = setTimeout(() => setSunMap(sunMapFor(site, aduEnabled)), 300);
     return () => clearTimeout(id);
   }, [site, aduEnabled]);
+  // The white sedan is home on weekday evenings and nights, at the street end of the driveway (if there is one).
+  const sedanSpot = useMemo(() => sedanSpotFor(hardscape, (e) => footprint(e, engine.hardscape), engine.vehicle), [hardscape, engine]);
+  const sedanHomeNow = sedanHome(engine.referenceYear, month, dayOfMonth, minutes, engine.vehicle);
+  const sedan = sedanHomeNow ? sedanSpot : null;
+  const sedanKey = sedan ? `${sedan.center[0]},${sedan.center[1]}` : '';
   const world = useMemo(() => {
-    const w = buildLifeWorld({ site, structures, hardscape, materials, plants, month, engine, hive: hive.current, hiveAt: ownerHive ? { x: ownerHive[0], y: ownerHive[1] } : null, sunMap });
+    const w = buildLifeWorld({ site, structures, hardscape, materials, plants, month, engine, sedan, hive: hive.current, hiveAt: ownerHive ? { x: ownerHive[0], y: ownerHive[1] } : null, sunMap });
     hive.current = w.hive;
     return w;
-  }, [site, structures, hardscape, materials, plants, month, engine, ownerHive, sunMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [site, structures, hardscape, materials, plants, month, engine, ownerHive, sunMap, sedanKey]);
   const sim = useRef<LifeSim | null>(null);
   const crit = useRef<CritterSim | null>(null);
   if (!sim.current) sim.current = new LifeSim(world, engine.life, Math.floor(Math.random() * 1e9), { people: settings.people, dogs: settings.dogs, bees: settings.bees });
@@ -906,10 +918,11 @@ export function LifeLayer() {
   // The time of day decides whether the movie is on; the sim also needs it the moment it is created.
   useEffect(() => {
     sim.current?.setBirthday(bday);
+    sim.current?.setFireworksDay(fireworksDay(month, dayOfMonth, engine.life.fireworks));
     sim.current?.setClock(minutes);
     const nc = engine.life.night;
     crit.current?.setClock({ minutes, night: minutes >= nc.startMin || minutes < nc.endMin });
-  }, [minutes, world, engine, bday]);
+  }, [minutes, world, engine, bday, month, dayOfMonth]);
   useEffect(() => {
     sim.current?.setCounts({ people: settings.people, dogs: settings.dogs, bees: settings.bees });
   }, [settings.people, settings.dogs, settings.bees]);
@@ -949,6 +962,8 @@ export function LifeLayer() {
       <Butterflies crit={crit} />
       <Worms crit={crit} />
       {world.screen && <Movie sim={sim} screen={world.screen} />}
+      {sedan && <Sedan spot={sedan} color={engine.vehicle.color} />}
+      <Fireworks sim={sim} lot={world.lot} />
       {settings.bees && world.hive && <Hive world={world} />}
       {settings.bees && world.hive && <Bees sim={sim} count={engine.life.bees.count} />}
     </group>

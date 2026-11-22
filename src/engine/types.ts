@@ -455,6 +455,7 @@ export interface LifeCfg {
   night: NightCfg;
   dining: DiningCfg;
   movie: MovieCfg;
+  fireworks: FireworksCfg;
   cellFt: number;
   margins: { plantFt: number; structureFt: number; lotFt: number; hiveFt: number; nearBlockedFt: number; nearBlockedExtraCost: number };
   /** What it costs to walk one foot over each kind of ground; paths are cheapest, so people drift toward them. */
@@ -540,6 +541,50 @@ export interface LitterCfg {
   groundZ: number;
 }
 
+/** The white sedan parked at the street end of the driveway on weekday evenings and nights. */
+export interface VehicleCfg {
+  /** Days it is home, 0 Sunday to 6 Saturday. */
+  weekdays: number[];
+  /** Gone from this minute of the day (420 is 7 am) until this one (1140 is 7 pm); home the rest of the day. */
+  awayFromMin: number;
+  backAtMin: number;
+  lengthFt: number;
+  widthFt: number;
+  /** The nose of the car points toward the garage; its tail is this far from the street edge of the lot. */
+  tailFromStreetFt: number;
+  color: string;
+  /** People and dogs keep this far from it. */
+  marginFt: number;
+}
+
+/** The Fourth of July display shown beyond the back of the lot, and the neighbors who come out to watch. */
+export interface FireworksCfg {
+  month: number;
+  day: number;
+  /** On from this minute of the day to this one (1200 is 8 pm, 1380 is 11 pm). */
+  startMin: number;
+  endMin: number;
+  /** Chance that someone free when it starts, or choosing where to go next, goes to watch. */
+  attendBias: number;
+  /** Watchers stand this far apart. */
+  spotGapFt: number;
+  /** Seconds between shells, the height of a burst, its radius and how long it lasts. */
+  burstEveryS: [number, number];
+  distanceFt: [number, number];
+  spreadFt: number;
+  heightFt: [number, number];
+  radiusFt: [number, number];
+  lifeS: number;
+  sparks: number;
+  /** Downward pull on the sparks (ft/s^2). */
+  gravityFt: number;
+  /** A shell that goes off this high lights the yard for a moment, up to this much (a light intensity). */
+  flashIntensity: number;
+  colors: string[];
+  /** How far up the watchers tip their heads (radians) and how long they cheer after a big burst. */
+  lookUpRad: number;
+}
+
 export interface HolidayCfg {
   /** Structures whose front roofline is strung with lights (the street-facing house and the ADU). */
   lightedParts: string[];
@@ -577,6 +622,7 @@ export interface EngineConfig {
   birthday: BirthdayCfg;
   pricing: PricingCfg;
   holiday: HolidayCfg;
+  vehicle: VehicleCfg;
   litter: LitterCfg;
   /** The growth-stages view: the ages shown and the two camera heights (angled, side-on). */
   growthStages: { years: number[]; anglePitch: number; sidePitch: number; /** The most plants shown side by side, the one opened included. */ maxPlants: number };
@@ -639,6 +685,8 @@ export interface EngineConfig {
     sampleCellFt: number;
     /** Types that older plans may still contain but that can no longer be drawn or generated. */
     notDrawable?: HardscapeType[];
+    /** Nothing is planted on the driveway (any element marked keep-clear) or this close to it, in feet. */
+    drivewayBufferFt: number;
     snapToleranceFt: number;
     rootZoneFactor: number;
     drawOrder: HardscapeType[];

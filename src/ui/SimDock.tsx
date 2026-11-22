@@ -100,12 +100,22 @@ export function SimDock() {
               }
               return;
             }
+            if (v === 'fireworks') {
+              // The Fourth of July display, a little after it starts.
+              const f = s.engine.life.fireworks;
+              s.setDoy(monthDayToDoy(f.month, f.day));
+              s.setMinutes(f.startMin + 60);
+              return;
+            }
             const p = s.engine.sun.presets.find((x) => x.id === v);
             if (p) s.setDoy(monthDayToDoy(p.month, p.day));
           }}
         >
           <option value="" disabled>Season…</option>
           {s.engine.sun.presets.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+          <optgroup label="Holidays">
+            <option value="fireworks">Fourth of July fireworks, {fmtTime(s.engine.life.fireworks.startMin + 60)}</option>
+          </optgroup>
           {birthdays.length > 0 && (
             <optgroup label="Birthdays (at sunset)">
               {birthdays.map((b) => <option key={b.doy} value={`bday:${b.doy}`}>{nameList(b.names)}, {monthName(b.month)} {b.day}</option>)}

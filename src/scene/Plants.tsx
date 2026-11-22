@@ -5,6 +5,7 @@ import type { PlacedPlant } from '../engine/growth';
 import { fruitPositions, fruitState, seedFromId } from '../engine/fruit';
 import { isBlooming, isLeafOff, placedPlants } from '../engine/growth';
 import { pointInPolygon } from '../engine/geometry';
+import { drivewayBlocks } from '../engine/hardscape';
 import { activeStructures } from '../engine/site';
 import { doyToMonthDay } from '../engine/time';
 import { useApp } from '../store/store';
@@ -229,7 +230,9 @@ export function PlantLayer() {
   const placingSp = placing ? library.species.find((s) => s.id === placing) : undefined;
   const site = useApp((s) => s.site);
   const aduEnabled = useApp((s) => s.aduEnabled);
-  const placeOk = !hover || (hover[0] >= 0 && hover[1] >= 0 && hover[0] <= site.lot.width && hover[1] <= site.lot.depth && !activeStructures(site, { aduEnabled }).some((st) => pointInPolygon(hover[0], hover[1], st.footprint)));
+  const hardscapeAll = useApp((s) => s.hardscape);
+  const drivewayCfg = useApp((s) => s.engine.hardscape);
+  const placeOk = !hover || (!drivewayBlocks(hover, hardscapeAll, drivewayCfg) && hover[0] >= 0 && hover[1] >= 0 && hover[0] <= site.lot.width && hover[1] <= site.lot.depth && !activeStructures(site, { aduEnabled }).some((st) => pointInPolygon(hover[0], hover[1], st.footprint)));
   // The pointer is replaced by the cursor disc while placing.
   const gl = useThree((st) => st.gl);
   useEffect(() => {

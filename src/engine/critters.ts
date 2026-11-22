@@ -1,4 +1,5 @@
-import type { LifeWorld, WormSpot } from './life';
+import { keepOutOfStructures, type LifeWorld, type WormSpot } from './life';
+import { pointInPolygon } from './geometry';
 import { mulberry32 } from './shuffle';
 import type { LifeCfg } from './types';
 
@@ -233,6 +234,31 @@ export class CritterSim {
     for (const ids of taken.values()) ids.forEach((i) => (this.birds[i].leader = ids[0]));
   }
 
+  private insideStructure(x: number, y: number): boolean {
+    return this.world.structureTops.some((st) => pointInPolygon(x, y, st.poly));
+  }
+
+  /**
+   * Where to go on a plant: usually the flowering or fruiting top, but now and then in among the leaves, so the creature
+   * seems to slip into the plant (and is half hidden by it).
+   */
+  private onPlant(f: { x: number; y: number; radius: number; height: number }, topZ: number): { x: number; y: number; z: number } {
+    if (this.rng() < 0.4) {
+      const a = this.rng() * Math.PI * 2, d = Math.sqrt(this.rng()) * f.radius * 0.35;
+      return { x: f.x + Math.cos(a) * d, y: f.y + Math.sin(a) * d, z: Math.max(0.3, f.height * (0.45 + this.rng() * 0.25)) };
+    }
+    return { x: f.x + (this.rng() - 0.5) * f.radius, y: f.y + (this.rng() - 0.5) * f.radius, z: topZ };
+  }
+
+  /** A random point over the lot that is not on a building, for wandering. */
+  private openPoint(): [number, number] {
+    for (let i = 0; i < 20; i++) {
+      const x = this.rng() * this.world.lot.width, y = this.rng() * this.world.lot.depth;
+      if (!this.insideStructure(x, y)) return [x, y];
+    }
+    return [2, 2];
+  }
+
   private edgePoint(): [number, number] {
     const { width, depth } = this.world.lot;
     return this.rng() < 0.5 ? [this.rng() < 0.5 ? 2 : width - 2, this.rng() * depth] : [this.rng() * width, this.rng() < 0.5 ? 2 : depth - 2];
@@ -325,8 +351,8 @@ export class CritterSim {
       if (b.state === 'forage' && sp.guild === 'ground') {
         // Hop about a little, pecking, until it is time to go.
         b.z = c.hopFt * Math.max(0, Math.sin(this.t * 7 + b.phase));
-        b.x += Math.cos(b.heading) * dt * 0.25;
-        b.y += Math.sin(b.heading) * dt * 0.25;
+        const nx = b.x + Math.cos(b.heading) * dt * 0.25, ny = b.y + Math.sin(b.heading) * dt * 0.25;
+        if (!this.insideStructure(nx, ny)) { b.x = nx; b.y = ny; } else b.heading += Math.PI;
         if (this.rng() < dt * 0.4) b.heading += (this.rng() - 0.5) * 2.4;
       }
       if (b.timer > 0) continue;
@@ -342,16 +368,20 @@ export class CritterSim {
         next = { x: p.x, y: p.y, z: 0, ground: true };
       } else if (sp.guild === 'fruit' && w.birdFood.length) {
         const f = w.birdFood[Math.floor(this.rng() * w.birdFood.length)];
-        const p = b !== lead && lead.target ? near(lead.target.x, lead.target.y) : { x: f.x + (this.rng() - 0.5) * f.radius, y: f.y + (this.rng() - 0.5) * f.radius };
-        next = { x: p.x, y: p.y, z: f.height * 0.85, ground: false };
+        const q = this.onPlant(f, f.height * 0.85);
+        const p = b !== lead && lead.target ? near(lead.target.x, lead.target.y) : q;
+        next = { x: p.x, y: p.y, z: b !== lead && lead.target ? lead.target.z : q.z, ground: false };
       } else if (sp.guild === 'nectar') {
         const flowers = w.flowers.filter((f) => f.groups.includes('hummingbirds'));
         const f = flowers.length ? flowers[Math.floor(this.rng() * flowers.length)] : null;
-        next = f ? { x: f.x, y: f.y, z: f.height * 0.9, ground: false } : null;
+        const q = f ? this.onPlant(f, f.height * 0.9) : null;
+        next = q ? { ...q, ground: false } : null;
       } else {
         const p = w.perches.length ? w.perches[Math.floor(this.rng() * w.perches.length)] : null;
         const q = p && b !== lead && lead.target && !lead.target.ground ? near(lead.target.x, lead.target.y) : p ? { x: p.x, y: p.y } : null;
-        next = p && q ? { x: q.x, y: q.y, z: p.z, ground: false } : null;
+        // a shrub or tree: on its top, or settled in among the branches
+        const inside = p && this.rng() < 0.4;
+        next = p && q ? { x: inside ? p.x + (this.rng() - 0.5) * p.r * 0.5 : q.x, y: inside ? p.y + (this.rng() - 0.5) * p.r * 0.5 : q.y, z: inside ? p.z * 0.6 : p.z, ground: false } : null;
       }
       if (!next) { b.timer = between(this.rng, c.perchS); continue; }
       b.target = next;
@@ -374,7 +404,7 @@ export class CritterSim {
           const f = flowers.length ? flowers[Math.floor(this.rng() * flowers.length)] : null;
           if (f) {
             h.state = 'dart';
-            h.target = { x: f.x + (this.rng() - 0.5) * f.radius, y: f.y + (this.rng() - 0.5) * f.radius, z: f.height * 0.85 + 0.2 };
+            h.target = this.onPlant(f, f.height * 0.85 + 0.2);
           } else h.timer = between(this.rng, c.perchS);
         }
       } else if (h.state === 'dart') {
@@ -390,7 +420,7 @@ export class CritterSim {
           const next = flowers.length > 1 && this.rng() < 0.6 ? flowers[Math.floor(this.rng() * flowers.length)] : null;
           if (next) {
             h.state = 'dart';
-            h.target = { x: next.x + (this.rng() - 0.5) * next.radius, y: next.y + (this.rng() - 0.5) * next.radius, z: next.height * 0.85 + 0.2 };
+            h.target = this.onPlant(next, next.height * 0.85 + 0.2);
           } else {
             h.state = 'perch';
             h.target = null;
@@ -411,6 +441,8 @@ export class CritterSim {
     o.y += (dy / d) * move;
     o.z += (dz / d) * move;
     if (Math.hypot(dx, dy) > 0.05) o.heading = Math.atan2(dy, dx);
+    // Never through a roof or a wall: climb and pass over.
+    keepOutOfStructures(this.world, o, dt);
     return d - move < 0.08;
   }
 
@@ -428,8 +460,8 @@ export class CritterSim {
       if (!b.target || b.timer <= 0) {
         const f = flowers.length && this.rng() < 0.75 ? flowers[Math.floor(this.rng() * flowers.length)] : null;
         b.target = f
-          ? { x: f.x + (this.rng() - 0.5) * f.radius, y: f.y + (this.rng() - 0.5) * f.radius, z: f.height * 0.9 + 0.15 }
-          : { x: this.rng() * this.world.lot.width, y: this.rng() * this.world.lot.depth, z: between(this.rng, c.altFt) };
+          ? this.onPlant(f, f.height * 0.9 + 0.15)
+          : (() => { const [x, y] = this.openPoint(); return { x, y, z: between(this.rng, c.altFt) }; })();
         b.timer = 12;
       }
       // An uneven, fluttering flight: it drifts off line and bobs.

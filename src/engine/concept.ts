@@ -1,5 +1,5 @@
 import { circleOverlapsPolygon, distanceToPolygon, lineToPolygon, pointInPolygon, polygonsIntersect } from './geometry';
-import { footprint } from './hardscape';
+import { drivewayBlocks, footprint } from './hardscape';
 import { routePaths, type Hub } from './pathnet';
 import { lightSuits, roomRatio, shadesRaisedBed, type SunMap } from './placement';
 import type { ScenarioData } from './scenario';
@@ -423,6 +423,8 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
           // Plants go in beds, gravel, mulch and open ground, not on paving, decks, paths or lawn.
           if (hard.some((poly) => pointInPolygon(p[0], p[1], poly))) continue;
           if (base.hardscape.some((e) => pointInPolygon(p[0], p[1], footprint(e, ctx.engine.hardscape)))) continue;
+          // And nothing within a few feet of the driveway.
+          if (drivewayBlocks(p, base.hardscape, ctx.engine.hardscape)) continue;
           if (ctx.site.easements.some((e) => pointInPolygon(p[0], p[1], e.polygon))) continue;
           if (trees.some((o) => Math.hypot(o.position![0] - p[0], o.position![1] - p[1]) < (o.canopyWidth ?? 10) / 2)) continue;
           if (placed.some((e) => e.type === 'path' && distanceToPolygon(p[0], p[1], polyOf.get(e.id)!) < cfg.path.plantEdgeFt)) continue;

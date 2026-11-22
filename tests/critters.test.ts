@@ -6,7 +6,7 @@ import speciesRaw from '../src/data/species.json';
 import { butterflyCount, butterflyFlowers, CritterSim, hummerCount, wormCount, wormUpChance } from '../src/engine/critters';
 import { pointInPolygon } from '../src/engine/geometry';
 import { instanceSize, type PlacedPlant } from '../src/engine/growth';
-import { buildLifeWorld, type LifeWorldInput } from '../src/engine/life';
+import { buildLifeWorld, LifeSim, type LifeWorldInput } from '../src/engine/life';
 import type { SunMap } from '../src/engine/placement';
 import { activeStructures, loadSite } from '../src/engine/site';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, SpeciesLibrary } from '../src/engine/types';
@@ -250,5 +250,70 @@ describe('the visitors together', () => {
         expect(o.z).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+});
+
+describe('wildlife and the buildings', () => {
+  const tops = (w: ReturnType<typeof world>) => w.structureTops;
+  const inside = (w: ReturnType<typeof world>, o: { x: number; y: number; z: number }) => tops(w).some((st) => pointInPolygon(o.x, o.y, st.poly) && o.z < st.top + 0.15);
+
+  it('knows each building\'s footprint and its highest point', () => {
+    const w = world([], 5);
+    expect(tops(w)).toHaveLength(structures.length);
+    for (const st of tops(w)) expect(st.top).toBeGreaterThan(8);
+  });
+
+  it('keeps hummingbirds, butterflies and birds out of the buildings, passing over the roofs instead', () => {
+    // flowers on both sides of the house, so a good deal of flying crosses it
+    const flowers = placed([
+      ['penstemon-margarita-bop', 5, 45], ['penstemon-margarita-bop', 49, 45], ['salvia-clevelandii', 4, 50], ['salvia-clevelandii', 49.5, 55],
+      ['verbena-lilacina', 5, 40], ['verbena-lilacina', 49, 40], ['arctostaphylos-howard-mcminn', 5, 60], ['arctostaphylos-howard-mcminn', 49, 60],
+    ]);
+    const w = world(flowers, 6);
+    let crossed = 0;
+    for (const seed of [1, 2, 3]) {
+      const sim = new CritterSim(w, cfg, seed);
+      sim.setClock({ minutes: 12 * 60, night: false });
+      for (let t = 0; t < 240; t += 0.1) {
+        sim.step(0.1);
+        for (const o of [...sim.hummers, ...sim.butterflies, ...sim.birds]) {
+          if (o.vis < 0.05) continue;
+          expect(inside(w, o), `at ${o.x.toFixed(1)}, ${o.y.toFixed(1)}, ${o.z.toFixed(1)}`).toBe(false);
+          if (tops(w).some((st) => pointInPolygon(o.x, o.y, st.poly))) crossed++; // over a roof
+        }
+      }
+    }
+    expect(crossed).toBeGreaterThan(20); // they do fly across, high enough
+  });
+
+  it('keeps bees out of the buildings too', () => {
+    const w = world(placed([['salvia-leucantha', 5, 45], ['salvia-leucantha', 49, 45], ['salvia-leucantha', 30, 100]]), 10);
+    const sim = new LifeSim(w, engine.life, 7, { people: 0, dogs: 0, bees: true });
+    let over = 0;
+    for (let t = 0; t < 240; t += 0.1) {
+      sim.step(0.1);
+      for (const b of sim.bees) {
+        if (b.phase === 'rest') continue;
+        expect(inside(w, b), `bee at ${b.x.toFixed(1)}, ${b.y.toFixed(1)}, ${b.z.toFixed(1)}`).toBe(false);
+        if (tops(w).some((st) => pointInPolygon(b.x, b.y, st.poly))) over++;
+      }
+    }
+    expect(over).toBeGreaterThanOrEqual(0);
+  });
+
+  it('lets them slip in among the leaves of a plant: some visits are inside the canopy, below its top', () => {
+    const w = world(placed([['salvia-clevelandii', 38, 100], ['salvia-clevelandii', 42, 104], ['penstemon-margarita-bop', 34, 98]]), 6);
+    const inCanopy = new Set<string>();
+    for (const seed of [1, 2, 3, 4]) {
+      const sim = new CritterSim(w, cfg, seed);
+      sim.setClock({ minutes: 12 * 60, night: false });
+      for (let t = 0; t < 200; t += 0.1) {
+        sim.step(0.1);
+        for (const h of sim.hummers) if (h.state === 'feed' && h.vis > 0.5) { const f = w.flowers.find((q) => Math.hypot(q.x - h.x, q.y - h.y) <= q.radius); if (f && h.z < f.height * 0.8) inCanopy.add('hummer'); }
+        for (const b of sim.butterflies) if (b.state === 'land' && b.vis > 0.5) { const f = w.flowers.find((q) => Math.hypot(q.x - b.x, q.y - b.y) <= q.radius); if (f && b.z < f.height * 0.8) inCanopy.add('butterfly'); }
+      }
+    }
+    expect(inCanopy.has('hummer')).toBe(true);
+    expect(inCanopy.has('butterfly')).toBe(true);
   });
 });

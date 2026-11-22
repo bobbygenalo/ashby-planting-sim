@@ -1,5 +1,5 @@
 import {
-  bbox, circleOverlapsPolygon, distanceToSegment, lineToPolygon, perimeter, pointInPolygon,
+  bbox, circleOverlapsPolygon, distanceToPolygon, distanceToSegment, lineToPolygon, perimeter, pointInPolygon,
   polygonArea, polygonsIntersect, polylineLength, triangulate,
 } from './geometry';
 import type { Solid } from './site';
@@ -277,4 +277,18 @@ export function elementAt(elements: HardscapeElement[], p: Pt, cfg: HsCfg): Hard
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => !e.removed && pointInPolygon(p[0], p[1], footprint(e, cfg)))
     .sort((a, b) => order(b.e) - order(a.e) || b.i - a.i)[0]?.e;
+}
+
+/**
+ * Whether a spot is too close to the driveway to plant in: on it, or within `drivewayBufferFt` of its edge. The driveway
+ * is any element marked keep-clear that is not removed in this scenario.
+ */
+export function drivewayBlocks(p: Pt, elements: HardscapeElement[], cfg: HsCfg): boolean {
+  for (const e of elements) {
+    if (!e.keepClear || e.removed) continue;
+    const poly = footprint(e, cfg);
+    if (poly.length < 3) continue;
+    if (pointInPolygon(p[0], p[1], poly) || distanceToPolygon(p[0], p[1], poly) < cfg.drivewayBufferFt) return true;
+  }
+  return false;
 }

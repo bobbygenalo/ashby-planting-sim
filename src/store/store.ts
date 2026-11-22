@@ -3,6 +3,7 @@ import siteRaw from '../data/site.json';
 import engineRaw from '../data/engine.json';
 import type { Conflict } from '../engine/conflicts';
 import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engine/geometry';
+import { drivewayBlocks } from '../engine/hardscape';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
 import { buildSunMap, type SunMap } from '../engine/placement';
@@ -424,6 +425,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setPaletteSpecies: (id, on) => scenario({ palette: { ...get().palette, [id]: on } }),
       addInstance: (speciesId, position, opts = {}) => {
         if (get().mode !== 'edit') return null;
+        // Nothing is planted on the driveway or within a few feet of it.
+        if (!opts.existing && drivewayBlocks(position, get().hardscape, engine.hardscape)) return null;
         const id = uid('p');
         const inst: PlantInstance = {
           id,
@@ -439,6 +442,11 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         return id;
       },
       updateInstance: (id, patch, opts) => {
+        // A plant is not moved onto the driveway or beside it: that move is ignored.
+        if (patch.position && drivewayBlocks(patch.position, get().hardscape, engine.hardscape)) {
+          const cur = get().instances.find((i) => i.id === id);
+          if (cur && !drivewayBlocks(cur.position, get().hardscape, engine.hardscape)) return;
+        }
         const next = { instances: get().instances.map((i) => (i.id === id ? { ...i, ...patch } : i)) };
         if (opts?.silent) mutate(next);
         else scenario(next, `inst:${id}`);

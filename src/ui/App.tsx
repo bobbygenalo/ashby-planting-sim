@@ -12,6 +12,7 @@ import { CanvasToolbar } from './CanvasToolbar';
 import { SimDock } from './SimDock';
 import { SelectionCard } from './SelectionCard';
 import { ShuffleBar } from './ShuffleControl';
+import { viewForKey } from './shortcuts';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
 import { startCloudSync } from '../store/cloudSync';
@@ -90,6 +91,13 @@ function useShortcuts() {
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')) return;
       const st = appStore.getState();
+      // Number keys switch the camera view, unless a dialog is open.
+      const view = viewForKey(st.site.views, e);
+      if (view && !document.querySelector('.dialog')) {
+        e.preventDefault();
+        st.setView(view);
+        return;
+      }
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();

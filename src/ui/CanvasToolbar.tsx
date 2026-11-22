@@ -31,11 +31,14 @@ export function CanvasToolbar() {
   }, [open]);
   return (
     <div className="canvasbar">
-      <label className="pillctl">View
-        <select value={s.view} onChange={(e) => s.setView(e.target.value)} aria-label="Camera view">
-          {s.site.views.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
-        </select>
-      </label>
+      <div className="viewbar" role="group" aria-label="Camera view">
+        {s.site.views.map((v, i) => (
+          <button key={v.id} className={s.view === v.id ? 'on' : ''} aria-pressed={s.view === v.id} aria-keyshortcuts={String(i + 1)} title={`${v.label} (press ${i + 1})`} onClick={() => s.setView(v.id)}>
+            {v.label}<kbd className="key">{i + 1}</kbd>
+          </button>
+        ))}
+      </div>
+      <div className="toolbar-right">
       <div className="layers" ref={box}>
         <button aria-expanded={open} onClick={() => setOpen(!open)}>Layers ▾</button>
         {open && (
@@ -74,6 +77,7 @@ export function CanvasToolbar() {
           {s.engine.scene.snapOptionsFt.map((v) => <option key={v} value={v}>{formatFeetInches(v)}</option>)}
         </select>
       </label>
+      </div>
     </div>
   );
 }

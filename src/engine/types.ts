@@ -92,6 +92,20 @@ export interface PrintedDimCfg {
   measure: Measure;
 }
 
+/** A door people use to go into a building. The point is on the outside face of the wall. */
+export interface DoorCfg {
+  id: string;
+  label: string;
+  /** The structure's group, or its id when it has none. */
+  building: string;
+  point: Pt;
+  /** Unit vector pointing away from the building. */
+  outward: Pt;
+  /** True when the position is assumed rather than read from a plan. */
+  estimate?: boolean;
+  note?: string;
+}
+
 export interface SiteConfig {
   schema: string;
   name: string;
@@ -104,6 +118,8 @@ export interface SiteConfig {
   driveSide: 'left' | 'right';
   lot: { width: number; depth: number };
   structures: StructureCfg[];
+  /** Doors people walk in and out of. Optional: a site without them has people stay outside. */
+  doors?: DoorCfg[];
   hardscape: HardscapeCfg[];
   contextObjects: ContextObjectCfg[];
   easements: EasementCfg[];
@@ -218,12 +234,36 @@ export interface SpeciesFruit {
   source?: string;
 }
 
+export interface PersonSpec {
+  /** Age in years: under 6 follows an adult, 6 to 17 wanders on their own, 18 and over is an adult. */
+  age: number;
+  heightFt: number;
+  speedFt: [number, number];
+}
+
 export interface LifeCfg {
   cellFt: number;
   margins: { plantFt: number; structureFt: number; lotFt: number; hiveFt: number; nearBlockedFt: number; nearBlockedExtraCost: number };
   /** What it costs to walk one foot over each kind of ground; paths are cheapest, so people drift toward them. */
   costs: { open: number; path: number; hard: number; lawn: number; gravel: number; mulch: number; bed: number };
-  people: { max: number; speedFt: [number, number]; pauseS: [number, number]; pathBias: number; minTripFt: number; heightFt: number; turnRate: number };
+  people: {
+    max: number;
+    pauseS: [number, number];
+    pathBias: number;
+    minTripFt: number;
+    turnRate: number;
+    /** The cast, in the order people join as the count goes up. Its length is the most people there can be. */
+    roster: PersonSpec[];
+    /** How close a toddler stays to the adult looking after them, and how often they catch up. */
+    toddlerFollowFt: [number, number];
+    toddlerReplanS: number;
+    /** Chance, when choosing where to go next, of heading for a building instead. */
+    visitBias: number;
+    /** How long someone stays inside, in seconds, chosen at random. */
+    lingerS: [number, number];
+    /** How far outside a door they stop before going in, in feet. */
+    doorApproachFt: number;
+  };
   dogs: { max: number; speedFt: [number, number]; pauseS: [number, number]; followFt: [number, number]; replanS: number; heightFt: number; turnRate: number };
   bees: {
     count: number;
@@ -234,7 +274,7 @@ export interface LifeCfg {
     wanderFt: number;
     altitudeFt: [number, number];
     wobbleFt: number;
-    /** Drawn width of a bee in feet (a real bee is a third of this, too small to see). */
+    /** Drawn length of a bee in feet (a real bee is about a seventh of this, too small to see). */
     displayFt: number;
     hive: { boxes: number; minFromPathFt: number; minFromStructureFt: number; minFromPlantFt: number; attempts: number; /** Score added for a spot at the very back of the lot, so a hive tends to sit toward the rear. */ rearBias: number };
   };

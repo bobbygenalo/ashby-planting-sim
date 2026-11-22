@@ -5,7 +5,8 @@ import speciesRaw from '../src/data/species.json';
 import materialsRaw from '../src/data/materials.json';
 import { distanceToPolygon, pointInPolygon } from '../src/engine/geometry';
 import { instanceSize, type PlacedPlant } from '../src/engine/growth';
-import { buildLifeWorld, chooseHiveSpot, findRoute, hiveSpotIsGood, LifeSim, type LifeWorld, type LifeWorldInput } from '../src/engine/life';
+import { ADULT_AGE, buildLifeWorld, chooseHiveSpot, findRoute, hiveSpotIsGood, isInside, LifeSim, TODDLER_AGE_LIMIT, type LifeWorld, type LifeWorldInput } from '../src/engine/life';
+import { personProportions } from '../src/scene/forms';
 import { activeStructures, loadSite } from '../src/engine/site';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, SiteConfig, SpeciesLibrary } from '../src/engine/types';
 
@@ -121,10 +122,10 @@ describe('people and dogs', () => {
   const w = world();
   const run = (seed: number, seconds: number, people = 4, dogs = 2, dt = 0.1) => {
     const sim = new LifeSim(w, cfg, seed, { people, dogs, bees: true });
-    const samples: { kind: string; x: number; y: number }[] = [];
+    const samples: { kind: string; x: number; y: number; stepping: boolean }[] = [];
     for (let t = 0; t < seconds; t += dt) {
       sim.step(dt);
-      for (const a of sim.walkers) samples.push({ kind: a.kind, x: a.x, y: a.y });
+      for (const a of sim.walkers) samples.push({ kind: a.kind, x: a.x, y: a.y, stepping: a.visit !== null });
     }
     return { sim, samples };
   };
@@ -133,7 +134,8 @@ describe('people and dogs', () => {
     for (const seed of [1, 2, 3]) {
       const { samples } = run(seed, 400);
       for (const a of samples) {
-        expect(cellBlocked(w, a.x, a.y), `${a.kind} at ${a.x.toFixed(1)}, ${a.y.toFixed(1)}`).toBe(false);
+        // Blocked ground is for plants, buildings and beds; the only way onto it is the last step to a door.
+        expect(a.stepping ? false : cellBlocked(w, a.x, a.y), `${a.kind} at ${a.x.toFixed(1)}, ${a.y.toFixed(1)}`).toBe(false);
         for (const p of w.plants) expect(Math.hypot(p.x - a.x, p.y - a.y), 'inside a canopy').toBeGreaterThan(p.r);
         for (const s of w.structures) expect(pointInPolygon(a.x, a.y, s)).toBe(false);
         expect(a.x).toBeGreaterThan(0);
@@ -148,7 +150,10 @@ describe('people and dogs', () => {
     const sim = new LifeSim(w, cfg, 5, { people: 3, dogs: 2, bees: false });
     for (let n = 0; n < 200; n++) {
       sim.step(4); // a four-second hitch
-      for (const a of sim.walkers) expect(cellBlocked(w, a.x, a.y)).toBe(false);
+      for (const a of sim.walkers) {
+        expect(a.visit ? false : cellBlocked(w, a.x, a.y)).toBe(false);
+        for (const s of w.structures) expect(pointInPolygon(a.x, a.y, s)).toBe(false);
+      }
     }
   });
 
@@ -169,10 +174,10 @@ describe('people and dogs', () => {
     expect(cells.size).toBeGreaterThan(25);
   });
 
-  it('allows at most two dogs and four people, however many are asked for', () => {
+  it('allows at most two dogs and fifteen people, however many are asked for', () => {
     const sim = new LifeSim(w, cfg, 1, { people: 99, dogs: 99, bees: false });
     expect(sim.walkers.filter((a) => a.kind === 'dog')).toHaveLength(2);
-    expect(sim.walkers.filter((a) => a.kind === 'person')).toHaveLength(4);
+    expect(sim.walkers.filter((a) => a.kind === 'person')).toHaveLength(15);
     const none = new LifeSim(w, cfg, 1, { people: 0, dogs: 0, bees: false });
     expect(none.walkers).toHaveLength(0);
     const neg = new LifeSim(w, cfg, 1, { people: -3, dogs: -1, bees: false });
@@ -211,9 +216,9 @@ describe('people and dogs', () => {
     const victim = sim.walkers[0];
     const grown = buildLifeWorld(input({ plants: [...FULL_PLANTS, ...placed([['heteromeles-arbutifolia', victim.x, victim.y, 20]])] }));
     sim.setWorld(grown);
-    for (const a of sim.walkers) expect(cellBlocked(grown, a.x, a.y)).toBe(false);
+    for (const a of sim.walkers) expect(a.visit ? false : cellBlocked(grown, a.x, a.y)).toBe(false);
     for (let n = 0; n < 300; n++) sim.step(0.1);
-    for (const a of sim.walkers) expect(cellBlocked(grown, a.x, a.y)).toBe(false);
+    for (const a of sim.walkers) expect(a.visit ? false : cellBlocked(grown, a.x, a.y)).toBe(false);
   });
 });
 
@@ -297,5 +302,189 @@ describe('where the hive goes', () => {
     });
     expect(hives.filter((h) => h.y > site.lot.depth / 2).length).toBeGreaterThanOrEqual(6);
     for (const h of hives) expect(hiveSpotIsGood(w, h, cfg)).toBe(true);
+  });
+});
+
+describe('the cast of people', () => {
+  const w = world();
+  const people = (n = 99) => new LifeSim(w, cfg, 3, { people: n, dogs: 0, bees: false }).walkers.filter((a) => a.kind === 'person');
+
+  it('is fifteen people: two nine-year-olds, an eleven-year-old, a fourteen-year-old, a three-year-old and ten adults', () => {
+    const all = people();
+    expect(cfg.people.max).toBe(15);
+    expect(all).toHaveLength(15);
+    const ages = all.map((p) => p.age).sort((a, b) => a - b);
+    expect(ages.filter((a) => a === 9)).toHaveLength(2);
+    expect(ages.filter((a) => a === 11)).toHaveLength(1);
+    expect(ages.filter((a) => a === 14)).toHaveLength(1);
+    expect(ages.filter((a) => a === 3)).toHaveLength(1);
+    expect(ages.filter((a) => a >= ADULT_AGE)).toHaveLength(10);
+  });
+
+  it('adds people in a mixed order, so a small group has adults and children', () => {
+    const three = people(3).map((p) => p.age);
+    expect(three.filter((a) => a >= ADULT_AGE).length).toBeGreaterThanOrEqual(2);
+    expect(three.some((a) => a < ADULT_AGE)).toBe(true);
+    // the same people appear at the same place in the list however many are asked for
+    expect(people(6).map((p) => p.age)).toEqual(people(15).slice(0, 6).map((p) => p.age));
+  });
+
+  it('is taller the older they are, and children are built like children', () => {
+    const byAge = [...people()].sort((a, b) => a.age - b.age);
+    const ages = byAge.map((p) => p.age);
+    expect(byAge.find((p) => p.age === 3)!.heightFt).toBeLessThan(byAge.find((p) => p.age === 9)!.heightFt);
+    expect(byAge.find((p) => p.age === 9)!.heightFt).toBeLessThan(byAge.find((p) => p.age === 11)!.heightFt);
+    expect(byAge.find((p) => p.age === 11)!.heightFt).toBeLessThan(byAge.find((p) => p.age === 14)!.heightFt);
+    expect(byAge.find((p) => p.age === 14)!.heightFt).toBeLessThan(Math.min(...byAge.filter((p) => p.age >= ADULT_AGE).map((p) => p.heightFt)) + 0.5);
+    expect(ages[0]).toBe(3);
+    const toddler = personProportions(3, 3), adult = personProportions(30, 5.6);
+    expect(toddler.headR * 2 / toddler.height).toBeGreaterThan(adult.headR * 2 / adult.height + 0.08); // a big head
+    expect(toddler.legH / toddler.height).toBeLessThan(adult.legH / adult.height); // short legs
+    for (const age of [3, 9, 11, 14, 30]) {
+      const f = personProportions(age, 5);
+      expect(f.legH + f.torsoH + f.headR * 2).toBeCloseTo(5, 6);
+      expect(f.torsoH).toBeGreaterThan(0);
+    }
+  });
+
+  it('has the toddler stay close to an adult, and the toddler walk slower than everyone else', () => {
+    const sim = new LifeSim(w, cfg, 14, { people: 15, dogs: 0, bees: false });
+    const toddler = sim.walkers.find((p) => p.age < TODDLER_AGE_LIMIT)!;
+    const leader = sim.walkers[toddler.leader!];
+    expect(leader.age).toBeGreaterThanOrEqual(ADULT_AGE);
+    expect(toddler.cruise).toBeLessThan(Math.min(...sim.walkers.filter((p) => p.age >= TODDLER_AGE_LIMIT).map((p) => p.cruise)));
+    let near = 0, total = 0;
+    for (let t = 0; t < 600; t += 0.1) {
+      sim.step(0.1);
+      if (t < 30) continue;
+      total++;
+      if (Math.hypot(toddler.x - leader.x, toddler.y - leader.y) < 25) near++;
+    }
+    expect(near / total).toBeGreaterThan(0.6);
+  });
+
+  it('never has two walkers stand inside a plant, a building or a bed with all fifteen out at once', () => {
+    const sim = new LifeSim(w, cfg, 17, { people: 15, dogs: 2, bees: false });
+    for (let t = 0; t < 300; t += 0.1) {
+      sim.step(0.1);
+      for (const a of sim.walkers) {
+        if (isInside(a)) continue;
+        expect(a.visit ? false : cellBlocked(w, a.x, a.y), `${a.kind} age ${a.age}`).toBe(false);
+        for (const p of w.plants) expect(Math.hypot(p.x - a.x, p.y - a.y)).toBeGreaterThan(p.r);
+        for (const s of w.structures) expect(pointInPolygon(a.x, a.y, s)).toBe(false);
+      }
+    }
+  });
+});
+
+describe('going into buildings', () => {
+  const w = world();
+
+  it('has a door for the house, the garage and the ADU, each just outside its wall and reachable from the yard', () => {
+    expect(w.doors.map((d) => d.building).sort()).toEqual(['adu', 'garage', 'house', 'house']);
+    for (const d of w.doors) {
+      const parts = structures.filter((s) => (s.group ?? s.id) === d.building);
+      const dist = Math.min(...parts.map((s) => distanceToPolygon(d.stand[0], d.stand[1], s.footprint)));
+      expect(dist, `${d.id} stands off its wall`).toBeGreaterThan(0.05);
+      expect(dist, `${d.id} is at its wall`).toBeLessThan(0.6);
+      for (const s of structures) expect(pointInPolygon(d.stand[0], d.stand[1], s.footprint)).toBe(false);
+      const [i, j] = [Math.floor(d.approach[0] / w.cell), Math.floor(d.approach[1] / w.cell)];
+      expect(w.blocked[j * w.nx + i]).toBe(0);
+      expect(w.reachable).toContain(j * w.nx + i);
+      expect(Math.hypot(d.approach[0] - d.stand[0], d.approach[1] - d.stand[1])).toBeLessThan(5);
+    }
+  });
+
+  it('has only the doors of buildings that are in the plan', () => {
+    const noAdu = buildLifeWorld(input({ structures: activeStructures(site, { aduEnabled: false }) }));
+    expect(noAdu.doors.some((d) => d.building === 'adu')).toBe(false);
+    expect(noAdu.doors).toHaveLength(3);
+    expect(buildLifeWorld(input({ site: { ...site, doors: [] } })).doors).toEqual([]);
+  });
+
+  it('has people walk in, linger a random while, and come out, at all three buildings', () => {
+    const sim = new LifeSim(w, cfg, 5, { people: 12, dogs: 0, bees: false });
+    const entered = new Map<string, number>();
+    const stays: number[] = [];
+    const insideSince = new Map<number, { t: number; door: string }>();
+    for (let t = 0; t < 1800; t += 0.1) {
+      sim.step(0.1);
+      sim.walkers.forEach((p, i) => {
+        const inside = isInside(p);
+        const was = insideSince.get(i);
+        if (inside && !was) {
+          insideSince.set(i, { t, door: p.visit!.door });
+          const b = w.doors.find((d) => d.id === p.visit!.door)!.building;
+          entered.set(b, (entered.get(b) ?? 0) + 1);
+        }
+        if (!inside && was) {
+          stays.push(t - was.t);
+          insideSince.delete(i);
+        }
+      });
+    }
+    for (const b of ['house', 'garage', 'adu']) expect(entered.get(b) ?? 0, `nobody went into the ${b}`).toBeGreaterThan(2);
+    expect(stays.length).toBeGreaterThan(20);
+    for (const s of stays) {
+      expect(s).toBeGreaterThanOrEqual(cfg.people.lingerS[0] - 0.2);
+      expect(s).toBeLessThanOrEqual(cfg.people.lingerS[1] + 2); // a moment longer to step back out
+    }
+    expect(Math.max(...stays) - Math.min(...stays)).toBeGreaterThan(15); // the stays really differ
+  });
+
+  it('hides people while they are inside, shows them stepping in and out, and puts them back on open ground', () => {
+    const sim = new LifeSim(w, cfg, 9, { people: 8, dogs: 0, bees: false });
+    let hidden = 0, stepping = 0, exits = 0;
+    const was = new Map<number, boolean>();
+    for (let t = 0; t < 900; t += 0.1) {
+      sim.step(0.1);
+      sim.walkers.forEach((p, i) => {
+        if (isInside(p)) {
+          hidden++;
+          expect(p.speed).toBe(0);
+        } else if (p.visit) stepping++;
+        if (was.get(i) && !isInside(p)) {
+          exits++;
+          expect(p.visit?.phase).toBe('out');
+        }
+        was.set(i, isInside(p));
+      });
+    }
+    expect(hidden).toBeGreaterThan(1000);
+    expect(stepping).toBeGreaterThan(100);
+    expect(exits).toBeGreaterThan(5);
+    // afterwards everyone who is visible and walking is on open ground again
+    for (let t = 0; t < 120; t += 0.1) sim.step(0.1);
+    for (const p of sim.walkers) if (!p.visit) expect(cellBlocked(w, p.x, p.y)).toBe(false);
+  });
+
+  it('keeps dogs and toddlers waiting outside while their person is inside, and never takes them in', () => {
+    const sim = new LifeSim(w, cfg, 12, { people: 15, dogs: 2, bees: false });
+    for (let t = 0; t < 900; t += 0.1) {
+      sim.step(0.1);
+      for (const a of sim.walkers) {
+        if (a.kind === 'dog' || a.age < TODDLER_AGE_LIMIT) {
+          expect(a.visit).toBeNull();
+          expect(isInside(a)).toBe(false);
+          expect(cellBlocked(w, a.x, a.y)).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('keeps going to the same door when the yard changes on the way, and lets go if the building disappears', () => {
+    const sim = new LifeSim(w, cfg, 21, { people: 6, dogs: 0, bees: false });
+    let walker = sim.walkers[0];
+    for (let t = 0; t < 1200 && !(walker.visit && walker.visit.phase === 'to'); t += 0.1) {
+      sim.step(0.1);
+      walker = sim.walkers.find((p) => p.visit?.phase === 'to') ?? walker;
+    }
+    expect(walker.visit?.phase).toBe('to');
+    const door = walker.visit!.door;
+    sim.setWorld(buildLifeWorld(input({ plants: [...FULL_PLANTS, ...placed([['salvia-leucantha', 30.5, 98.5, 8]])] })));
+    expect(walker.visit?.door).toBe(door);
+    sim.setWorld(buildLifeWorld(input({ site: { ...site, doors: [] } })));
+    for (let t = 0; t < 30; t += 0.1) sim.step(0.1);
+    expect(sim.walkers.every((p) => p.visit === null || !isInside(p))).toBe(true);
   });
 });

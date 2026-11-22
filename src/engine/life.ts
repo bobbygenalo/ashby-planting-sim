@@ -6,6 +6,11 @@ import type { EngineConfig, HardscapeElement, Material, Pt, SiteConfig, Structur
 
 type Cfg = EngineConfig['life'];
 
+/** Under this age a child follows an adult. */
+export const TODDLER_AGE_LIMIT = 6;
+/** From this age a person is an adult. */
+export const ADULT_AGE = 18;
+
 /** A flower the bees can visit: where it is, how wide, and how high its top is. */
 export interface Bloom {
   x: number;
@@ -35,6 +40,18 @@ export interface LifeWorld {
   structures: Pt[][];
   blooms: Bloom[];
   hive: { x: number; y: number } | null;
+  /** Doors people can go in and out of, for the buildings that are in the plan. */
+  doors: LifeDoor[];
+}
+
+/** A door: where someone stands to go in, and the open ground a little way out where they walk to first. */
+export interface LifeDoor {
+  id: string;
+  label: string;
+  building: string;
+  /** Just outside the wall, where they step in and out of sight. */
+  stand: Pt;
+  approach: Pt;
 }
 
 export interface LifeWorldInput {
@@ -67,7 +84,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null,
+    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [],
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -127,7 +144,30 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
     }
   }
   finishWorld(w, cfg);
+  w.doors = buildDoors(w, input, cfg);
   return w;
+}
+
+/** The doors of the buildings that are in the plan, each with a reachable spot to walk to first. */
+function buildDoors(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeDoor[] {
+  const buildings = new Set(input.structures.map((s) => s.group ?? s.id));
+  const out: LifeDoor[] = [];
+  for (const d of input.site.doors ?? []) {
+    if (!buildings.has(d.building) || !w.reachable.length) continue;
+    const want: Pt = [d.point[0] + d.outward[0] * cfg.people.doorApproachFt, d.point[1] + d.outward[1] * cfg.people.doorApproachFt];
+    let best: Pt | null = null;
+    let bestD = Infinity;
+    for (const k of w.reachable) {
+      const c = center(w, k % w.nx, Math.floor(k / w.nx));
+      const dist = Math.hypot(c[0] - want[0], c[1] - want[1]);
+      if (dist < bestD) {
+        bestD = dist;
+        best = c;
+      }
+    }
+    if (best) out.push({ id: d.id, label: d.label, building: d.building, stand: [d.point[0] + d.outward[0] * 0.25, d.point[1] + d.outward[1] * 0.25], approach: best });
+  }
+  return out;
 }
 
 /** Inflate the cost beside blocked ground, then find the largest connected open region and the path cells in it. */
@@ -318,13 +358,22 @@ export interface Walker {
   gait: number;
   route: Pt[];
   pauseLeft: number;
-  /** A person a dog follows. */
+  /** A person a dog or a small child follows. */
   leader: number | null;
+  /** Going into, inside, or coming out of a building. Hidden while `inside`. */
+  visit: { door: string; phase: 'to' | 'in' | 'inside' | 'out'; left: number } | null;
+  /** Age in years: a dog is 0. */
+  age: number;
+  /** How tall they stand, in feet. */
+  heightFt: number;
   /** Looks, chosen once. */
   variant: number;
   replan: number;
   cruise: number;
 }
+
+/** True while a person is inside a building and so not to be drawn. */
+export const isInside = (w: Walker): boolean => w.visit?.phase === 'inside';
 
 export interface BeeState {
   x: number;
@@ -383,10 +432,17 @@ export class LifeSim {
       const p = this.randomCell();
       if (!p) break;
       const person = n < this.counts.people;
+      const spec = person ? this.cfg.people.roster[n] : null;
+      // A small child stays near an adult; a dog stays near a person.
+      let leader: number | null = null;
+      if (spec && spec.age < TODDLER_AGE_LIMIT) {
+        const adults = this.cfg.people.roster.slice(0, n).map((r, i) => (r.age >= ADULT_AGE ? i : -1)).filter((i) => i >= 0);
+        leader = adults.length ? adults[adults.length - 1] : null;
+      } else if (!person && this.counts.people > 0) leader = (n - this.counts.people) % this.counts.people;
       this.walkers.push({
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
-        pauseLeft: this.rng() * 2, leader: person || this.counts.people === 0 ? null : (n - this.counts.people) % this.counts.people, variant: Math.floor(this.rng() * 1000),
-        replan: 0, cruise: this.between(person ? this.cfg.people.speedFt : this.cfg.dogs.speedFt),
+        pauseLeft: this.rng() * 2, leader, visit: null, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
+        replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
       });
     }
     this.bees = [];
@@ -403,6 +459,8 @@ export class LifeSim {
     this.world = world;
     for (const wk of this.walkers) {
       wk.route = [];
+      if (wk.visit && wk.visit.phase !== 'to' && world.doors.some((d) => d.id === wk.visit!.door)) continue; // at their door, already
+      if (wk.visit && wk.visit.phase !== 'to') wk.visit = null; // their building is gone
       const [i, j] = cellOf(world, wk.x, wk.y);
       if (world.blocked[idx(world, i, j)]) {
         const p = this.nearestFree(wk.x, wk.y);
@@ -452,21 +510,98 @@ export class LifeSim {
     return this.randomCell();
   }
 
-  private pickDogTarget(wk: Walker): Pt | null {
+  /** Somewhere near the person this walker follows, or anywhere when they follow no one. */
+  private pickFollowTarget(wk: Walker): Pt | null {
     const leader = wk.leader !== null ? this.walkers[wk.leader] : null;
     if (!leader) return this.randomCell();
     const a = this.rng() * Math.PI * 2;
-    const d = this.between(this.cfg.dogs.followFt);
+    const d = this.between(wk.kind === 'dog' ? this.cfg.dogs.followFt : this.cfg.people.toddlerFollowFt);
     const t = this.nearestFree(leader.x + Math.cos(a) * d, leader.y + Math.sin(a) * d);
     return t;
   }
 
+  /** Sometimes a grown-up or older child heads for a building instead of just somewhere in the yard. */
+  private pickDoor(wk: Walker): LifeDoor | null {
+    const doors = this.world.doors;
+    if (!doors.length || wk.leader !== null || wk.kind !== 'person' || this.rng() >= this.cfg.people.visitBias) return null;
+    const buildings = [...new Set(doors.map((d) => d.building))];
+    const building = buildings[Math.floor(this.rng() * buildings.length)];
+    const options = doors.filter((d) => d.building === building);
+    return options[Math.floor(this.rng() * options.length)];
+  }
+
   private plan(wk: Walker) {
-    const target = wk.kind === 'person' ? this.pickPersonTarget(wk) : this.pickDogTarget(wk);
+    if (wk.visit?.phase === 'to' && !this.world.doors.some((d) => d.id === wk.visit!.door)) wk.visit = null;
+    const door = wk.visit?.phase === 'to' ? this.world.doors.find((d) => d.id === wk.visit!.door)! : this.pickDoor(wk);
+    if (door) {
+      const route = findRoute(this.world, [wk.x, wk.y], door.approach);
+      if (route) {
+        wk.visit = { door: door.id, phase: 'to', left: 0 };
+        wk.route = route.slice(1);
+        if (route.length <= 1) this.startEntering(wk);
+        return;
+      }
+      wk.visit = null;
+    }
+    const target = wk.kind === 'person' && wk.leader === null ? this.pickPersonTarget(wk) : this.pickFollowTarget(wk);
     if (!target) return;
     const route = findRoute(this.world, [wk.x, wk.y], target);
     wk.route = route ? route.slice(1) : [];
     if (!route) wk.pauseLeft = 0.5;
+  }
+
+  /** They have reached the spot outside a door: step in. */
+  private startEntering(wk: Walker) {
+    if (!wk.visit) return;
+    wk.visit.phase = 'in';
+    wk.route = [];
+    wk.speed = 0;
+  }
+
+  /** Going in, staying, and coming out of a door, which is a straight walk over the last few feet. */
+  private stepVisit(wk: Walker, dt: number) {
+    const v = wk.visit!;
+    const door = this.world.doors.find((d) => d.id === v.door);
+    if (!door) {
+      wk.visit = null;
+      const p = this.nearestFree(wk.x, wk.y);
+      if (p) [wk.x, wk.y] = p;
+      return;
+    }
+    if (v.phase === 'inside') {
+      v.left -= dt;
+      wk.speed = 0;
+      wk.x = door.stand[0];
+      wk.y = door.stand[1];
+      if (v.left <= 0) v.phase = 'out';
+      return;
+    }
+    const goal = v.phase === 'in' ? door.stand : door.approach;
+    const dx = goal[0] - wk.x, dy = goal[1] - wk.y;
+    const dist = Math.hypot(dx, dy);
+    const speed = wk.cruise * 0.7;
+    const move = Math.min(dist, speed * dt);
+    if (dist > 1e-6) {
+      wk.heading = Math.atan2(dy, dx);
+      wk.x += (dx / dist) * move;
+      wk.y += (dy / dist) * move;
+    }
+    wk.speed = dt > 0 ? move / dt : 0;
+    wk.gait += move * 1.6 * (5.6 / wk.heightFt) ** 0.8;
+    if (dist - move < 0.05) {
+      if (v.phase === 'in') {
+        v.phase = 'inside';
+        v.left = this.between(this.cfg.people.lingerS);
+        wk.x = door.stand[0];
+        wk.y = door.stand[1];
+        wk.speed = 0;
+      } else {
+        wk.visit = null;
+        wk.route = [];
+        wk.pauseLeft = this.between(this.cfg.people.pauseS) * 0.4;
+        wk.speed = 0;
+      }
+    }
   }
 
   /** Advance everyone by `dt` seconds, in steps no longer than the configured maximum. */
@@ -483,14 +618,18 @@ export class LifeSim {
     const w = this.world;
     for (const wk of this.walkers) {
       const turn = (wk.kind === 'person' ? this.cfg.people.turnRate : this.cfg.dogs.turnRate) * dt;
-      if (wk.kind === 'dog') wk.replan -= dt;
+      if (wk.leader !== null) wk.replan -= dt;
+      if (wk.visit && wk.visit.phase !== 'to') {
+        this.stepVisit(wk, dt);
+        continue;
+      }
       if (wk.pauseLeft > 0) {
         wk.pauseLeft -= dt;
         wk.speed = 0;
         continue;
       }
-      if (wk.route.length === 0 || (wk.kind === 'dog' && wk.leader !== null && wk.replan <= 0)) {
-        if (wk.kind === 'dog') wk.replan = this.cfg.dogs.replanS;
+      if (wk.route.length === 0 || (wk.leader !== null && wk.replan <= 0)) {
+        if (wk.leader !== null) wk.replan = wk.kind === 'dog' ? this.cfg.dogs.replanS : this.cfg.people.toddlerReplanS;
         const hadRoute = wk.route.length > 0;
         this.plan(wk);
         if (wk.route.length === 0 && !hadRoute) {
@@ -519,9 +658,13 @@ export class LifeSim {
         continue;
       }
       wk.speed = move / dt;
-      wk.gait += move * (wk.kind === 'person' ? 1.6 : 2.4);
+      wk.gait += move * (wk.kind === 'person' ? 1.6 * (5.6 / wk.heightFt) ** 0.8 : 2.4);
       if (dist - move < 0.25) wk.route.shift();
       if (wk.route.length === 0) {
+        if (wk.visit?.phase === 'to') {
+          this.startEntering(wk);
+          continue;
+        }
         wk.pauseLeft = wk.kind === 'person' ? this.between(this.cfg.people.pauseS) : this.between(this.cfg.dogs.pauseS);
         wk.speed = 0;
       }

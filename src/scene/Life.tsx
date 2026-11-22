@@ -1,11 +1,12 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { buildLifeWorld, LifeSim, type LifeWorld } from '../engine/life';
+import { buildLifeWorld, isInside, LifeSim, type LifeWorld } from '../engine/life';
 import { activeStructures } from '../engine/site';
 import { doyToMonthDay } from '../engine/time';
 import { usePlaced } from '../store/derived';
 import { useApp } from '../store/store';
+import { beeGeometry, personProportions } from './forms';
 
 /** Nothing here should catch a click meant for the ground or a plant. */
 const noHit = { raycast: () => null } as const;
@@ -15,16 +16,16 @@ const PANTS = ['#2c3e50', '#4a4a4a', '#5d4037', '#1f3a5f', '#6b705c'];
 const SKIN = ['#f1c9a5', '#d9a577', '#b07a4f', '#8a5a3a', '#f5d7bd'];
 const COATS = ['#a0693a', '#2b2b2b', '#d8b46a', '#ececec', '#7a5a3c'];
 
-/** A person in site coordinates: facing +X, Z up, legs and arms swinging as they walk. */
+/** A person in site coordinates: facing +X, Z up, legs and arms swinging as they walk. Built to their age and height. */
 function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; index: number }) {
-  const height = useApp((s) => s.engine.life.people.heightFt);
   const root = useRef<THREE.Group>(null);
   const legs = [useRef<THREE.Group>(null), useRef<THREE.Group>(null)];
   const arms = [useRef<THREE.Group>(null), useRef<THREE.Group>(null)];
   const body = useRef<THREE.Group>(null);
-  const variant = sim.current?.walkers[index]?.variant ?? index;
+  const who = sim.current?.walkers[index];
+  const variant = who?.variant ?? index;
+  const f = useMemo(() => personProportions(who?.age ?? 30, who?.heightFt ?? 5.6), [who?.age, who?.heightFt]);
   const look = useMemo(() => ({ shirt: SHIRTS[variant % SHIRTS.length], pants: PANTS[(variant >> 2) % PANTS.length], skin: SKIN[(variant >> 4) % SKIN.length] }), [variant]);
-  const legH = 2.7, torsoH = 1.9;
   useFrame(() => {
     const w = sim.current?.walkers[index];
     const g = root.current;
@@ -33,7 +34,7 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
       g.visible = false;
       return;
     }
-    g.visible = true;
+    g.visible = !isInside(w);
     g.position.set(w.x, w.y, 0);
     g.rotation.z = w.heading;
     const swing = Math.sin(w.gait) * 0.7 * Math.min(1, w.speed / 2);
@@ -41,33 +42,33 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
     legs[1].current?.rotation.set(0, -swing, 0);
     arms[0].current?.rotation.set(0, -swing * 0.8, 0);
     arms[1].current?.rotation.set(0, swing * 0.8, 0);
-    if (body.current) body.current.position.z = Math.abs(Math.sin(w.gait)) * 0.06 * Math.min(1, w.speed / 2);
+    if (body.current) body.current.position.z = Math.abs(Math.sin(w.gait)) * 0.011 * f.height * Math.min(1, w.speed / 2);
   });
   return (
-    <group ref={root} scale={height / 5.6} {...noHit}>
+    <group ref={root} {...noHit}>
       <group ref={body}>
         {[1, -1].map((side, n) => (
-          <group key={side} ref={legs[n]} position={[0, side * 0.28, legH]}>
-            <mesh {...noHit} position={[0, 0, -legH / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <cylinderGeometry args={[0.17, 0.14, legH, 8]} />
+          <group key={side} ref={legs[n]} position={[0, side * f.hipY, f.legH]}>
+            <mesh {...noHit} position={[0, 0, -f.legH / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[f.legR, f.legR * 0.82, f.legH, 8]} />
               <meshStandardMaterial color={look.pants} />
             </mesh>
           </group>
         ))}
-        <mesh {...noHit} position={[0, 0, legH + torsoH / 2]} castShadow>
-          <boxGeometry args={[0.6, 1.3, torsoH]} />
+        <mesh {...noHit} position={[0, 0, f.legH + f.torsoH / 2]} castShadow>
+          <boxGeometry args={[f.torsoD, f.torsoW, f.torsoH]} />
           <meshStandardMaterial color={look.shirt} />
         </mesh>
         {[1, -1].map((side, n) => (
-          <group key={side} ref={arms[n]} position={[0, side * 0.82, legH + torsoH - 0.15]}>
-            <mesh {...noHit} position={[0, 0, -0.8]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <cylinderGeometry args={[0.13, 0.11, 1.6, 8]} />
+          <group key={side} ref={arms[n]} position={[0, side * f.shoulderY, f.legH + f.torsoH - f.armR * 1.2]}>
+            <mesh {...noHit} position={[0, 0, -f.armL / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[f.armR, f.armR * 0.85, f.armL, 8]} />
               <meshStandardMaterial color={look.skin} />
             </mesh>
           </group>
         ))}
-        <mesh {...noHit} position={[0, 0, legH + torsoH + 0.33]} castShadow>
-          <sphereGeometry args={[0.34, 14, 10]} />
+        <mesh {...noHit} position={[0, 0, f.legH + f.torsoH + f.headR * 0.95]} castShadow>
+          <sphereGeometry args={[f.headR, 14, 10]} />
           <meshStandardMaterial color={look.skin} />
         </mesh>
       </group>
@@ -182,6 +183,8 @@ function Bees({ sim, count }: { sim: React.MutableRefObject<LifeSim | null>; cou
   const size = useApp((s) => s.engine.life.bees.displayFt);
   const mesh = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const geometry = useMemo(() => beeGeometry(), []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
   useLayoutEffect(() => {
     if (mesh.current) mesh.current.count = count;
   }, [count]);
@@ -194,7 +197,7 @@ function Bees({ sim, count }: { sim: React.MutableRefObject<LifeSim | null>; cou
       if (!b || b.phase === 'rest') dummy.scale.set(0, 0, 0);
       else {
         dummy.position.set(b.x, b.y, b.z);
-        dummy.scale.set(size, size * 0.7, size * 0.7);
+        dummy.scale.set(size, size, size);
         dummy.rotation.set(0, 0, b.heading);
       }
       dummy.updateMatrix();
@@ -204,8 +207,8 @@ function Bees({ sim, count }: { sim: React.MutableRefObject<LifeSim | null>; cou
   });
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, count]} frustumCulled={false} {...noHit}>
-      <sphereGeometry args={[1, 8, 6]} />
-      <meshStandardMaterial color="#ffc400" emissive="#7a5200" emissiveIntensity={0.6} />
+      <primitive object={geometry} attach="geometry" />
+      <meshStandardMaterial vertexColors roughness={0.55} />
     </instancedMesh>
   );
 }

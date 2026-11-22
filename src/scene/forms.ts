@@ -149,6 +149,30 @@ function mulberry(seed: number): () => number {
   };
 }
 
+/** Colors of a bee: a dark head and thorax, then a yellow abdomen crossed by thin black stripes. */
+export const BEE = { head: '#2e2116', body: '#ffc400', stripe: '#141414' };
+
+/**
+ * One bee, a unit long and facing +X: an elongated body colored by position along its length, so a single instanced mesh
+ * shows its dark front, yellow abdomen and two thin black stripes without extra parts.
+ */
+export function beeGeometry(): THREE.BufferGeometry {
+  const g = new THREE.SphereGeometry(1, 16, 48);
+  g.rotateZ(Math.PI / 2); // the poles now lie along X
+  g.scale(0.5, 0.26, 0.26); // a unit long, about half as wide
+  const pos = g.getAttribute('position');
+  const colors = new Float32Array(pos.count * 3);
+  const head = new THREE.Color(BEE.head), body = new THREE.Color(BEE.body), stripe = new THREE.Color(BEE.stripe);
+  const stripes: [number, number][] = [[0.25, 0.33], [0.44, 0.52]];
+  for (let i = 0; i < pos.count; i++) {
+    const t = pos.getX(i) + 0.5; // 0 at the tail, 1 at the head
+    const c = t >= 0.7 ? head : stripes.some(([a, b]) => t >= a && t <= b) || t < 0.06 ? stripe : body;
+    colors.set([c.r, c.g, c.b], i * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return g;
+}
+
 /** The three.js geometry for a part, before its position, rotation and scale are applied. */
 export function partGeometry(p: Part): THREE.BufferGeometry {
   switch (p.shape) {
@@ -181,4 +205,54 @@ export function partBounds(p: Part): { min: Vec3; max: Vec3 } {
   const b = g.boundingBox!;
   g.dispose();
   return { min: [b.min.x, b.min.y, b.min.z], max: [b.max.x, b.max.y, b.max.z] };
+}
+
+// ---------------------------------------------------------------------------------------------
+// People
+// ---------------------------------------------------------------------------------------------
+
+/** Linear interpolation through (age, value) points, held flat beyond the ends. */
+function byAge(age: number, table: [number, number][]): number {
+  if (age <= table[0][0]) return table[0][1];
+  for (let i = 1; i < table.length; i++) {
+    if (age <= table[i][0]) {
+      const [a0, v0] = table[i - 1], [a1, v1] = table[i];
+      return v0 + ((v1 - v0) * (age - a0)) / (a1 - a0);
+    }
+  }
+  return table[table.length - 1][1];
+}
+
+/** A figure's measurements in feet. Children have bigger heads and shorter legs for their height. */
+export interface Figure {
+  height: number;
+  legH: number;
+  torsoH: number;
+  headR: number;
+  torsoW: number;
+  torsoD: number;
+  legR: number;
+  armL: number;
+  armR: number;
+  /** Half the distance between the hips and between the shoulders. */
+  hipY: number;
+  shoulderY: number;
+}
+
+/**
+ * How a person of this age and height is built. Legs, torso and head add up to the height. A 3-year-old's head is about
+ * a quarter of their height; an adult's about an eighth.
+ */
+export function personProportions(age: number, heightFt: number): Figure {
+  const headFrac = byAge(age, [[3, 0.24], [9, 0.16], [11, 0.15], [14, 0.14], [18, 0.13]]);
+  const legFrac = byAge(age, [[3, 0.36], [9, 0.44], [11, 0.46], [14, 0.47], [18, 0.48]]);
+  const h = heightFt;
+  const headD = headFrac * h;
+  const legH = legFrac * h;
+  const torsoH = h - legH - headD;
+  const torsoW = h * byAge(age, [[3, 0.2], [9, 0.21], [14, 0.22], [18, 0.232]]);
+  return {
+    height: h, legH, torsoH, headR: headD / 2, torsoW, torsoD: torsoW * 0.46, legR: h * 0.03, armL: torsoH * 0.85, armR: h * 0.021,
+    hipY: torsoW * 0.22, shoulderY: torsoW * 0.63,
+  };
 }

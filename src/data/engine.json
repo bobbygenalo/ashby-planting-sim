@@ -696,19 +696,147 @@
       "bed": 6.0
     },
     "people": {
-      "max": 4,
-      "speedFt": [
-        2.6,
-        3.6
-      ],
+      "max": 15,
       "pauseS": [
         1.5,
         4.5
       ],
       "pathBias": 0.55,
       "minTripFt": 8,
-      "heightFt": 5.6,
-      "turnRate": 6
+      "turnRate": 6,
+      "roster": [
+        {
+          "age": 30,
+          "heightFt": 5.5,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.9,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 9,
+          "heightFt": 4.3,
+          "speedFt": [
+            3.4,
+            4.4
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.3,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 3,
+          "heightFt": 3.0,
+          "speedFt": [
+            1.6,
+            2.2
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.7,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 11,
+          "heightFt": 4.8,
+          "speedFt": [
+            3.4,
+            4.2
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 6.0,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 14,
+          "heightFt": 5.4,
+          "speedFt": [
+            3.0,
+            3.8
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.4,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 9,
+          "heightFt": 4.45,
+          "speedFt": [
+            3.4,
+            4.4
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.6,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.8,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.2,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        },
+        {
+          "age": 30,
+          "heightFt": 5.65,
+          "speedFt": [
+            2.6,
+            3.6
+          ]
+        }
+      ],
+      "toddlerFollowFt": [
+        2,
+        5
+      ],
+      "toddlerReplanS": 1.4,
+      "visitBias": 0.2,
+      "lingerS": [
+        10,
+        60
+      ],
+      "doorApproachFt": 3
     },
     "dogs": {
       "max": 2,
@@ -757,7 +885,7 @@
         "attempts": 400,
         "rearBias": 10
       },
-      "displayFt": 0.25
+      "displayFt": 0.36
     },
     "maxStepS": 0.1
   }

@@ -163,19 +163,35 @@ export interface DataCheck {
 }
 
 /** Check and clean a scenario's data. Structural problems are errors; unknown species are dropped with a warning. */
+/**
+ * Species that are no longer in the library, and what a plant of one becomes, so saved work, files and shared links
+ * made before the change still open with their plants in place.
+ */
+export const RETIRED_SPECIES: Record<string, { becomes: string; label: string }> = {
+  'feijoa-sellowiana': { becomes: 'citrus-kumquat', label: 'Pineapple guava' },
+};
+
 export function validateScenarioData(raw: unknown, ctx: ValidationContext, extraSpecies: Set<string> = new Set()): DataCheck {
   const errors: string[] = [];
   const warnings: string[] = [];
   if (!isRecord(raw)) return { data: null, errors: ['Scenario data is missing.'], warnings };
   const known = (id: string) => ctx.speciesIds.has(id) || extraSpecies.has(id);
+  const replaced = new Set<string>();
+  const current = (id: string) => {
+    const r = RETIRED_SPECIES[id];
+    if (!r || known(id)) return id;
+    replaced.add(`${r.label} is no longer in the library; its plants are now ${r.becomes.replace('citrus-', '')}s.`);
+    return r.becomes;
+  };
 
   const palette: Record<string, boolean> = {};
   if (!isRecord(raw.palette)) errors.push('The palette is missing.');
   else {
-    for (const [id, on] of Object.entries(raw.palette)) {
-      if (typeof on !== 'boolean') errors.push(`Palette entry "${id}" is not on or off.`);
-      else if (!known(id)) warnings.push(`Dropped unknown species "${id}" from the palette.`);
-      else palette[id] = on;
+    for (const [oldId, on] of Object.entries(raw.palette)) {
+      const id = current(oldId);
+      if (typeof on !== 'boolean') errors.push(`Palette entry "${oldId}" is not on or off.`);
+      else if (!known(id)) warnings.push(`Dropped unknown species "${oldId}" from the palette.`);
+      else palette[id] = palette[id] || on;
     }
   }
 
@@ -187,11 +203,11 @@ export function validateScenarioData(raw: unknown, ctx: ValidationContext, extra
         errors.push(`Plant ${n + 1} is malformed.`);
       } else if (!ctx.containers.has(i.container)) {
         errors.push(`Plant ${n + 1} has an unknown container "${i.container}".`);
-      } else if (!known(i.speciesId)) {
+      } else if (!known(current(i.speciesId))) {
         warnings.push(`Dropped a plant of unknown species "${i.speciesId}".`);
       } else {
         instances.push({
-          id: i.id, speciesId: i.speciesId, position: [(i.position as number[])[0], (i.position as number[])[1]], plantedMonth: i.plantedMonth,
+          id: i.id, speciesId: current(i.speciesId), position: [(i.position as number[])[0], (i.position as number[])[1]], plantedMonth: i.plantedMonth,
           container: i.container as PlantInstance['container'], existing: i.existing,
           ...(isNum(i.currentHeight) ? { currentHeight: i.currentHeight } : {}),
           ...(isNum(i.currentWidth) ? { currentWidth: i.currentWidth } : {}),
@@ -237,6 +253,7 @@ export function validateScenarioData(raw: unknown, ctx: ValidationContext, extra
   if (typeof raw.useRain !== 'boolean') errors.push('The rainfall setting is missing.');
   if (typeof raw.aduEnabled !== 'boolean') errors.push('The ADU setting is missing.');
 
+  warnings.push(...replaced);
   if (errors.length) return { data: null, errors, warnings };
   return {
     data: { palette, instances, hardscape, hydrozones, autoIrrigation, useRain: raw.useRain as boolean, aduEnabled: raw.aduEnabled as boolean },

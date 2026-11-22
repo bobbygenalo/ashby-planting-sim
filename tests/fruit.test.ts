@@ -14,9 +14,9 @@ const grown = (s: Species, fraction: number) => ({ planted: true, height: s.matu
 describe('fruit data', () => {
   const fruiting = lib.species.filter((s) => s.fruit);
 
-  it('covers the edible fruiting trees: apples, olives, lemon, persimmon and pineapple guava', () => {
+  it('covers the edible fruiting trees: apples, olives, lemon, kumquat, satsuma and persimmon', () => {
     expect(fruiting.map((s) => s.id).sort()).toEqual([
-      'citrus-meyer-lemon', 'diospyros-kaki-hachiya', 'feijoa-sellowiana', 'malus-mutsu', 'malus-pink-pearl', 'olea-arbequina', 'olea-frantoio',
+      'citrus-kumquat', 'citrus-meyer-lemon', 'citrus-satsuma', 'diospyros-kaki-hachiya', 'malus-mutsu', 'malus-pink-pearl', 'olea-arbequina', 'olea-frantoio',
     ]);
     expect(fruiting.every((s) => s.type === 'edible')).toBe(true);
   });
@@ -134,5 +134,34 @@ describe('month labels', () => {
     expect(monthRange([11, 12, 1])).toBe('Nov to Jan');
     expect(monthRange([8])).toBe('Aug');
     expect(monthRange([])).toBe('none');
+  });
+});
+
+describe('kumquat and satsuma', () => {
+  const kumquat = sp('citrus-kumquat'), satsuma = sp('citrus-satsuma');
+
+  it('are small evergreen edible citrus with fruit that follows their own seasons', () => {
+    for (const s of [kumquat, satsuma]) {
+      expect(s.type).toBe('edible');
+      expect(s.evergreen).toBe(true);
+      expect(s.invasive).toBe(false);
+      expect(s.fruit).toBeTruthy();
+      expect(s.bloomMonths).toEqual([4, 5]);
+    }
+    expect(kumquat.matureHeight).toBeLessThan(satsuma.matureHeight);
+    expect(kumquat.fruit!.diameterFt).toBeLessThan(satsuma.fruit!.diameterFt);
+    expect(kumquat.fruit!.shape).toBe('oval');
+    expect(satsuma.fruit!.shape).toBe('sphere');
+    // kumquats ripen through the winter, satsumas in the fall
+    expect(fruitState(kumquat, grown(kumquat, 1), 1, cfg)!.phase).toBe('ripe');
+    expect(fruitState(kumquat, grown(kumquat, 1), 8, cfg)!.phase).toBe('unripe');
+    expect(fruitState(satsuma, grown(satsuma, 1), 11, cfg)!.phase).toBe('ripe');
+    expect(fruitState(satsuma, grown(satsuma, 1), 3, cfg)).toBeNull();
+    expect(fruitState(satsuma, grown(satsuma, 1), 7, cfg)!.phase).toBe('unripe');
+  });
+
+  it('replace the pineapple guava, which is gone from the library', () => {
+    expect(lib.species.some((s) => s.id === 'feijoa-sellowiana')).toBe(false);
+    expect(lib.species.some((s) => /pineapple guava/i.test(s.common))).toBe(false);
   });
 });

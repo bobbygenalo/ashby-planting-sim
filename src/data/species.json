@@ -1782,25 +1782,25 @@
       }
     },
     {
-      "id": "feijoa-sellowiana",
-      "botanical": "Acca sellowiana",
-      "common": "Pineapple guava",
+      "id": "citrus-kumquat",
+      "botanical": "Citrus japonica 'Nagami'",
+      "common": "Kumquat",
       "type": "edible",
       "origin": "other",
       "evergreen": true,
       "leafOffMonths": [],
-      "matureHeight": 10,
-      "matureWidth": 8,
-      "yearsToMaturity": 8,
+      "matureHeight": 8,
+      "matureWidth": 6,
+      "yearsToMaturity": 6,
       "habit": "round",
       "sun": "full",
       "wucols": "moderate",
       "bloomMonths": [
-        5,
-        6
+        4,
+        5
       ],
-      "bloomColor": "#fda4af",
-      "foliageColor": "#7f9aa0",
+      "bloomColor": "#fbf6e6",
+      "foliageColor": "#3f7d3c",
       "pollinator": {
         "value": "moderate",
         "groups": [
@@ -1809,18 +1809,15 @@
         "larvalHost": []
       },
       "invasive": false,
-      "toxic": false,
-      "maintenance": "low",
-      "notes": "Edible fruit and petals.",
+      "toxic": true,
+      "maintenance": "moderate",
+      "notes": "Small evergreen citrus with fruit eaten whole, peel and all. Fragrant spring blossom, good for bees. Needs fast drainage and protection from hard frost; size assumes a dwarf rootstock. Size, water and bloom values are general estimates.",
       "soil": {
-        "drainageNeed": "tolerant",
+        "drainageNeed": "moderate",
         "textures": [
-          "loamy sand",
           "sandy loam",
           "loam",
-          "silt loam",
-          "clay loam",
-          "clay"
+          "silt loam"
         ],
         "phMin": 6.0,
         "phMax": 7.5
@@ -1832,22 +1829,93 @@
       },
       "fruit": {
         "shape": "oval",
-        "aspect": 1.4,
-        "diameterFt": 0.14,
-        "ripeColor": "#86ad49",
-        "unripeColor": "#628a3c",
+        "aspect": 1.25,
+        "diameterFt": 0.1,
+        "ripeColor": "#f59a1a",
+        "unripeColor": "#8fa83a",
         "ripeMonths": [
-          10,
           11,
-          12
+          12,
+          1,
+          2,
+          3
         ],
         "unripeMonths": [
           6,
           7,
           8,
+          9,
+          10
+        ],
+        "count": 70,
+        "source": "General estimate for display; ripening months vary with variety and year."
+      }
+    },
+    {
+      "id": "citrus-satsuma",
+      "botanical": "Citrus unshiu 'Owari'",
+      "common": "Satsuma mandarin",
+      "type": "edible",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 12,
+      "matureWidth": 10,
+      "yearsToMaturity": 8,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        4,
+        5
+      ],
+      "bloomColor": "#fbf6e6",
+      "foliageColor": "#3c7a3c",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": true,
+      "maintenance": "moderate",
+      "notes": "An easy-peeling, seedless mandarin that ripens early, in fall. Fragrant spring blossom, good for bees. Needs fast drainage and protection from hard frost; size assumes a standard rootstock kept pruned. Size, water and bloom values are general estimates.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 10,
+        "minPavingFt": 5
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.22,
+        "ripeColor": "#f28c1c",
+        "unripeColor": "#8aa83a",
+        "ripeMonths": [
+          10,
+          11,
+          12,
+          1
+        ],
+        "unripeMonths": [
+          5,
+          6,
+          7,
+          8,
           9
         ],
-        "count": 26,
+        "count": 40,
         "source": "General estimate for display; ripening months vary with variety and year."
       }
     },

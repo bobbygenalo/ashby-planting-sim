@@ -50,7 +50,7 @@ export function ShuffleBar() {
   const [mode, setMode] = useState<Mode>('vary');
   const [opts, setOpts] = useState<ShuffleOptions>({ species: true, positions: true, materials: true, colors: true, time: false });
   const [starredVary, setStarredVary] = useState(false);
-  const [concept, setConcept] = useState<ConceptOptions>({ hardscape: true, plants: true, starredOnly: true });
+  const [concept, setConcept] = useState<ConceptOptions>({ hardscape: true, plants: true, starredOnly: false });
   const [copy, setCopy] = useState(true);
   const [seedText, setSeedText] = useState('');
   const [last, setLast] = useState<Last | null>(null);

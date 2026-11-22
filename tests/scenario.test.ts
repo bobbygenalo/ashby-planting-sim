@@ -8,7 +8,7 @@ import { solarPosition } from '../src/engine/solar';
 import { loadSite } from '../src/engine/site';
 import {
   OWNER_PICKS, WORKSPACE_KEY, buildShareSnapshot, compareMetrics, emptyScenarioData, loadWorkspace, parseScenarioFile, parseShareSnapshot,
-  redactSite, saveWorkspace, scenarioMetrics, serializeScenarioFile, type KeyValueStorage, type ScenarioData, type ValidationContext, type Workspace,
+  redactSite, saveWorkspace, scenarioMetrics, serializeScenarioFile, validateScenarioData, type KeyValueStorage, type ScenarioData, type ValidationContext, type Workspace,
 } from '../src/engine/scenario';
 import type { EngineConfig, Material, PlantInstance, Species, SpeciesLibrary, WaterConfig } from '../src/engine/types';
 import { makeCustomSpecies } from '../src/engine/library';
@@ -344,5 +344,41 @@ describe('share records saved by an older version', () => {
     const r = parseShareSnapshot(snap, ctx);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.snapshot.blurLocation).toBe(true);
+  });
+});
+
+describe('a retired species', () => {
+  const ctx = { speciesIds: new Set(lib.species.map((s) => s.id)), containers: new Set(Object.keys(engine.growth.containers)), hardscapeTypes: new Set(Object.keys(engine.hardscape.types)), materialIds: new Set(mats.map((m) => m.id)), zoneIds: new Set(site.zones.map((z) => z.id)) };
+  const old = (): ScenarioData => {
+    const d = emptyScenarioData(site);
+    d.palette = { ...d.palette, 'feijoa-sellowiana': true };
+    d.instances = [{ id: 'g', speciesId: 'feijoa-sellowiana', position: [30, 100], plantedMonth: 0, container: '5gal', existing: false }, { id: 'h', speciesId: 'salvia-leucantha', position: [34, 100], plantedMonth: 0, container: '5gal', existing: false }];
+    return d;
+  };
+
+  it('keeps the plant, now a kumquat, and says so', () => {
+    const r = validateScenarioData(old(), ctx);
+    expect(r.data).toBeTruthy();
+    expect(r.data!.instances.map((i) => i.speciesId)).toEqual(['citrus-kumquat', 'salvia-leucantha']);
+    expect(r.data!.instances[0]).toMatchObject({ id: 'g', position: [30, 100] });
+    expect(r.data!.palette['citrus-kumquat']).toBe(true);
+    expect('feijoa-sellowiana' in r.data!.palette).toBe(false);
+    expect(r.warnings.filter((w) => /Pineapple guava/.test(w))).toHaveLength(1); // once, however many plants
+  });
+
+  it('does the same for a saved workspace, so nothing is lost on load', () => {
+    const s = makeAppStore('edit');
+    const ws = s.getState().toWorkspace();
+    ws.data[ws.activeId] = old();
+    const next = makeAppStore('edit');
+    next.getState().hydrateWorkspace(ws);
+    expect(next.getState().instances.map((i) => i.speciesId)).toEqual(['citrus-kumquat', 'salvia-leucantha']);
+  });
+
+  it('leaves a species alone when it is in the library, even one that shares its old name', () => {
+    const d = emptyScenarioData(site);
+    d.instances = [{ id: 'k', speciesId: 'citrus-satsuma', position: [30, 100], plantedMonth: 0, container: '5gal', existing: false }];
+    expect(validateScenarioData(d, ctx).data!.instances[0].speciesId).toBe('citrus-satsuma');
+    expect(validateScenarioData(d, ctx).warnings).toEqual([]);
   });
 });

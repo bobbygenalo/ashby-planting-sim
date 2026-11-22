@@ -483,3 +483,14 @@ describe('hardscape persistence, color and duplicate', () => {
     expect(copy.existing).toBe(false);
   });
 });
+
+describe('the life layer defaults', () => {
+  it('starts with people, dogs, the hive and the bees all on', () => {
+    const s = makeAppStore('edit');
+    expect(s.getState().layers.life).toBe(true);
+    expect(s.getState().lifeSettings).toEqual({ people: 3, dogs: 2, bees: true });
+    s.getState().setLifeSettings({ bees: false });
+    expect(s.getState().lifeSettings.bees).toBe(false);
+    expect(s.getState().lifeSettings.people).toBe(3);
+  });
+});

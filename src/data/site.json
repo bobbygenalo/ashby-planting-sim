@@ -1166,5 +1166,67 @@
       "text": "The 6 ft fences and the garage eave height (9.3 ft, a 4:12 roof) are placeholders; the garage ridge, 12'-8\", is printed. House and ADU heights come from the plans. Terrain is modeled flat; the house's natural grade rises about half a foot from front to back.",
       "estimate": true
     }
+  ],
+  "doors": [
+    {
+      "id": "house-front",
+      "label": "House, front door",
+      "building": "house",
+      "point": [
+        18.5,
+        25.04
+      ],
+      "outward": [
+        0,
+        -1
+      ],
+      "estimate": true,
+      "note": "Assumed under the porch; the roof plan does not show the door."
+    },
+    {
+      "id": "house-rear",
+      "label": "House, back door",
+      "building": "house",
+      "point": [
+        32.0,
+        66.23
+      ],
+      "outward": [
+        0,
+        1
+      ],
+      "estimate": true,
+      "note": "Assumed on the rear wing's north wall, facing the garage."
+    },
+    {
+      "id": "garage-front",
+      "label": "Garage, street side",
+      "building": "garage",
+      "point": [
+        12.0,
+        83.3854
+      ],
+      "outward": [
+        0,
+        -1
+      ],
+      "estimate": true,
+      "note": "Assumed at the middle of the street-side wall, where the garage door is."
+    },
+    {
+      "id": "adu-front",
+      "label": "ADU, front door",
+      "building": "adu",
+      "point": [
+        36.1,
+        123.3646
+      ],
+      "outward": [
+        0,
+        -1
+      ],
+      "estimate": true,
+      "note": "On the entry landing (door 01A) in the great room's south wall; its exact position along the wall is estimated."
+    }
   ]
 }

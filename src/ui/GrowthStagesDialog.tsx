@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { GrowthStages } from '../scene/GrowthStages';
 import { doyToMonthDay, monthName } from '../engine/time';
 import { useApp } from '../store/store';
@@ -9,7 +9,9 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 /** One plant, planted and at several ages, season by season, in 3D you can turn: how it will look as it grows. */
 export function GrowthStagesDialog() {
   const id = useApp((s) => s.growthStagesFor);
-  const close = useApp((s) => () => s.setGrowthStagesFor(null));
+  const setFor = useApp((s) => s.setGrowthStagesFor);
+  // A stable function: a new one each render would make the dialog take focus back every time the store changed.
+  const close = useCallback(() => setFor(null), [setFor]);
   const library = useApp((s) => s.library);
   const cfg = useApp((s) => s.engine.growthStages);
   const doy = useApp((s) => s.doy);

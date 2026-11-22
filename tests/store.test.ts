@@ -494,3 +494,15 @@ describe('the life layer defaults', () => {
     expect(s.getState().lifeSettings.people).toBe(3);
   });
 });
+
+describe('layers on a new workspace', () => {
+  it('start with the easement and setback lines off, and the rest on', () => {
+    const s = makeAppStore('edit');
+    const l = s.getState().layers;
+    expect(l.easements).toBe(false);
+    expect(l.setbacks).toBe(false);
+    for (const k of ['sunHours', 'context', 'bloom', 'fruit', 'crops', 'life', 'suggestions', 'conflicts'] as const) expect(l[k], k).toBe(true);
+    s.getState().setLayer('easements', true);
+    expect(s.getState().layers.easements).toBe(true);
+  });
+});

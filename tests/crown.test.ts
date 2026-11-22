@@ -39,14 +39,17 @@ describe('crown profiles', () => {
     for (const [z, r] of pr) expect(profileShare(pr, z)).toBeCloseTo(r, 9);
   });
 
-  it('draws the Frantoio as a rounded oval: widest in the upper middle, narrower both above and below, no flat top', () => {
+  it('draws the Frantoio as a rounded oval: widest around the middle, narrower both above and below, no flat top', () => {
     const f = sp('olea-frantoio');
     const widest = Array.from({ length: 101 }, (_, i) => i / 100).reduce((a, z) => (canopyRadius(f.habit, 10, z, false, f.crown!.profile) > canopyRadius(f.habit, 10, a, false, f.crown!.profile) ? z : a), 0);
-    expect(widest).toBeGreaterThan(0.45);
-    expect(widest).toBeLessThan(0.75);
+    expect(widest).toBeGreaterThan(0.35);
+    expect(widest).toBeLessThan(0.65);
     const at = (z: number) => canopyRadius(f.habit, 10, z, false, f.crown!.profile);
     expect(at(0.98)).toBeLessThan(at(0.9) * 0.6); // the top closes in, not a flat disc
-    expect(at(0.1)).toBeLessThan(at(widest) * 0.7);
+    expect(at(0.1)).toBeLessThan(at(widest) * 0.85);
+    // a full oval, not a cone: the bottom of the crown is still well over half its width
+    expect(at(0)).toBeGreaterThan(at(widest) * 0.4);
+    expect(at(0.1)).toBeGreaterThan(at(widest) * 0.6);
   });
 
   it('draw the same outline the shadow is built from', () => {

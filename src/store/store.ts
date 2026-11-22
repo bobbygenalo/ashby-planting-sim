@@ -364,7 +364,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, fruit: true, crops: true, life: true, suggestions: true, conflicts: true },
+      layers: { sunHours: true, dimensions: false, setbacks: false, easements: false, context: true, bloom: true, fruit: true, crops: true, life: true, suggestions: true, conflicts: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,

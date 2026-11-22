@@ -152,5 +152,27 @@
     "unit": "sf",
     "color": "#3f2d22",
     "note": "Surface depth is the mulch layer. Replace every year or two."
+  },
+  {
+    "id": "outdoor-table",
+    "name": "Outdoor table with 8 chairs",
+    "category": "furniture",
+    "permeability": 1,
+    "defaultDepthIn": 0,
+    "baseDepthIn": 0,
+    "unit": "sf",
+    "color": "#a8794a",
+    "note": "A table about 8 ft by 3 ft with three chairs along each side and one at each end; the footprint is the table plus the chairs pulled out."
+  },
+  {
+    "id": "grill-station",
+    "name": "Grilling station",
+    "category": "furniture",
+    "permeability": 1,
+    "defaultDepthIn": 0,
+    "baseDepthIn": 0,
+    "unit": "sf",
+    "color": "#8f8a80",
+    "note": "A standard barbecue grill about 2.5 ft wide with a counter about 2 ft wide on each side, 3 ft high."
   }
 ]

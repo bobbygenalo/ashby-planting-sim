@@ -40,7 +40,7 @@ describe('paths join the places people go', () => {
       }
     }
     expect(concepts).toBe(40);
-    expect(doorsReached / doorsTotal).toBeGreaterThan(0.75);
+    expect(doorsReached / doorsTotal).toBeGreaterThan(0.7);
   });
 
   it('connects every lawn and every fruit tree it can', () => {

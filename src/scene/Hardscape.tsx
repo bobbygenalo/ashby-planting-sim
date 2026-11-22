@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react';
-import { useThree, type ThreeEvent } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { polygonArea } from '../engine/geometry';
@@ -7,6 +7,9 @@ import { footprint, snapAnchors, snapPoint, type SnapResult } from '../engine/ha
 import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
 import type { HardscapeElement, Material, Pt } from '../engine/types';
+import { tableLayout } from '../engine/furniture';
+import { chairPull } from './chairState';
+import { chairGeometry, modelFor, rectFrame } from './furniture';
 import { useApp } from '../store/store';
 
 const SNAP_COLOR: Record<SnapResult['kind'], string> = { vertex: '#f97316', edge: '#2563eb', grid: '#6b7280' };
@@ -40,6 +43,24 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
     const shape = new THREE.Shape(poly.map(([x, y]) => new THREE.Vector2(x, y)));
     return el.height > 0 ? new THREE.ExtrudeGeometry(shape, { depth: el.height, bevelEnabled: false }) : new THREE.ShapeGeometry(shape);
   }, [poly, el.height]);
+  const modelKind = cfg.types[el.type].model;
+  const frame = useMemo(() => (modelKind && poly.length >= 3 ? rectFrame(poly) : null), [modelKind, poly]);
+  const modelParts = useMemo(() => (modelKind && frame ? modelFor(modelKind, frame.long, frame.short) : []), [modelKind, frame]);
+  useEffect(() => () => modelParts.forEach((m) => m.geometry.dispose()), [modelParts]);
+  // A table's chairs are drawn one by one so people can pull them out; they come from the same layout as the seats.
+  const pullFt = useApp((st) => st.engine.life.dining.pullFt);
+  const chairGeo = useMemo(() => (modelKind === 'table' ? chairGeometry() : null), [modelKind]);
+  useEffect(() => () => chairGeo?.dispose(), [chairGeo]);
+  const seats = useMemo(() => (modelKind === 'table' && frame ? tableLayout(frame.long, frame.short).seats : []), [modelKind, frame]);
+  const chairRefs = useRef<(THREE.Group | null)[]>([]);
+  useFrame(() => {
+    seats.forEach((seat, i) => {
+      const g = chairRefs.current[i];
+      if (!g) return;
+      const pull = (chairPull.get(`${el.id}:${i}`) ?? 0) * pullFt;
+      g.position.set(seat.x - seat.fx * pull, seat.y - seat.fy * pull, 0);
+    });
+  });
   if (poly.length < 3) return null;
   const selected = selectedId === el.id;
   const ghost = !!el.removed;
@@ -65,11 +86,29 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
     setHsDrag({ id: el.id, kind: 'move', last: [e.point.x, -e.point.z] });
     if (controls) controls.enabled = false;
   };
+  const base = el.color ?? mat?.color ?? '#aaa';
   return (
     <group>
-      <mesh geometry={geo} position={[0, 0, el.height > 0 ? 0 : z]} castShadow={el.height > 0} receiveShadow onClick={onClick} onPointerDown={onDown}>
-        <meshStandardMaterial color={ghost ? '#c0392b' : (el.color ?? mat?.color ?? '#aaa')} roughness={0.95} transparent={ghost} opacity={ghost ? 0.3 : 1} />
-      </mesh>
+      {frame ? (
+        <group position={[frame.cx, frame.cy, 0]} rotation={[0, 0, frame.angle]}>
+          {modelParts.map((m, i) => (
+            <mesh key={i} geometry={m.geometry} castShadow receiveShadow onClick={onClick} onPointerDown={onDown}>
+              <meshStandardMaterial color={ghost ? '#c0392b' : (m.color ?? base)} roughness={0.85} transparent={ghost} opacity={ghost ? 0.3 : 1} />
+            </mesh>
+          ))}
+          {chairGeo && seats.map((seat, i) => (
+            <group key={i} ref={(g) => { chairRefs.current[i] = g; }} position={[seat.x, seat.y, 0]} rotation={[0, 0, Math.atan2(seat.fy, seat.fx)]}>
+              <mesh geometry={chairGeo} castShadow receiveShadow onClick={onClick} onPointerDown={onDown}>
+                <meshStandardMaterial color={ghost ? '#c0392b' : '#6a5845'} roughness={0.85} transparent={ghost} opacity={ghost ? 0.3 : 1} />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      ) : (
+        <mesh geometry={geo} position={[0, 0, el.height > 0 ? 0 : z]} castShadow={el.height > 0} receiveShadow onClick={onClick} onPointerDown={onDown}>
+          <meshStandardMaterial color={ghost ? '#c0392b' : base} roughness={0.95} transparent={ghost} opacity={ghost ? 0.3 : 1} />
+        </mesh>
+      )}
       {selected && (
         <Line points={[...poly, poly[0]].map(([x, y]): [number, number, number] => [x, y, el.height + 0.12])} color="#2563eb" lineWidth={2.5} />
       )}
@@ -131,6 +170,12 @@ function DrawingPreview() {
   const snapKind = useApp((s) => s.hoverSnap);
   if (!drawing) return null;
   const isLine = cfg.types[drawing.type].shape === 'line';
+  const preset = cfg.types[drawing.type].placeSize;
+  // Furniture and fixtures show the outline they would take where the pointer is.
+  const ghost: Pt[] | null = preset && hover ? [[hover[0] - preset[0] / 2, hover[1] - preset[1] / 2], [hover[0] + preset[0] / 2, hover[1] - preset[1] / 2], [hover[0] + preset[0] / 2, hover[1] + preset[1] / 2], [hover[0] - preset[0] / 2, hover[1] + preset[1] / 2]] : null;
+  if (preset) {
+    return ghost ? <Line points={[...ghost, ghost[0]].map(([x, y]): [number, number, number] => [x, y, 0.25])} color="#16a34a" lineWidth={2.5} /> : null;
+  }
   const pts: Pt[] = hover ? [...drawing.points, hover] : drawing.points;
   const closed = !isLine && pts.length >= 3;
   const path = (closed ? [...pts, pts[0]] : pts).map(([x, y]): [number, number, number] => [x, y, 0.25]);

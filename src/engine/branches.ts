@@ -1,4 +1,4 @@
-import { canopyRadius } from './canopy';
+import { canopyRadius, type CrownProfile } from './canopy';
 import { mulberry32 } from './shuffle';
 import type { BranchCfg, Habit } from './types';
 
@@ -27,7 +27,7 @@ const betweenInt = (rng: () => number, [lo, hi]: [number, number]) => lo + Math.
  * canopy's outline. Positions are feet from the trunk, Z up. Deterministic for a seed, so a tree has the same
  * branches every winter.
  */
-export function branchSkeleton(habit: Habit, r: number, base: number, canopyH: number, seed: number, cfg: BranchCfg): Skeleton {
+export function branchSkeleton(habit: Habit, r: number, base: number, canopyH: number, seed: number, cfg: BranchCfg, profile?: CrownProfile): Skeleton {
   const rng = mulberry32(seed);
   const segments: BranchSegment[] = [];
   const tips: Vec3[] = [];
@@ -35,7 +35,7 @@ export function branchSkeleton(habit: Habit, r: number, base: number, canopyH: n
   const inside = (p: Vec3) => {
     const zf = (p[2] - base) / canopyH;
     if (zf < 0.02 || zf > 0.99) return false;
-    return Math.hypot(p[0], p[1]) <= canopyRadius(habit, r, zf, grounded) * cfg.inset + r * 0.02;
+    return Math.hypot(p[0], p[1]) <= canopyRadius(habit, r, zf, grounded, profile) * cfg.inset + r * 0.02;
   };
   const reach = (from: Vec3, dir: Vec3, len: number): Vec3 | null => {
     for (let k = 0; k < 9; k++) {

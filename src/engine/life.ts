@@ -1,5 +1,6 @@
 import { distanceToPolygon, pointInPolygon } from './geometry';
 import { footprint } from './hardscape';
+import { worldSeats, type WorldSeat } from './furniture';
 import { isBlooming, type PlacedPlant } from './growth';
 import { mulberry32 } from './shuffle';
 import type { EngineConfig, HardscapeElement, Material, Pt, SiteConfig, StructureCfg } from './types';
@@ -42,6 +43,29 @@ export interface LifeWorld {
   hive: { x: number; y: number } | null;
   /** Doors people can go in and out of, for the buildings that are in the plan. */
   doors: LifeDoor[];
+  /** Tables people can sit down at, with their reachable seats. */
+  tables: LifeTable[];
+  /** The wall the evening movie is shown on, or null when the plan has no such wall or no room to watch from. */
+  screen: LifeScreen | null;
+}
+
+export interface LifeTable {
+  id: string;
+  center: Pt;
+  seats: WorldSeat[];
+}
+
+export interface LifeScreen {
+  /** The wall's east face: X of the screen, and the Y of its middle. */
+  x: number;
+  y: number;
+  width: number;
+  bottom: number;
+  height: number;
+  /** Open ground to watch from, in front of the screen. */
+  spots: Pt[];
+  /** Where the projector stands, behind the viewers. */
+  projector: Pt;
 }
 
 /** A door: where someone stands to go in, and the open ground a little way out where they walk to first. */
@@ -65,6 +89,8 @@ export interface LifeWorldInput {
   engine: EngineConfig;
   /** Keep the hive where it was when it is still a good spot. */
   hive?: { x: number; y: number } | null;
+  /** Where the owner put the hive: used as it is, a good spot or not. */
+  hiveAt?: { x: number; y: number } | null;
 }
 
 const idx = (w: { nx: number }, i: number, j: number) => j * w.nx + i;
@@ -84,7 +110,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [],
+    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null,
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -99,7 +125,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
       for (const { el, poly } of classes) {
         if (!pointInPolygon(x, y, poly)) continue;
         const material = mats.get(el.materialId);
-        if (el.type === 'raisedBed' || el.type === 'wall' || el.type === 'fence') blocked[k] = 1;
+        if (el.type === 'raisedBed' || el.type === 'wall' || el.type === 'fence' || el.type === 'table' || el.type === 'grill') blocked[k] = 1;
         else if (el.type === 'path') {
           cost[k] = cfg.costs.path;
           isPath[k] = 1;
@@ -133,7 +159,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
     .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3) }));
 
   // The hive: keep the old spot while it is still good, otherwise find a new one.
-  const hive = input.hive && hiveSpotIsGood(w, input.hive, cfg) ? input.hive : chooseHiveSpot(w, cfg, mulberry32(7));
+  const hive = input.hiveAt ?? (input.hive && hiveSpotIsGood(w, input.hive, cfg) ? input.hive : chooseHiveSpot(w, cfg, mulberry32(7)));
   w.hive = hive;
   if (hive) {
     for (let j = 0; j < ny; j++) {
@@ -145,6 +171,8 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   }
   finishWorld(w, cfg);
   w.doors = buildDoors(w, input, cfg);
+  w.tables = buildTables(w, input, cfg);
+  w.screen = buildScreen(w, input, cfg);
   return w;
 }
 
@@ -168,6 +196,53 @@ function buildDoors(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeDoor[] {
     if (best) out.push({ id: d.id, label: d.label, building: d.building, stand: [d.point[0] + d.outward[0] * 0.25, d.point[1] + d.outward[1] * 0.25], approach: best });
   }
   return out;
+}
+
+
+/** Tables in the plan, with the seats whose standing place behind the chair people can reach. */
+function buildTables(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeTable[] {
+  const reach = new Set(w.reachable);
+  const out: LifeTable[] = [];
+  for (const el of input.hardscape) {
+    if (el.removed || el.type !== 'table' || el.points.length < 4) continue;
+    const { center, seats } = worldSeats(el.id, el.points, cfg.dining.approachFt);
+    const usable = seats.filter((st) => {
+      const [i, j] = cellOf(w, st.approach[0], st.approach[1]);
+      return reach.has(idx(w, i, j));
+    });
+    if (usable.length >= 2) out.push({ id: el.id, center, seats: usable });
+  }
+  return out;
+}
+
+/** The east wall of the movie building as a screen, with open, reachable ground in front of it to watch from. */
+function buildScreen(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeScreen | null {
+  const mc = cfg.movie;
+  const parts = input.structures.filter((s) => (s.group ?? s.id) === mc.screenBuilding);
+  if (!parts.length) return null;
+  // The building's easternmost vertical edge.
+  let best: { x: number; y0: number; y1: number } | null = null;
+  for (const part of parts) {
+    const pts = part.footprint;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      if (Math.abs(a[0] - b[0]) > 0.05) continue;
+      const x = a[0];
+      const east = !pointInPolygon(x + 0.3, (a[1] + b[1]) / 2, pts);
+      if (!east) continue;
+      if (!best || x > best.x) best = { x, y0: Math.min(a[1], b[1]), y1: Math.max(a[1], b[1]) };
+    }
+  }
+  if (!best) return null;
+  const y = (best.y0 + best.y1) / 2;
+  const width = Math.min(mc.widthFt, (best.y1 - best.y0) * 0.8);
+  const spots: Pt[] = [];
+  for (const k of w.reachable) {
+    const [cx, cy] = center(w, k % w.nx, Math.floor(k / w.nx));
+    if (cx - best.x >= mc.spotFromWallFt[0] && cx - best.x <= mc.spotFromWallFt[1] && Math.abs(cy - y) <= mc.spotLateralFt) spots.push([cx, cy]);
+  }
+  if (spots.length < 3) return null;
+  return { x: best.x, y, width, bottom: mc.bottomFt, height: mc.heightFt, spots, projector: [best.x + mc.projectorFromWallFt, y] };
 }
 
 /** Inflate the cost beside blocked ground, then find the largest connected open region and the path cells in it. */
@@ -347,6 +422,11 @@ export function findRoute(w: LifeWorld, from: Pt, to: Pt): Pt[] | null {
   return pts;
 }
 
+/** What a person is doing apart from walking: taking a seat at a table, or watching the movie. */
+export type Act =
+  | { kind: 'dine'; seat: string; phase: 'to' | 'pull' | 'sit' | 'talk' | 'rise' | 'push'; t: number; left: number }
+  | { kind: 'watch'; phase: 'to' | 'watch'; spot: Pt };
+
 export interface Walker {
   kind: 'person' | 'dog';
   x: number;
@@ -361,7 +441,17 @@ export interface Walker {
   /** A person a dog or a small child follows. */
   leader: number | null;
   /** Going into, inside, or coming out of a building. Hidden while `inside`. */
-  visit: { door: string; phase: 'to' | 'in' | 'inside' | 'out'; left: number } | null;
+  visit: { door: string; phase: 'to' | 'in' | 'inside' | 'out'; left: number; /** Gone in for the night: stays until morning. */ night?: boolean } | null;
+  /** Out of sight for the night in a plan with no door to go in by. */
+  away: boolean;
+  /** Sitting down to talk at a table, or standing to watch the movie. */
+  act: Act | null;
+  /** How far down into a chair they are, 0 standing to 1 seated. */
+  sit: number;
+  /** True while this person is the one speaking at their table. */
+  talking: boolean;
+  /** How far their head is turned from straight ahead, toward whoever is speaking, in radians. */
+  headTurn: number;
   /** Age in years: a dog is 0. */
   age: number;
   /** How tall they stand, in feet. */
@@ -373,7 +463,7 @@ export interface Walker {
 }
 
 /** True while a person is inside a building and so not to be drawn. */
-export const isInside = (w: Walker): boolean => w.visit?.phase === 'inside';
+export const isInside = (w: Walker): boolean => w.visit?.phase === 'inside' || w.away;
 
 export interface BeeState {
   x: number;
@@ -405,6 +495,15 @@ export class LifeSim {
   world: LifeWorld;
   walkers: Walker[] = [];
   bees: BeeState[] = [];
+  /** How far each chair is pulled out, by seat id, 0 (in) to 1 (fully out). Chairs not here are in. */
+  chairs = new Map<string, number>();
+  /** Seat id -> the walker sitting or heading there. */
+  private seatTaken = new Map<string, number>();
+  private tableTalk = new Map<string, { speaker: number; left: number }>();
+  /** Minute of the day, set by the caller; the movie shows between the configured start and end. */
+  minutes = 720;
+  movieOn = false;
+  private clock = 0;
   private rng: () => number;
   private cfg: Cfg;
   private counts: LifeCounts;
@@ -441,7 +540,7 @@ export class LifeSim {
       } else if (!person && this.counts.people > 0) leader = (n - this.counts.people) % this.counts.people;
       this.walkers.push({
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
-        pauseLeft: this.rng() * 2, leader, visit: null, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
+        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, talking: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
         replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
       });
     }
@@ -459,6 +558,12 @@ export class LifeSim {
     this.world = world;
     for (const wk of this.walkers) {
       wk.route = [];
+      // A seat, or the screen, that is gone ends what they were doing there; the rest carry on.
+      if (wk.act) {
+        const ok = wk.act.kind === 'dine' ? !!this.findSeat(wk.act.seat) : !!world.screen;
+        if (!ok) this.endAct(wk);
+        else if (wk.act.phase !== 'to') continue; // seated or watching: already where they are
+      }
       if (wk.visit && wk.visit.phase !== 'to' && world.doors.some((d) => d.id === wk.visit!.door)) continue; // at their door, already
       if (wk.visit && wk.visit.phase !== 'to') wk.visit = null; // their building is gone
       const [i, j] = cellOf(world, wk.x, wk.y);
@@ -467,6 +572,7 @@ export class LifeSim {
         if (p) [wk.x, wk.y] = p;
       }
     }
+    if (!world.screen && this.movieOn) this.movieOn = false;
     if (!world.hive) this.bees = [];
     else if (this.counts.bees && this.bees.length === 0) this.populate();
   }
@@ -531,12 +637,28 @@ export class LifeSim {
   }
 
   private plan(wk: Walker) {
+    // On the way to a chair or a viewing spot: keep heading there, or give up if it cannot be reached.
+    if (wk.act?.phase === 'to') {
+      const target = this.actTarget(wk);
+      const route = target ? findRoute(this.world, [wk.x, wk.y], target) : null;
+      if (route) {
+        wk.route = route.slice(1);
+        if (route.length <= 1) this.arrive(wk);
+        return;
+      }
+      this.endAct(wk);
+    }
+    // Free to choose: the movie, if it is showing, or a seat at the table, now and then.
+    if (this.idle(wk)) {
+      if (this.movieOn && this.rng() < this.cfg.movie.joinBias && this.assignWatch(wk)) return;
+      if (this.world.tables.length && this.rng() < this.cfg.dining.bias && this.startDinner(wk)) return;
+    }
     if (wk.visit?.phase === 'to' && !this.world.doors.some((d) => d.id === wk.visit!.door)) wk.visit = null;
     const door = wk.visit?.phase === 'to' ? this.world.doors.find((d) => d.id === wk.visit!.door)! : this.pickDoor(wk);
     if (door) {
       const route = findRoute(this.world, [wk.x, wk.y], door.approach);
       if (route) {
-        wk.visit = { door: door.id, phase: 'to', left: 0 };
+        wk.visit = { door: door.id, phase: 'to', left: 0, ...(wk.visit?.night ? { night: true } : {}) };
         wk.route = route.slice(1);
         if (route.length <= 1) this.startEntering(wk);
         return;
@@ -591,7 +713,7 @@ export class LifeSim {
     if (dist - move < 0.05) {
       if (v.phase === 'in') {
         v.phase = 'inside';
-        v.left = this.between(this.cfg.people.lingerS);
+        v.left = v.night ? Infinity : this.between(this.cfg.people.lingerS);
         wk.x = door.stand[0];
         wk.y = door.stand[1];
         wk.speed = 0;
@@ -602,6 +724,323 @@ export class LifeSim {
         wk.speed = 0;
       }
     }
+  }
+
+
+  // -------------------------------------------------------------------------------------------
+  // Gatherings: sitting down at the table, and the evening movie
+  // -------------------------------------------------------------------------------------------
+
+  private findSeat(id: string): WorldSeat | null {
+    for (const t of this.world.tables) {
+      const s = t.seats.find((q) => q.id === id);
+      if (s) return s;
+    }
+    return null;
+  }
+
+  private idle(wk: Walker): boolean {
+    return wk.kind === 'person' && wk.leader === null && !wk.act && !wk.visit;
+  }
+
+  /** Stop what they were doing at a table or the screen: stand, push the chair in, and wander off. */
+  private endAct(wk: Walker) {
+    const a = wk.act;
+    if (a?.kind === 'dine') {
+      this.seatTaken.delete(a.seat);
+      this.chairs.set(a.seat, 0);
+    }
+    wk.act = null;
+    wk.sit = 0;
+    wk.talking = false;
+    wk.headTurn = 0;
+    wk.route = [];
+    wk.speed = 0;
+    wk.pauseLeft = this.between(this.cfg.people.pauseS) * 0.5;
+    const [i, j] = cellOf(this.world, wk.x, wk.y);
+    if (this.world.blocked[idx(this.world, i, j)]) {
+      const p = this.nearestFree(wk.x, wk.y);
+      if (p) [wk.x, wk.y] = p;
+    }
+  }
+
+  /** Where someone with an act is heading while they walk there. */
+  private actTarget(wk: Walker): Pt | null {
+    const a = wk.act;
+    if (!a) return null;
+    if (a.kind === 'watch') return a.spot;
+    return this.findSeat(a.seat)?.approach ?? null;
+  }
+
+  /** They have walked to the chair or the viewing spot: start the next part. */
+  private arrive(wk: Walker) {
+    const a = wk.act;
+    if (!a) return;
+    wk.route = [];
+    wk.speed = 0;
+    if (a.kind === 'watch') {
+      a.phase = 'watch';
+      return;
+    }
+    const seat = this.findSeat(a.seat);
+    if (!seat) {
+      this.endAct(wk);
+      return;
+    }
+    wk.x = seat.approach[0];
+    wk.y = seat.approach[1];
+    a.phase = 'pull';
+    a.t = 0;
+  }
+
+  private setPull(id: string, v: number) {
+    this.chairs.set(id, Math.max(0, Math.min(1, v)));
+  }
+
+  /** The pose of someone at a table: pulling the chair out, sitting down, talking, standing up, pushing it in. */
+  private stepDine(wk: Walker, dt: number) {
+    const a = wk.act as Extract<Act, { kind: 'dine' }>;
+    const seat = this.findSeat(a.seat);
+    if (!seat) {
+      this.endAct(wk);
+      return;
+    }
+    const c = this.cfg.dining;
+    const ease = (u: number) => u * u * (3 - 2 * u);
+    const chairAt = (pull: number): Pt => [seat.chair[0] + seat.out[0] * c.pullFt * pull, seat.chair[1] + seat.out[1] * c.pullFt * pull];
+    a.t += dt;
+    wk.speed = 0;
+    wk.heading = seat.facing;
+    switch (a.phase) {
+      case 'pull': {
+        wk.x = seat.approach[0];
+        wk.y = seat.approach[1];
+        this.setPull(seat.id, a.t / c.pullS);
+        if (a.t >= c.pullS) { a.phase = 'sit'; a.t = 0; }
+        break;
+      }
+      case 'sit': {
+        const u = ease(Math.min(1, a.t / c.sitS));
+        const pull = 1 - (1 - c.scootShare) * u;
+        this.setPull(seat.id, pull);
+        const seatPos = chairAt(pull);
+        wk.x = seat.approach[0] + (seatPos[0] - seat.approach[0]) * u;
+        wk.y = seat.approach[1] + (seatPos[1] - seat.approach[1]) * u;
+        wk.sit = u;
+        if (a.t >= c.sitS) { a.phase = 'talk'; a.t = 0; a.left = this.between(c.talkS); }
+        break;
+      }
+      case 'talk': {
+        this.setPull(seat.id, c.scootShare);
+        [wk.x, wk.y] = chairAt(c.scootShare);
+        wk.sit = 1;
+        a.left -= dt;
+        if (a.left <= 0) { a.phase = 'rise'; a.t = 0; wk.talking = false; wk.headTurn = 0; }
+        break;
+      }
+      case 'rise': {
+        const u = ease(Math.min(1, a.t / c.riseS));
+        const pull = c.scootShare + (1 - c.scootShare) * u;
+        this.setPull(seat.id, pull);
+        const seatPos = chairAt(c.scootShare + (1 - c.scootShare) * Math.min(1, u * 1.2));
+        wk.x = seatPos[0] + (seat.approach[0] - seatPos[0]) * u;
+        wk.y = seatPos[1] + (seat.approach[1] - seatPos[1]) * u;
+        wk.sit = 1 - u;
+        if (a.t >= c.riseS) { a.phase = 'push'; a.t = 0; wk.sit = 0; }
+        break;
+      }
+      case 'push': {
+        wk.x = seat.approach[0];
+        wk.y = seat.approach[1];
+        this.setPull(seat.id, 1 - a.t / c.pushS);
+        if (a.t >= c.pushS) this.endAct(wk);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  /** Watching: turn to face the screen and stand there until the movie is over. */
+  private stepWatch(wk: Walker, dt: number) {
+    const sc = this.world.screen;
+    if (!sc || !this.movieOn) {
+      this.endAct(wk);
+      return;
+    }
+    const want = Math.atan2(sc.y - wk.y, sc.x - wk.x);
+    let diff = want - wk.heading;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    const turn = this.cfg.people.turnRate * dt;
+    wk.heading += Math.max(-turn, Math.min(turn, diff));
+    wk.speed = 0;
+  }
+
+  /** At each table, one of those sitting talks while the others look at them, and who talks changes every few seconds. */
+  private stepTables(dt: number) {
+    const c = this.cfg.dining;
+    for (const t of this.world.tables) {
+      const sitters = this.walkers.filter((wk) => wk.act?.kind === 'dine' && wk.act.phase === 'talk' && t.seats.some((s) => s.id === (wk.act as { seat: string }).seat));
+      if (sitters.length < 2) {
+        for (const wk of sitters) { wk.talking = false; wk.headTurn = 0; }
+        this.tableTalk.delete(t.id);
+        continue;
+      }
+      const state = this.tableTalk.get(t.id) ?? { speaker: -1, left: 0 };
+      state.left -= dt;
+      if (state.left <= 0 || !sitters.some((_, n) => this.walkers.indexOf(sitters[n]) === state.speaker)) {
+        state.speaker = this.walkers.indexOf(sitters[Math.floor(this.rng() * sitters.length)]);
+        state.left = this.between(c.speakerS);
+      }
+      this.tableTalk.set(t.id, state);
+      const speaker = this.walkers[state.speaker];
+      for (const wk of sitters) {
+        if (wk === speaker) {
+          wk.talking = true;
+          wk.headTurn = Math.sin(this.clock * 1.3 + state.speaker) * 0.35;
+        } else {
+          wk.talking = false;
+          let d = Math.atan2(speaker.y - wk.y, speaker.x - wk.x) - wk.heading;
+          d = Math.atan2(Math.sin(d), Math.cos(d));
+          wk.headTurn = Math.max(-c.headTurnMax, Math.min(c.headTurnMax, d));
+        }
+      }
+    }
+  }
+
+  /** True between the configured night hours (11 pm to 6 am): everyone is indoors. */
+  night = false;
+
+  /**
+   * Called with the minute of the day. The movie starts and ends with it, and people are drawn to it; at night people
+   * and dogs go in and out of sight, walking to a door when time passes normally and all at once when the clock jumps.
+   */
+  setClock(minutes: number) {
+    const prev = this.minutes;
+    this.minutes = minutes;
+    const nc = this.cfg.night;
+    const night = minutes >= nc.startMin || minutes < nc.endMin;
+    const jumped = Math.abs(minutes - prev) > nc.jumpMin;
+    const mc = this.cfg.movie;
+    const on = !night && !!this.world.screen && minutes >= mc.startMin && minutes < mc.endMin;
+    if (on !== this.movieOn) {
+      this.movieOn = on;
+      if (on) {
+        for (const wk of this.walkers) if (this.idle(wk) && this.rng() < mc.attendBias) this.assignWatch(wk);
+      } else {
+        for (const wk of this.walkers) if (wk.act?.kind === 'watch') this.endAct(wk);
+      }
+    }
+    if (night !== this.night) {
+      this.night = night;
+      if (night) this.sendIn(jumped);
+      else this.bringOut();
+    }
+  }
+
+  /** Night falls: everyone heads for the nearest door, or is simply gone from the yard when the clock jumped. */
+  private sendIn(now: boolean) {
+    for (const wk of this.walkers) {
+      if (wk.act) this.endAct(wk);
+      wk.talking = false;
+      wk.route = [];
+      if (wk.visit?.phase === 'inside') {
+        wk.visit.night = true;
+        wk.visit.left = Infinity;
+        continue;
+      }
+      const doors = this.world.doors;
+      if (!doors.length) {
+        wk.away = true;
+        wk.speed = 0;
+        continue;
+      }
+      const door = doors.reduce((best, d) => (Math.hypot(d.approach[0] - wk.x, d.approach[1] - wk.y) < Math.hypot(best.approach[0] - wk.x, best.approach[1] - wk.y) ? d : best));
+      const route = now ? null : findRoute(this.world, [wk.x, wk.y], door.approach);
+      if (route && route.length > 1) {
+        wk.visit = { door: door.id, phase: 'to', left: 0, night: true };
+        wk.route = route.slice(1);
+        wk.pauseLeft = 0;
+      } else {
+        wk.visit = { door: door.id, phase: 'inside', left: Infinity, night: true };
+        wk.x = door.stand[0];
+        wk.y = door.stand[1];
+        wk.speed = 0;
+      }
+    }
+  }
+
+  /** Morning: they come out of their doors one by one and go about the day. */
+  private bringOut() {
+    const spread = this.cfg.night.riseSpreadS;
+    for (const wk of this.walkers) {
+      wk.away = false;
+      if (!wk.visit?.night) continue;
+      wk.visit.night = false;
+      if (wk.visit.phase === 'inside') wk.visit.left = this.rng() * spread;
+      else if (wk.visit.phase === 'to') wk.visit.left = 0; // still walking in: it will come straight back out
+    }
+  }
+
+  /** Send someone to a free spot in front of the screen. */
+  private assignWatch(wk: Walker): boolean {
+    const sc = this.world.screen;
+    if (!sc) return false;
+    const gap = this.cfg.movie.spotGapFt;
+    const taken = this.walkers.flatMap((o) => (o.act?.kind === 'watch' ? [o.act.spot] : []));
+    for (let tries = 0; tries < 14; tries++) {
+      const spot = sc.spots[Math.floor(this.rng() * sc.spots.length)];
+      if (taken.some((t) => Math.hypot(t[0] - spot[0], t[1] - spot[1]) < gap)) continue;
+      const route = findRoute(this.world, [wk.x, wk.y], spot);
+      if (!route) continue;
+      wk.act = { kind: 'watch', phase: 'to', spot };
+      wk.route = route.slice(1);
+      wk.pauseLeft = 0;
+      if (route.length <= 1) this.arrive(wk);
+      return true;
+    }
+    return false;
+  }
+
+  /** Call a few people to sit down together at a table, in neighboring seats so they can talk. */
+  private startDinner(host: Walker): boolean {
+    const tables = this.world.tables;
+    if (!tables.length) return false;
+    const c = this.cfg.dining;
+    const table = tables[Math.floor(this.rng() * tables.length)];
+    const free = table.seats.filter((st) => !this.seatTaken.has(st.id));
+    const want = Math.min(free.length, c.groupSize[0] + Math.floor(this.rng() * (c.groupSize[1] - c.groupSize[0] + 1)));
+    if (want < 2) return false;
+    // A run of neighboring seats around the table (the seats are numbered in a ring).
+    const byIndex = new Map(free.map((st) => [st.index, st]));
+    const ringLen = 8;
+    const starts = Array.from({ length: ringLen }, (_, i) => i).sort(() => this.rng() - 0.5);
+    let run: WorldSeat[] | null = null;
+    for (const start of starts) {
+      const seats: WorldSeat[] = [];
+      for (let k = 0; k < want; k++) {
+        const st = byIndex.get((start + k) % ringLen);
+        if (!st) break;
+        seats.push(st);
+      }
+      if (seats.length === want) { run = seats; break; }
+    }
+    if (!run) return false;
+    const others = this.walkers.filter((o) => o !== host && this.idle(o)).sort(() => this.rng() - 0.5).slice(0, want - 1);
+    const group = [host, ...others];
+    let seated = 0;
+    group.forEach((wk, k) => {
+      const seat = run![k];
+      const route = findRoute(this.world, [wk.x, wk.y], seat.approach);
+      if (!route) return;
+      wk.act = { kind: 'dine', seat: seat.id, phase: 'to', t: 0, left: 0 };
+      wk.route = route.slice(1);
+      wk.pauseLeft = 0;
+      this.seatTaken.set(seat.id, this.walkers.indexOf(wk));
+      seated++;
+      if (route.length <= 1) this.arrive(wk);
+    });
+    return seated > 0 && host.act !== null;
   }
 
   /** Advance everyone by `dt` seconds, in steps no longer than the configured maximum. */
@@ -618,7 +1057,13 @@ export class LifeSim {
     const w = this.world;
     for (const wk of this.walkers) {
       const turn = (wk.kind === 'person' ? this.cfg.people.turnRate : this.cfg.dogs.turnRate) * dt;
+      if (wk.away) continue;
       if (wk.leader !== null) wk.replan -= dt;
+      if (wk.act && wk.act.phase !== 'to') {
+        if (wk.act.kind === 'dine') this.stepDine(wk, dt);
+        else this.stepWatch(wk, dt);
+        continue;
+      }
       if (wk.visit && wk.visit.phase !== 'to') {
         this.stepVisit(wk, dt);
         continue;
@@ -661,6 +1106,10 @@ export class LifeSim {
       wk.gait += move * (wk.kind === 'person' ? 1.6 * (5.6 / wk.heightFt) ** 0.8 : 2.4);
       if (dist - move < 0.25) wk.route.shift();
       if (wk.route.length === 0) {
+        if (wk.act?.phase === 'to') {
+          this.arrive(wk);
+          continue;
+        }
         if (wk.visit?.phase === 'to') {
           this.startEntering(wk);
           continue;
@@ -669,6 +1118,8 @@ export class LifeSim {
         wk.speed = 0;
       }
     }
+    this.clock += dt;
+    this.stepTables(dt);
     this.stepBees(dt);
   }
 
@@ -734,4 +1185,27 @@ export class LifeSim {
       }
     }
   }
+}
+
+export interface HiveCheck {
+  lot: { width: number; depth: number };
+  structures: Pt[][];
+  plants: { x: number; y: number; r: number }[];
+  /** Outlines of the paths, where people walk. */
+  paths: Pt[][];
+}
+
+/**
+ * What is wrong with a spot for the hive, in plain words (empty when it is a good one): outside the lot, too near a
+ * building, a plant or a path, where bees on their way out meet people.
+ */
+export function hiveProblems(h: { x: number; y: number }, c: HiveCheck, cfg: Cfg): string[] {
+  const hc = cfg.bees.hive;
+  const out: string[] = [];
+  if (h.x < cfg.margins.lotFt || h.y < cfg.margins.lotFt || h.x > c.lot.width - cfg.margins.lotFt || h.y > c.lot.depth - cfg.margins.lotFt) out.push('Too close to the lot edge.');
+  if (c.structures.some((s) => pointInPolygon(h.x, h.y, s))) out.push('Inside a building.');
+  else if (c.structures.some((s) => distanceToPolygon(h.x, h.y, s) < hc.minFromStructureFt)) out.push(`Within ${hc.minFromStructureFt} ft of a building.`);
+  if (c.plants.some((p) => Math.hypot(p.x - h.x, p.y - h.y) < p.r + hc.minFromPlantFt)) out.push('In or right beside a plant.');
+  if (c.paths.some((p) => pointInPolygon(h.x, h.y, p) || distanceToPolygon(h.x, h.y, p) < hc.minFromPathFt)) out.push(`Within ${hc.minFromPathFt} ft of a path, where people walk.`);
+  return out;
 }

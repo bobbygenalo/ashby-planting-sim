@@ -74,7 +74,7 @@ export function lookAlikes(sp: Species, all: Species[], band: [number, number]):
 
 /** Materials that could replace this one: same family and unit, never walls and fences. */
 export function materialAlternatives(current: Material | undefined, all: Material[]): Material[] {
-  if (!current || current.category === 'structure') return [];
+  if (!current || current.category === 'structure' || current.category === 'furniture') return [];
   return all.filter((m) => m.id !== current.id && m.category === current.category && m.unit === current.unit);
 }
 

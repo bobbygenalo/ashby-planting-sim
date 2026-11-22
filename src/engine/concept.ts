@@ -29,6 +29,8 @@ export interface ConceptContext {
 
 export interface ConceptCounts {
   patio: number;
+  table: number;
+  grill: number;
   deck: number;
   path: number;
   beds: number;
@@ -69,7 +71,7 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
   const cfg = ctx.engine.concept;
   const base = emptyScenarioData(ctx.site);
   const notes: string[] = [];
-  const counts: ConceptCounts = { patio: 0, deck: 0, path: 0, beds: 0, raisedBeds: 0, lawn: 0, gravel: 0, mulch: 0, plants: 0, species: 0 };
+  const counts: ConceptCounts = { patio: 0, table: 0, grill: 0, deck: 0, path: 0, beds: 0, raisedBeds: 0, lawn: 0, gravel: 0, mulch: 0, plants: 0, species: 0 };
   const matsById = new Map(ctx.materials.map((m) => [m.id, m]));
   const snap = (v: number) => Math.round(v / cfg.gridFt) * cfg.gridFt;
   const { width: lotW, depth: lotD } = ctx.site.lot;
@@ -178,6 +180,7 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
       seeds: paths.map((e) => e.points),
       accept: (line) => {
         const poly = lineToPolygon(line, pp.width);
+        if (poly.some(([x, y]) => x < 0 || y < 0 || x > lotW || y > lotD)) return false;
         if (ctx.structures.some((st) => polygonsIntersect(poly, st.footprint))) return false;
         if (fixed.some((f) => polygonsIntersect(poly, f))) return false;
         return !areaPolys.some((a) => !hubPolyList.includes(a) && polygonsIntersect(poly, a));
@@ -240,6 +243,59 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
         add(make('patio', found[0].poly, 'Patio', paving.length ? pick(rng, paving).id : undefined));
         counts.patio = 1;
       } else notes.push('No room for a patio.');
+    }
+
+    // A communal table with its chairs and a grilling station, on the patio where there is room (the grill may stand
+    // just beside it), the table toward the middle and the grill against the edge nearest a building.
+    const patioEl = placed.find((el) => el.type === 'patio');
+    if (patioEl) {
+      const patio = polyOf.get(patioEl.id)!;
+      const fc = cfg.furniture;
+      const furniture = () => placed.filter((el) => el.type === 'table' || el.type === 'grill').map((el) => polyOf.get(el.id)!);
+      const pxs = patio.map((p) => p[0]), pys = patio.map((p) => p[1]);
+      const [px0, px1, py0, py1] = [Math.min(...pxs), Math.max(...pxs), Math.min(...pys), Math.max(...pys)];
+      const pcx = (px0 + px1) / 2, pcy = (py0 + py1) / 2;
+      const nearBuilding = (poly: Pt[]) => Math.min(...ctx.structures.map((st) => Math.min(...poly.map(([x, y]) => distanceToPolygon(x, y, st.footprint)))));
+      const free = (poly: Pt[]) => {
+        if (furniture().some((f) => polygonsIntersect(poly, f) || poly.some(([x, y]) => distanceToPolygon(x, y, f) < fc.gapFt) || f.some(([x, y]) => distanceToPolygon(x, y, poly) < fc.gapFt))) return false;
+        return true;
+      };
+      const rects = (type: 'table' | 'grill', size: [number, number], within: 'patio' | 'outside') => {
+        const out: Pt[][] = [];
+        const tries = within === 'patio' ? fc.attempts : fc.grillOutsideAttempts;
+        for (let i = 0; i < tries; i++) {
+          const turn = rng() < 0.5;
+          const [w, d] = turn ? [size[1], size[0]] : size;
+          const poly = within === 'patio'
+            ? rect(snap(px0 + fc.edgeFt + rng() * Math.max(0, px1 - px0 - w - 2 * fc.edgeFt)), snap(py0 + fc.edgeFt + rng() * Math.max(0, py1 - py0 - d - 2 * fc.edgeFt)), w, d)
+            : rect(snap(px0 - w - 2 + rng() * (px1 - px0 + w + 4)), snap(py0 - d - 2 + rng() * (py1 - py0 + d + 4)), w, d);
+          if (within === 'patio' ? poly.every(([x, y]) => pointInPolygon(x, y, patio) && ctx.structures.every((st) => distanceToPolygon(x, y, st.footprint) >= cfg.structureMarginFt)) : fits(poly, [cfg.patio.zone, ...cfg.plants.zones], 0, patio) && !polygonsIntersect(poly, patio) && poly.some(([x, y]) => distanceToPolygon(x, y, patio) < 1.5)) {
+            if (free(poly)) out.push(poly);
+          }
+        }
+        void type;
+        return out;
+      };
+      const put = (type: 'table' | 'grill', poly: Pt[]) => {
+        const label = cfg2.types[type].label;
+        add(make(type, poly, label));
+        counts[type] = 1;
+      };
+      const cfg2 = ctx.engine.hardscape;
+      if (rng() < theme.table) {
+        const spots = rects('table', cfg2.types.table.placeSize!, 'patio');
+        // toward the middle of the patio
+        spots.sort((a, b) => Math.hypot(a[0][0] + (a[2][0] - a[0][0]) / 2 - pcx, a[0][1] + (a[2][1] - a[0][1]) / 2 - pcy) - Math.hypot(b[0][0] + (b[2][0] - b[0][0]) / 2 - pcx, b[0][1] + (b[2][1] - b[0][1]) / 2 - pcy));
+        if (spots.length) put('table', spots[0]);
+        else notes.push('The patio is too small for a communal table.');
+      }
+      if (rng() < theme.grill) {
+        let spots = rects('grill', cfg2.types.grill.placeSize!, 'patio');
+        if (spots.length === 0) spots = rects('grill', cfg2.types.grill.placeSize!, 'outside');
+        spots.sort((a, b) => nearBuilding(a) - nearBuilding(b));
+        if (spots.length) put('grill', spots[0]);
+        else notes.push('No room for a grilling station.');
+      }
     }
 
     // The big soft areas first, while there is room: lawn, then a deck, gravel and mulch.
@@ -316,7 +372,7 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
   }
 
   const planting = [...beds, ...raised, ...mulches, ...gravels];
-  const keepOff = () => placed.filter((el) => ['patio', 'deck', 'path', 'lawn'].includes(el.type)).map((el) => polyOf.get(el.id)!);
+  const keepOff = () => placed.filter((el) => ['patio', 'deck', 'path', 'lawn', 'table', 'grill'].includes(el.type)).map((el) => polyOf.get(el.id)!);
   let instances: PlantInstance[] = [];
   if (opts.plants) {
     const pc = cfg.plants;

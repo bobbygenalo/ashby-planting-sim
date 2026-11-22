@@ -171,9 +171,14 @@ export interface ConceptTheme {
   raisedBeds: [number, number];
   /** Chance of a deck. */
   deck: number;
+  /** Chances of a communal table with chairs, and of a grilling station, on the patio. */
+  table: number;
+  grill: number;
 }
 
 export interface ConceptCfg {
+  /** Where the table and grill go: tries to find a spot, the gap kept between them and the patio edge, and tries outside the patio when it is too small. */
+  furniture: { attempts: number; gapFt: number; edgeFt: number; grillOutsideAttempts: number };
   gridFt: number;
   lotMarginFt: number;
   structureMarginFt: number;
@@ -261,7 +266,66 @@ export interface PersonSpec {
   speedFt: [number, number];
 }
 
+export interface DiningCfg {
+  /** Chance, when someone chooses where to go next, of calling people to the table. */
+  bias: number;
+  /** How many sit down together, as [least, most]. */
+  groupSize: [number, number];
+  /** How far behind a chair, past its edge, someone stands before pulling it out. */
+  approachFt: number;
+  /** How far a chair slides out when pulled. */
+  pullFt: number;
+  pullS: number;
+  sitS: number;
+  pushS: number;
+  riseS: number;
+  /** How long a group stays at the table, in seconds. */
+  talkS: [number, number];
+  /** How long one person talks before another takes over, in seconds. */
+  speakerS: [number, number];
+  /** How far a seated person's hips drop below standing, in feet. */
+  sitDropFt: number;
+  /** How far a chair is scooted back in once someone sits, as a share of its pull. */
+  scootShare: number;
+  /** The most a listener turns their head toward the speaker, in radians. */
+  headTurnMax: number;
+}
+
+export interface MovieCfg {
+  /** The building whose east wall is the screen. */
+  screenBuilding: string;
+  /** Showing from this minute of the day to this one (1200 is 8 pm). */
+  startMin: number;
+  endMin: number;
+  /** Chance that someone free when it starts goes to watch, and that someone choosing where to go next does while it shows. */
+  attendBias: number;
+  joinBias: number;
+  widthFt: number;
+  bottomFt: number;
+  heightFt: number;
+  /** Viewers stand this far out from the wall and no further sideways from its middle than this. */
+  spotFromWallFt: [number, number];
+  spotLateralFt: number;
+  /** Viewers keep this far apart. */
+  spotGapFt: number;
+  projectorFromWallFt: number;
+  projectorHeightFt: number;
+}
+
+export interface NightCfg {
+  /** People and dogs are indoors from this minute of the day (1380 is 11 pm) until `endMin` (360 is 6 am). */
+  startMin: number;
+  endMin: number;
+  /** A change of the clock bigger than this many minutes sends everyone in at once, or brings them out, instead of walking. */
+  jumpMin: number;
+  /** In the morning they come out one by one over this many seconds. */
+  riseSpreadS: number;
+}
+
 export interface LifeCfg {
+  night: NightCfg;
+  dining: DiningCfg;
+  movie: MovieCfg;
   cellFt: number;
   margins: { plantFt: number; structureFt: number; lotFt: number; hiveFt: number; nearBlockedFt: number; nearBlockedExtraCost: number };
   /** What it costs to walk one foot over each kind of ground; paths are cheapest, so people drift toward them. */
@@ -322,7 +386,56 @@ export interface BranchCfg {
   inset: number;
 }
 
+export interface LitterCfg {
+  /** Months at the start of leaf-off when leaves are still coming down. */
+  fallMonths: number;
+  /** Months after the leaves return that last year's litter takes to rot into the soil. */
+  decayMonths: number;
+  /** Share of the full litter on the ground while the leaves are still falling. */
+  fallAmount: number;
+  leavesPerSqFt: number;
+  minLeaves: number;
+  maxLeaves: number;
+  /** Share of the leaves drawn in the air, drifting down, while they fall. */
+  fallingShare: number;
+  leafSizeFt: number;
+  /** Litter spreads over this share of the canopy radius. */
+  radiusFraction: number;
+  humusRadiusFraction: number;
+  humusOpacity: number;
+  soilColor: string;
+  autumnColor: string;
+  autumnBlend: number;
+  fallSpeedFtPerSec: number;
+  swayFt: number;
+  groundZ: number;
+}
+
+export interface HolidayCfg {
+  /** Structures whose front roofline is strung with lights (the street-facing house and the ADU). */
+  lightedParts: string[];
+  /** Lights go up the day after Thanksgiving, the `nth` `weekday` (1 Monday to 7 Sunday; 4 is Thursday) of `month`, and stay through `seasonEndMonth`. */
+  thanksgiving: { month: number; weekday: number; nth: number };
+  seasonEndMonth: number;
+  /** The sun is down, so the lights come on, when it is this far below the horizon (degrees). */
+  sunsetElevationDeg: number;
+  bulbSpacingFt: number;
+  bulbRadiusFt: number;
+  glowRadiusFt: number;
+  glowOpacity: number;
+  /** How bright an unlit bulb looks, as a share of lit. */
+  offDim: number;
+  colors: string[];
+  wireColor: string;
+  /** The string hangs this far out toward the street from the roof edge, and this far above it. */
+  outwardFt: number;
+  liftFt: number;
+  twinkleHz: number;
+}
+
 export interface EngineConfig {
+  holiday: HolidayCfg;
+  litter: LitterCfg;
   /** The growth-stages view: the ages shown and the two camera heights (angled, side-on). */
   growthStages: { years: number[]; anglePitch: number; sidePitch: number };
   crops: CropCfg;
@@ -344,7 +457,7 @@ export interface EngineConfig {
     presets: { id: string; label: string; month: number; day: number }[];
     seasons: SeasonCfg[];
   };
-  scene: { snapDefaultFt: number; snapOptionsFt: number[]; treeCanopyRings: number };
+  scene: { snapDefaultFt: number; snapOptionsFt: number[]; treeCanopyRings: number; /** Shift with an arrow key moves this many times as far. */ arrowShiftMultiplier: number };
   growth: {
     steepness: number;
     containers: Record<string, { label: string; height: number; width: number }>;
@@ -356,6 +469,8 @@ export interface EngineConfig {
     wucolsPlantFactor: Record<string, number>;
     /** Share of normal canopy density left when a deciduous plant is leafless. */
     leafOffDensityFactor: number;
+    /** Sections of a plant's crown used to build its shadow solid, bottom to top. */
+    shadowLevels: number;
     /** How far a blooming plant's foliage color moves toward its bloom color (0-1). */
     bloomTintFraction: number;
   };
@@ -387,7 +502,20 @@ export interface EngineConfig {
     drawOrder: HardscapeType[];
     types: Record<
       HardscapeType,
-      { label: string; shape: 'polygon' | 'line'; material: string; height: number; depthIn: number; width: number }
+      {
+        label: string;
+        shape: 'polygon' | 'line';
+        material: string;
+        height: number;
+        depthIn: number;
+        width: number;
+        /** Furniture and fixtures: one click places a rectangle of this size (long side, short side, feet) that is then turned or resized like any element. */
+        placeSize?: [number, number];
+        /** How it is drawn in 3D (a table with chairs, a grill between counters). Without it the outline is extruded. */
+        model?: 'table' | 'grill';
+        /** Stands on the ground, not part of it: ignored when working out what covers the lot. */
+        furniture?: boolean;
+      }
     >;
   };
 }
@@ -398,6 +526,16 @@ export type ContainerId = '1gal' | '5gal' | '15gal' | '24box';
 export type Confidence = 'high' | 'medium' | 'low';
 export type PollinatorValue = 'high' | 'moderate' | 'low';
 export type PollinatorGroup = 'native bees' | 'honey bees' | 'butterflies' | 'moths' | 'hummingbirds';
+
+/** How a plant's crown is drawn and how much light it lets through. */
+export interface CrownData {
+  /** The crown's outline as [share of canopy height, share of canopy radius] points, bottom to top; replaces the habit's stock outline. */
+  profile?: [number, number][];
+  /** Share of sunlight the crown blocks in leaf (0 to 1); without it the plant type's value is used. */
+  density?: number;
+  /** Share of sunlight a bare crown blocks; without it a share of `density` is used. */
+  leafOffDensity?: number;
+}
 
 export interface Species {
   id: string;
@@ -412,6 +550,8 @@ export interface Species {
   yearsToMaturity: number;
   habit: Habit;
   sun: 'full' | 'part' | 'shade';
+  /** Crown outline and light transmission (shadow and drawing share the outline). */
+  crown?: CrownData;
   wucols: 'very low' | 'low' | 'moderate' | 'high';
   bloomMonths: number[];
   bloomColor: string;
@@ -454,12 +594,12 @@ export interface PlantInstance {
   hydrozoneId?: string;
 }
 
-export type HardscapeType = 'patio' | 'path' | 'bed' | 'lawn' | 'deck' | 'gravel' | 'raisedBed' | 'wall' | 'fence';
+export type HardscapeType = 'patio' | 'path' | 'bed' | 'lawn' | 'deck' | 'gravel' | 'raisedBed' | 'wall' | 'fence' | 'table' | 'grill';
 
 export interface Material {
   id: string;
   name: string;
-  category: 'paving' | 'loose' | 'planting' | 'turf' | 'deck' | 'structure';
+  category: 'paving' | 'loose' | 'planting' | 'turf' | 'deck' | 'structure' | 'furniture';
   /** Share of rainfall that soaks through, 0 (sealed) to 1 (open soil). */
   permeability: number;
   /** Default surface layer depth in inches. */

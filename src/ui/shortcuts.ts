@@ -23,3 +23,21 @@ export function isPlayPauseKey(e: KeyLike): boolean {
   if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return false;
   return e.key === ' ' || e.key === 'Spacebar';
 }
+
+/**
+ * How far an arrow key moves the selected plant or element, in site feet [dx, dy], or null for any other key.
+ * Left and right are -X and +X; up is toward the rear of the lot (+Y) and down toward the street, as the plan view
+ * and the Nudge buttons have it. `step` is the snap size; Shift moves `shiftMultiplier` times as far. Cmd, Ctrl and Alt
+ * combinations belong to the browser and are ignored.
+ */
+export function arrowDelta(e: KeyLike, step: number, shiftMultiplier: number): [number, number] | null {
+  if (e.metaKey || e.ctrlKey || e.altKey) return null;
+  const d = e.shiftKey ? step * shiftMultiplier : step;
+  switch (e.key) {
+    case 'ArrowLeft': return [-d, 0];
+    case 'ArrowRight': return [d, 0];
+    case 'ArrowUp': return [0, d];
+    case 'ArrowDown': return [0, -d];
+    default: return null;
+  }
+}

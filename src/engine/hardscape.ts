@@ -122,7 +122,7 @@ export function buildCoverGrid(
   const live = elements.filter((e) => !e.removed).sort((a, b) => order(a) - order(b));
   for (const el of live) {
     const mat = byId.get(el.materialId);
-    if (!mat) continue;
+    if (!mat || cfg.types[el.type].furniture) continue; // furniture stands on whatever is underneath
     paint(footprint(el, cfg), mat.permeability >= cfg.permeableThreshold ? 1 : 2);
   }
   for (const s of structures) paint(s.footprint, 2);
@@ -264,4 +264,13 @@ export function snapPoint(p: Pt, grid: number, anchors: SnapAnchor[], tolerance:
   if (bestV) return { point: [bestV.pt[0], bestV.pt[1]], kind: 'vertex' };
   if (bestE) return { point: bestE.pt, kind: 'edge' };
   return { point: [Math.round(p[0] / grid) * grid, Math.round(p[1] / grid) * grid], kind: 'grid' };
+}
+
+/** The element drawn on top at a point of the ground (the last in draw order whose outline holds it), or undefined. */
+export function elementAt(elements: HardscapeElement[], p: Pt, cfg: HsCfg): HardscapeElement | undefined {
+  const order = (e: HardscapeElement) => cfg.drawOrder.indexOf(e.type);
+  return elements
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => !e.removed && pointInPolygon(p[0], p[1], footprint(e, cfg)))
+    .sort((a, b) => order(b.e) - order(a.e) || b.i - a.i)[0]?.e;
 }

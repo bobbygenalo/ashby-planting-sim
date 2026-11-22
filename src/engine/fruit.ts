@@ -1,5 +1,5 @@
 import type { PlantSize } from './growth';
-import { canopyRadius } from './canopy';
+import { canopyRadius, type CrownProfile } from './canopy';
 import { mulberry32 } from './shuffle';
 import type { FruitCfg, Habit, Species } from './types';
 
@@ -57,7 +57,7 @@ export function seedFromId(id: string): number {
  * Where fruit hangs: points on the canopy surface in the plant's own frame (feet from its trunk, z up), spread
  * evenly around and up the canopy with a little jitter, the same every time for the same seed.
  */
-export function fruitPositions(habit: Habit, r: number, base: number, canopyH: number, count: number, seed: number, cfg: FruitCfg): [number, number, number][] {
+export function fruitPositions(habit: Habit, r: number, base: number, canopyH: number, count: number, seed: number, cfg: FruitCfg, profile?: CrownProfile): [number, number, number][] {
   const rng = mulberry32(seed);
   const [z0, z1] = cfg.zFractionRange;
   const out: [number, number, number][] = [];
@@ -66,7 +66,7 @@ export function fruitPositions(habit: Habit, r: number, base: number, canopyH: n
     // Even coverage: height by area, angle by the golden angle, then a little jitter.
     const zf = z0 + (z1 - z0) * (0.5 + (t - 0.5) * (0.85 + 0.3 * rng()));
     const phi = i * 2.399963229728653 + (rng() - 0.5) * 0.6;
-    const rho = canopyRadius(habit, r, zf, base <= 0.02) * cfg.insetFraction;
+    const rho = canopyRadius(habit, r, zf, base <= 0.02, profile) * cfg.insetFraction;
     out.push([Math.cos(phi) * rho, Math.sin(phi) * rho, base + zf * canopyH]);
   }
   return out;

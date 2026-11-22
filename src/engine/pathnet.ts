@@ -183,13 +183,17 @@ export function routePaths(inp: NetInput): NetPath[] {
     return out;
   };
 
-  const extend = (hub: Hub, from: Pt, toward: Pt): Pt | null => {
-    if (hub.door) return [hub.door.point[0] + hub.door.outward[0] * 0.4, hub.door.point[1] + hub.door.outward[1] * 0.4];
+  /** Points from the end of a route to its hub: for a door, straight out from the wall and then to the entry, so the path arrives square on. */
+  const extend = (hub: Hub, from: Pt, toward: Pt): Pt[] => {
+    if (hub.door) {
+      const { point, outward } = hub.door;
+      return [[point[0] + outward[0] * 3.5, point[1] + outward[1] * 3.5], [point[0] + outward[0] * 0.4, point[1] + outward[1] * 0.4]];
+    }
     if (hub.tree) {
       const d = Math.hypot(hub.tree.x - from[0], hub.tree.y - from[1]);
-      if (d <= hub.tree.stand) return null;
+      if (d <= hub.tree.stand) return [];
       const f = (d - hub.tree.stand) / d;
-      return [from[0] + (hub.tree.x - from[0]) * f, from[1] + (hub.tree.y - from[1]) * f];
+      return [[from[0] + (hub.tree.x - from[0]) * f, from[1] + (hub.tree.y - from[1]) * f]];
     }
     if (hub.polygon) {
       const poly = hub.polygon;
@@ -197,11 +201,11 @@ export function routePaths(inp: NetInput): NetPath[] {
       const len = Math.hypot(mx - from[0], my - from[1]) || 1;
       const ux = (mx - from[0]) / len, uy = (my - from[1]) / len;
       for (let t = 0; t < len; t += 0.25) {
-        if (pointInPolygon(from[0] + ux * t, from[1] + uy * t, poly)) return [from[0] + ux * (t + 0.5), from[1] + uy * (t + 0.5)];
+        if (pointInPolygon(from[0] + ux * t, from[1] + uy * t, poly)) return [[from[0] + ux * (t + 0.5), from[1] + uy * (t + 0.5)]];
       }
     }
     void toward;
-    return null;
+    return [];
   };
 
   const out: NetPath[] = [];
@@ -243,11 +247,13 @@ export function routePaths(inp: NetInput): NetPath[] {
     const endTag = (tags.get(end) ?? ['path'])[0];
     const pts = smooth(cells);
     const startHub = hubById.get(bestHub)!;
-    const pre = extend(startHub, pts[0], pts[1] ?? pts[0]);
-    const post = endTag === 'path' ? null : extend(hubById.get(endTag)!, pts[pts.length - 1], pts[pts.length - 2] ?? pts[0]);
-    // Reading the path from the start hub: [edge of the start hub, ...route, edge of what it joins].
-    const doorTips = new Set<Pt>([pre, post].filter((q, n) => q && hubById.get(n === 0 ? bestHub : endTag)?.door) as Pt[]);
-    const raw: Pt[] = [...(pre ? [pre] : []), ...pts, ...(post ? [post] : [])];
+    // Read from the start hub: [its entry, ...the route, the entry of what it joins].
+    const pre = extend(startHub, pts[0], pts[1] ?? pts[0]).reverse();
+    const post = endTag === 'path' ? [] : extend(hubById.get(endTag)!, pts[pts.length - 1], pts[pts.length - 2] ?? pts[0]);
+    const doorTips = new Set<Pt>();
+    if (startHub.door) doorTips.add(pre[0]);
+    if (endTag !== 'path' && hubById.get(endTag)!.door) doorTips.add(post[post.length - 1]);
+    const raw: Pt[] = [...pre, ...pts, ...post];
     const line: Pt[] = inp.snap ? raw.map((q) => (doorTips.has(q) ? q : inp.snap!(q))) : raw;
     if (line.length >= 2 && (!inp.accept || inp.accept(line))) {
       out.push({ points: line, from: bestHub, to: endTag });

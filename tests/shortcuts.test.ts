@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import siteRaw from '../src/data/site.json';
-import { isPlayPauseKey, viewForKey } from '../src/ui/shortcuts';
+import { arrowDelta, isPlayPauseKey, viewForKey } from '../src/ui/shortcuts';
 
 const views = (siteRaw as { views: { id: string; label: string }[] }).views;
 const press = (key: string, extra: Partial<{ metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }> = {}) =>
@@ -39,5 +39,23 @@ describe('play and pause shortcut', () => {
   });
   it('ignores combinations and key repeat', () => {
     for (const x of ['metaKey', 'ctrlKey', 'altKey', 'shiftKey', 'repeat'] as const) expect(k(' ', { [x]: true })).toBe(false);
+  });
+});
+
+describe('arrow keys', () => {
+  const k = (key: string, extra: Partial<{ metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }> = {}) =>
+    arrowDelta({ key, metaKey: false, ctrlKey: false, altKey: false, shiftKey: false, ...extra }, 0.5, 4);
+  it('move one step: left and right along X, up toward the rear and down toward the street', () => {
+    expect(k('ArrowLeft')).toEqual([-0.5, 0]);
+    expect(k('ArrowRight')).toEqual([0.5, 0]);
+    expect(k('ArrowUp')).toEqual([0, 0.5]);
+    expect(k('ArrowDown')).toEqual([0, -0.5]);
+  });
+  it('move further with Shift, and ignore other keys and browser combinations', () => {
+    expect(k('ArrowRight', { shiftKey: true })).toEqual([2, 0]);
+    expect(k('a')).toBeNull();
+    expect(k('ArrowLeft', { metaKey: true })).toBeNull();
+    expect(k('ArrowLeft', { ctrlKey: true })).toBeNull();
+    expect(k('ArrowLeft', { altKey: true })).toBeNull();
   });
 });

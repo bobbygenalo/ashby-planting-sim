@@ -46,13 +46,19 @@ export function HardscapePanel() {
       {!edit && <p className="muted small">View only: the plan cannot be changed.</p>}
       {s.drawing ? (
         <div className="drawbox">
+          {cfg.types[s.drawing.type].placeSize ? (
+            <p className="small">
+              Placing a <b>{cfg.types[s.drawing.type].label.toLowerCase()}</b> ({cfg.types[s.drawing.type].placeSize!.map((n) => formatFeetInches(n)).join(' × ')}): click in the yard where its center goes. Turn it or resize it afterwards from its card or its corner handles. Esc cancels.
+            </p>
+          ) : (
           <p className="small">
             Drawing a <b>{cfg.types[s.drawing.type].label.toLowerCase()}</b>: click to add {cfg.types[s.drawing.type].shape === 'line' ? 'points along the centerline' : 'corners'} ({s.drawing.points.length} so far).
             Points snap to corners, then edges, then the {formatFeetInches(s.snap)} grid. Double-click, Enter or Finish to end; Esc cancels.
           </p>
+          )}
           <div className="row">
-            <button className="on" onClick={() => s.finishDrawing()} disabled={s.drawing.points.length < (cfg.types[s.drawing.type].shape === 'line' ? 2 : 3)}>Finish</button>
-            <button onClick={() => s.removeLastDrawPoint()} disabled={s.drawing.points.length === 0}>Undo point</button>
+            {!cfg.types[s.drawing.type].placeSize && <button className="on" onClick={() => s.finishDrawing()} disabled={s.drawing.points.length < (cfg.types[s.drawing.type].shape === 'line' ? 2 : 3)}>Finish</button>}
+            {!cfg.types[s.drawing.type].placeSize && <button onClick={() => s.removeLastDrawPoint()} disabled={s.drawing.points.length === 0}>Undo point</button>}
             <button onClick={() => s.startDrawing(null)}>Cancel</button>
           </div>
         </div>

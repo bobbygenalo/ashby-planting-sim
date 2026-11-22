@@ -9,6 +9,7 @@ import { useApp } from '../store/store';
 import { branchSkeleton, type Skeleton } from '../engine/branches';
 import { branchGeometry } from './branchGeometry';
 import { MIN_FORM_SIZE, partGeometry, plantParts } from './forms';
+import { LeafDrop } from './LeafDrop';
 
 // Spheres and domes are shared unit shapes that each plant scales; the rest are built per plant and thrown away with it.
 const UNIT_ELLIPSOID = partGeometry({ shape: 'ellipsoid', material: 'foliage', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], args: [] });
@@ -21,8 +22,8 @@ function useSkeleton(p: PlacedPlant, enabled: boolean): Skeleton | null {
   const h = Math.max(p.size.height, MIN_FORM_SIZE);
   const base = h * trunkFrac;
   return useMemo(
-    () => (enabled ? branchSkeleton(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, seedFromId(p.inst.id), cfg) : null),
-    [enabled, p.species.habit, p.size.width, base, h, p.inst.id, cfg],
+    () => (enabled ? branchSkeleton(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, seedFromId(p.inst.id), cfg, p.species.crown?.profile) : null),
+    [enabled, p.species.crown, p.species.habit, p.size.width, base, h, p.inst.id, cfg],
   );
 }
 
@@ -49,8 +50,8 @@ function FormBody({ p, month }: { p: PlacedPlant; month: number }) {
     return blooming ? c.lerp(new THREE.Color(s.bloomColor), tintFrac) : c;
   }, [s.foliageColor, s.bloomColor, blooming, tintFrac]);
   const parts = useMemo(
-    () => plantParts(s.habit, size.width / 2, size.height, trunkFrac, seedFromId(p.inst.id)),
-    [s.habit, size.width, size.height, trunkFrac, p.inst.id],
+    () => plantParts(s.habit, size.width / 2, size.height, trunkFrac, seedFromId(p.inst.id), s.crown?.profile),
+    [s.habit, s.crown, size.width, size.height, trunkFrac, p.inst.id],
   );
   const geometries = useMemo(
     () => parts.map((part) => (part.shape === 'ellipsoid' ? UNIT_ELLIPSOID : part.shape === 'dome' ? UNIT_DOME : partGeometry(part))),
@@ -104,8 +105,8 @@ function FruitCluster({ p, month }: { p: PlacedPlant; month: number }) {
   const base = h * trunkFrac;
   const skeleton = useSkeleton(p, leafOff);
   const spots = useMemo(
-    () => (state && leafOff ? (skeleton ? hangingSpots(skeleton, state.count, state.diameterFt, seedFromId(p.inst.id)) : []) : state ? fruitPositions(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, state.count, seedFromId(p.inst.id), cfg) : []),
-    [state, leafOff, skeleton, p.species.habit, p.size.width, base, h, p.inst.id, cfg],
+    () => (state && leafOff ? (skeleton ? hangingSpots(skeleton, state.count, state.diameterFt, seedFromId(p.inst.id)) : []) : state ? fruitPositions(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, state.count, seedFromId(p.inst.id), cfg, p.species.crown?.profile) : []),
+    [state, leafOff, skeleton, p.species.habit, p.species.crown, p.size.width, base, h, p.inst.id, cfg],
   );
   const mesh = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
@@ -135,6 +136,7 @@ export function Form({ p, month }: { p: PlacedPlant; month: number }) {
     <group>
       <FormBody p={p} month={month} />
       <FruitCluster p={p} month={month} />
+      <LeafDrop p={p} month={month} />
     </group>
   );
 }
@@ -163,6 +165,7 @@ export function PlantLayer() {
   const edit = useApp((s) => s.mode === 'edit');
   const setDrag = useApp((s) => s.setDrag);
   const beginGesture = useApp((s) => s.beginGesture);
+  const duplicateInstance = useApp((s) => s.duplicateInstance);
   const doy = useApp((s) => s.doy);
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
   const calMonth = doyToMonthDay(doy)[0];
@@ -193,6 +196,14 @@ export function PlantLayer() {
   const onDown = (id: string) => (e: ThreeEvent<PointerEvent>) => {
     if (measureActive || placing || !edit) return;
     e.stopPropagation();
+    // Option-drag: leave this plant where it is and drag a copy (one undo step removes it again).
+    if (e.nativeEvent.altKey) {
+      const copyId = duplicateInstance(id, [0, 0]);
+      if (!copyId) return;
+      setDrag(copyId);
+      if (controls) controls.enabled = false;
+      return;
+    }
     select(id);
     beginGesture();
     setDrag(id);

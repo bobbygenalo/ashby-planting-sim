@@ -3,6 +3,7 @@ import type { SunHoursResult } from '../engine/sunhours';
 import { useApp } from '../store/store';
 import { HardscapeInspector } from './HardscapeInspector';
 import { PlantInspector } from './PlantInspector';
+import { HiveInspector } from './HiveInspector';
 
 /**
  * Whatever is selected in the yard, a plant or a hardscape element, opens here as a card over the yard, against its
@@ -14,6 +15,8 @@ const GAP = 10;
 export function SelectionCard({ growing }: { growing: SunHoursResult | null }) {
   const plantId = useApp((s) => s.selectedId);
   const elementId = useApp((s) => s.selectedElementId);
+  const hiveSelected = useApp((s) => s.hiveSelected);
+  const selectHive = useApp((s) => s.selectHive);
   const select = useApp((s) => s.select);
   const selectElement = useApp((s) => s.selectElement);
   const plantName = useApp((s) => {
@@ -26,7 +29,7 @@ export function SelectionCard({ growing }: { growing: SunHoursResult | null }) {
   });
   const ref = useRef<HTMLDivElement>(null);
   const [lift, setLift] = useState(0);
-  const label = plantId ? plantName : elementId ? elementName : undefined;
+  const label = hiveSelected ? 'Beehive' : plantId ? plantName : elementId ? elementName : undefined;
   // Keep the card's bottom above the time controls, whatever their height (they wrap on a narrow yard).
   useEffect(() => {
     const dock = ref.current?.parentElement?.querySelector('.simdock');
@@ -41,11 +44,12 @@ export function SelectionCard({ growing }: { growing: SunHoursResult | null }) {
   const close = () => {
     select(null);
     selectElement(null);
+    selectHive(false);
   };
   return (
     <div className="selcard" ref={ref} role="dialog" aria-label={`Edit ${label}`} style={{ bottom: GAP + lift + GAP, maxHeight: `calc(100% - ${GAP + lift + GAP}px - 110px)` }}>
       <button className="icon selcard-x" aria-label="Close" onClick={close}>✕</button>
-      {plantId ? <PlantInspector growing={growing} /> : <HardscapeInspector />}
+      {hiveSelected ? <HiveInspector /> : plantId ? <PlantInspector growing={growing} /> : <HardscapeInspector />}
     </div>
   );
 }

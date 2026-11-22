@@ -123,7 +123,7 @@ export function ShuffleBar() {
   } else if (last?.kind === 'concept') {
     const c = last.summary.counts;
     const parts = [
-      c.patio && '1 patio', c.deck && '1 deck', c.lawn && '1 lawn', c.gravel && `${c.gravel} gravel`, c.mulch && `${c.mulch} mulch`,
+      c.patio && '1 patio', c.table && '1 table', c.grill && '1 grill', c.deck && '1 deck', c.lawn && '1 lawn', c.gravel && `${c.gravel} gravel`, c.mulch && `${c.mulch} mulch`,
       c.path && plural(c.path, 'path'), c.beds && plural(c.beds, 'bed'), c.raisedBeds && `${c.raisedBeds} raised`,
       c.plants && `${plural(c.plants, 'plant')} of ${plural(c.species, 'kind')}`,
     ].filter(Boolean);

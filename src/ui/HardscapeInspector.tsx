@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CROPS } from '../data/cropLibrary';
 import { activeCrop, planOf, seasonOf } from '../engine/crops';
 import { doyToMonthDay } from '../engine/time';
+import { isRectangle } from '../engine/geometry';
 import { elementMetrics, hardscapeWarnings } from '../engine/hardscape';
 import { formatFeetInches } from '../engine/units';
 import { useApp } from '../store/store';
@@ -67,27 +68,27 @@ export function HardscapeInspector() {
               <tbody>
                 <tr><td>Area</td><td>{fmt(m.areaSf, 1)} sq ft</td></tr>
                 <tr><td>Edge</td><td>{fmt(m.edgeLf, 1)} lin ft</td></tr>
-                <tr><td>Surface</td><td>{fmt(m.surfaceCuYd, 2)} cu yd at {sel.depthIn} in</td></tr>
-                <tr><td>Base</td><td>{fmt(m.baseCuYd, 2)} cu yd at {matById.get(sel.materialId)?.baseDepthIn} in</td></tr>
+                {!cfg.types[sel.type].furniture && <tr><td>Surface</td><td>{fmt(m.surfaceCuYd, 2)} cu yd at {sel.depthIn} in</td></tr>}
+                {!cfg.types[sel.type].furniture && <tr><td>Base</td><td>{fmt(m.baseCuYd, 2)} cu yd at {matById.get(sel.materialId)?.baseDepthIn} in</td></tr>}
               </tbody>
             </table>
           </>
         );
       })()}
       <div className="grid2">
-        <label>Material
+        {!cfg.types[sel.type].furniture && <label>Material
           <select disabled={!edit || sel.existing} value={sel.materialId} onChange={(e) => s.setElementMaterial(sel.id, e.target.value)}>
             {s.materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
-        </label>
+        </label>}
         <label>Color
           <span className="row">
             <input type="color" disabled={!edit} value={sel.color ?? matById.get(sel.materialId)?.color ?? '#aaaaaa'} onChange={(e) => s.updateElement(sel.id, { color: e.target.value }, { silent: false })} />
             <button disabled={!edit || !sel.color} onClick={() => s.updateElement(sel.id, { color: undefined })}>Use material color</button>
           </span>
         </label>
-        <label>Surface depth (in){num(sel.depthIn, (n) => s.updateElement(sel.id, { depthIn: n }), 0.5, !edit || sel.existing)}</label>
-        <label>Height (ft){num(sel.height, (n) => s.updateElement(sel.id, { height: n }), 0.5, !edit || sel.existing)}</label>
+        {!cfg.types[sel.type].furniture && <label>Surface depth (in){num(sel.depthIn, (n) => s.updateElement(sel.id, { depthIn: n }), 0.5, !edit || sel.existing)}</label>}
+        {!cfg.types[sel.type].furniture && <label>Height (ft){num(sel.height, (n) => s.updateElement(sel.id, { height: n }), 0.5, !edit || sel.existing)}</label>}
         {cfg.types[sel.type].shape === 'line' && (
           <label>{sel.type === 'path' ? 'Width (ft)' : 'Thickness (ft)'}{num(sel.width, (n) => s.updateElement(sel.id, { width: Math.max(0.1, n) }), 0.25, !edit || sel.existing)}</label>
         )}
@@ -132,6 +133,13 @@ export function HardscapeInspector() {
         </div>
       )}
       <div className="row">
+        {cfg.types[sel.type].shape === 'polygon' && !sel.existing && isRectangle(sel.points) && (
+          <>
+            <button disabled={!edit} onClick={() => s.rotateElement(sel.id, 15)} title="Turn 15° counterclockwise about its center" aria-label="Rotate 15 degrees counterclockwise">↺ 15°</button>
+            <button disabled={!edit} onClick={() => s.rotateElement(sel.id, -15)} title="Turn 15° clockwise about its center" aria-label="Rotate 15 degrees clockwise">↻ 15°</button>
+            <button disabled={!edit} onClick={() => s.rotateElement(sel.id)} title="Turn a quarter turn about its center (press R)">Rotate 90°</button>
+          </>
+        )}
         <button disabled={!edit} onClick={() => s.deleteElement(sel.id)}>{sel.existing ? (sel.removed ? 'Keep it' : 'Remove it') : 'Delete'}</button>
       </div>
     </div>

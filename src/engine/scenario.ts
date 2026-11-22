@@ -25,6 +25,8 @@ export interface ScenarioData {
   autoIrrigation: Record<string, Irrigation>;
   useRain: boolean;
   aduEnabled: boolean;
+  /** Where the owner put the beehive; without it the app picks a spot. */
+  hive?: [number, number] | null;
 }
 
 export interface ScenarioMeta {
@@ -96,6 +98,7 @@ export function emptyScenarioData(site: SiteConfig): ScenarioData {
     autoIrrigation: {},
     useRain: false,
     aduEnabled: true,
+    hive: null,
   };
 }
 
@@ -251,12 +254,14 @@ export function validateScenarioData(raw: unknown, ctx: ValidationContext, extra
     for (const [k, v] of Object.entries(raw.autoIrrigation)) if (typeof v === 'string' && IRRIGATION.has(v)) autoIrrigation[k] = v as Irrigation;
   }
   if (typeof raw.useRain !== 'boolean') errors.push('The rainfall setting is missing.');
+  // The hive position is optional: a pair of finite numbers, or the app picks a spot.
+  const hive: [number, number] | null = Array.isArray(raw.hive) && raw.hive.length === 2 && raw.hive.every((v) => typeof v === 'number' && Number.isFinite(v)) ? [raw.hive[0] as number, raw.hive[1] as number] : null;
   if (typeof raw.aduEnabled !== 'boolean') errors.push('The ADU setting is missing.');
 
   warnings.push(...replaced);
   if (errors.length) return { data: null, errors, warnings };
   return {
-    data: { palette, instances, hardscape, hydrozones, autoIrrigation, useRain: raw.useRain as boolean, aduEnabled: raw.aduEnabled as boolean },
+    data: { palette, instances, hardscape, hydrozones, autoIrrigation, useRain: raw.useRain as boolean, aduEnabled: raw.aduEnabled as boolean, hive },
     errors,
     warnings,
   };

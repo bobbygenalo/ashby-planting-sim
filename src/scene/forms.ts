@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { canopyRadius } from '../engine/canopy';
+import { canopyRadius, type CrownProfile } from '../engine/canopy';
 import type { Habit } from '../engine/types';
 
 /**
@@ -50,13 +50,13 @@ const column = (rTop: number, rBottom: number, height: number, z: number, materi
 });
 
 /** A smooth outline revolved around the trunk, sampled from the shared canopy profile. */
-const revolved = (habit: Habit, radius: number, canopyH: number, z: number, grounded = false): Part => {
+const revolved = (habit: Habit, radius: number, canopyH: number, z: number, grounded = false, profile?: CrownProfile): Part => {
   // More samples toward the top, where the rounded cap curves in fastest.
   const steps = 40;
   const args: number[] = [0, 0];
   for (let i = 0; i <= steps; i++) {
     const zf = 1 - (1 - i / steps) ** 1.5;
-    args.push(canopyRadius(habit, radius, zf, grounded), zf * canopyH);
+    args.push(canopyRadius(habit, radius, zf, grounded, profile), zf * canopyH);
   }
   return { shape: 'lathe', material: 'foliage', position: [0, 0, z], rotation: UP, scale: ONE, args };
 };
@@ -70,7 +70,7 @@ const dome = (radius: number, height: number, z: number): Part => {
  * The shape of a plant for its habit, `r` the canopy radius and `h` the height, both in feet, and `trunkFrac` the
  * share of the height that is bare trunk. The top of the shape is at `h` and nothing goes below the ground or past `r`.
  */
-export function plantParts(habit: Habit, r: number, h: number, trunkFrac: number, seed = 1): Part[] {
+export function plantParts(habit: Habit, r: number, h: number, trunkFrac: number, seed = 1, profile?: CrownProfile): Part[] {
   const height = Math.max(h, MIN_FORM_SIZE);
   const radius = Math.max(r, MIN_FORM_SIZE / 2);
   const base = height * trunkFrac;
@@ -78,6 +78,11 @@ export function plantParts(habit: Habit, r: number, h: number, trunkFrac: number
   const parts: Part[] = [];
   if (base > 0.02 && habit !== 'clump' && habit !== 'mat' && habit !== 'vine') {
     parts.push(column(Math.min(0.35, radius * 0.1) * 0.7 + 0.02, Math.min(0.5, radius * 0.14) * 0.7 + 0.03, base, 0, 'trunk'));
+  }
+  // A species with its own crown outline is drawn from it, whatever its habit (grass, mats and vines keep their forms).
+  if (profile && habit !== 'clump' && habit !== 'mat' && habit !== 'vine') {
+    parts.push(revolved(habit, radius, canopyH, base, base <= 0.02, profile));
+    return parts;
   }
   switch (habit) {
     case 'columnar':

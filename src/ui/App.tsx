@@ -13,7 +13,7 @@ import { CanvasToolbar } from './CanvasToolbar';
 import { SimDock } from './SimDock';
 import { SelectionCard } from './SelectionCard';
 import { ShuffleBar } from './ShuffleControl';
-import { isPlayPauseKey, viewForKey } from './shortcuts';
+import { arrowDelta, isPlayPauseKey, viewForKey } from './shortcuts';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
 import { startCloudSync } from '../store/cloudSync';
@@ -107,6 +107,36 @@ function useShortcuts() {
         st.setTimelinePlaying(!st.timelinePlaying);
         return;
       }
+      // Arrow keys move whatever is selected in the yard, a plant or a hardscape element, one snap step at a time.
+      const move = arrowDelta(e, st.snap, st.engine.scene.arrowShiftMultiplier);
+      if (move && st.mode === 'edit' && !document.querySelector('.dialog') && (st.selectedId || st.selectedElementId || st.hiveSelected)) {
+        const el2 = st.selectedElementId ? st.hardscape.find((h) => h.id === st.selectedElementId) : undefined;
+        const plant = !el2 && st.selectedId ? st.instances.find((i) => i.id === st.selectedId) : undefined;
+        if (st.hiveSelected && st.hive) {
+          e.preventDefault();
+          if (!e.repeat) st.beginGesture();
+          const { width, depth } = st.site.lot;
+          st.moveHive([Math.min(width, Math.max(0, st.hive[0] + move[0])), Math.min(depth, Math.max(0, st.hive[1] + move[1]))]);
+          return;
+        }
+        if (plant || (el2 && !el2.existing)) {
+          e.preventDefault();
+          // Holding a key down is one gesture for undo; each fresh press is its own.
+          if (!e.repeat) st.beginGesture();
+          if (el2) st.moveElementBy(el2.id, move[0], move[1]);
+          else if (plant) {
+            const { width, depth } = st.site.lot;
+            st.updateInstance(plant.id, { position: [Math.min(width, Math.max(0, plant.position[0] + move[0])), Math.min(depth, Math.max(0, plant.position[1] + move[1]))] }, { silent: true });
+          }
+          return;
+        }
+      }
+      // R turns the selected rectangle a quarter turn (Shift+R the other way).
+      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.repeat && st.selectedElementId && st.mode === 'edit' && !document.querySelector('.dialog')) {
+        e.preventDefault();
+        st.rotateElement(st.selectedElementId, e.shiftKey ? -90 : 90);
+        return;
+      }
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();
@@ -124,6 +154,7 @@ function useShortcuts() {
         else {
           st.select(null);
           st.selectElement(null);
+          st.selectHive(false);
         }
       } else if (e.key === 'Backspace' && st.drawing) {
         e.preventDefault();

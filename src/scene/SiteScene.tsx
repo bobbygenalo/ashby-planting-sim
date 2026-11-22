@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
+import { elementAt } from '../engine/hardscape';
 import { Html, Line, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry.js';
@@ -12,6 +13,7 @@ import type { ContextObjectCfg, Pt, StructureCfg } from '../engine/types';
 import { useApp } from '../store/store';
 import { PlantLayer } from './Plants';
 import { CropLayer } from './Crops';
+import { HolidayLights } from './HolidayLights';
 import { LifeLayer } from './Life';
 import { HardscapeLayer, useSnapper } from './Hardscape';
 import { ConflictRings, SuggestionLayer } from './Suggestions';
@@ -192,6 +194,15 @@ function Ground() {
   const drawing = useApp((s) => s.drawing);
   const addDrawPoint = useApp((s) => s.addDrawPoint);
   const finishDrawing = useApp((s) => s.finishDrawing);
+  const placePreset = useApp((s) => s.placePreset);
+  const duplicateElement = useApp((s) => s.duplicateElement);
+  const hardscapeAll = useApp((s) => s.hardscape);
+  const editMode = useApp((s) => s.mode === 'edit');
+  const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
+  const selectHive = useApp((s) => s.selectHive);
+  const hiveDragging = useApp((s) => s.hiveDragging);
+  const moveHive = useApp((s) => s.moveHive);
+  const hardscapeCfg = useApp((s) => s.engine.hardscape);
   const selectElement = useApp((s) => s.selectElement);
   const hsDrag = useApp((s) => s.hsDrag);
   const setVertex = useApp((s) => s.setVertex);
@@ -216,11 +227,26 @@ function Ground() {
       if (x >= 0 && x <= width && y >= 0 && y <= depth) addInstance(placing, [x, y]);
     } else if (drawing) {
       e.stopPropagation();
-      addDrawPoint(snapper([e.point.x, -e.point.z]).point);
+      const spot = snapper([e.point.x, -e.point.z]).point;
+      if (hardscapeCfg.types[drawing.type].placeSize) placePreset(spot);
+      else addDrawPoint(spot);
     } else {
       select(null);
       selectElement(null);
+      selectHive(false);
     }
+  };
+  // Option-drag copies whatever hardscape lies under the pointer, even when its own mesh did not take the press
+  // (a flat patio under an overlay, say): the topmost element at that spot is copied and the copy dragged.
+  const onDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!e.nativeEvent.altKey || !editMode || drawing || placing || measureActive) return;
+    const el = elementAt(hardscapeAll, [e.point.x, -e.point.z], hardscapeCfg);
+    if (!el) return;
+    e.stopPropagation();
+    const copyId = duplicateElement(el.id, [0, 0]);
+    if (!copyId) return;
+    setHsDrag({ id: copyId, kind: 'move', last: [e.point.x, -e.point.z] });
+    if (controls) controls.enabled = false;
   };
   const onDouble = (e: ThreeEvent<MouseEvent>) => {
     if (!drawing) return;
@@ -232,6 +258,10 @@ function Ground() {
     if (drawing) {
       const s = snapper([e.point.x, -e.point.z]);
       setHover(s.point, s.kind);
+    }
+    if (hiveDragging) {
+      const [x, y] = gridPoint(e);
+      moveHive(clampPt(x, y));
     }
     if (dragId) {
       const [x, y] = gridPoint(e);
@@ -256,7 +286,7 @@ function Ground() {
         <planeGeometry args={[400, 500]} />
         <meshStandardMaterial color="#b9bdb0" />
       </mesh>
-      <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick} onDoubleClick={onDouble} onPointerMove={onMove}>
+      <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick} onDoubleClick={onDouble} onPointerDown={onDown} onPointerMove={onMove}>
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial color="#a9b98f" roughness={1} />
       </mesh>
@@ -438,6 +468,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
         <HardscapeLayer />
         <CropLayer />
         <PlantLayer />
+        <HolidayLights />
         {layers.life && <LifeLayer />}
         <ConflictRings />
         <SuggestionLayer />

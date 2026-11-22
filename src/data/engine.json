@@ -122,7 +122,8 @@
       1,
       2
     ],
-    "treeCanopyRings": 12
+    "treeCanopyRings": 12,
+    "arrowShiftMultiplier": 4
   },
   "growth": {
     "steepness": 8,
@@ -183,7 +184,8 @@
       "high": 0.8
     },
     "leafOffDensityFactor": 0.25,
-    "bloomTintFraction": 0.55
+    "bloomTintFraction": 0.55,
+    "shadowLevels": 7
   },
   "timeline": {
     "maxYears": 30,
@@ -210,7 +212,9 @@
       "deck",
       "raisedBed",
       "wall",
-      "fence"
+      "fence",
+      "table",
+      "grill"
     ],
     "types": {
       "patio": {
@@ -284,6 +288,34 @@
         "height": 6,
         "depthIn": 0,
         "width": 0.2
+      },
+      "table": {
+        "label": "Communal table (seats 8)",
+        "shape": "polygon",
+        "material": "outdoor-table",
+        "height": 2.5,
+        "depthIn": 0,
+        "width": 0,
+        "placeSize": [
+          11,
+          6.5
+        ],
+        "model": "table",
+        "furniture": true
+      },
+      "grill": {
+        "label": "Grilling station",
+        "shape": "polygon",
+        "material": "grill-station",
+        "height": 3,
+        "depthIn": 0,
+        "width": 0,
+        "placeSize": [
+          6.5,
+          2.5
+        ],
+        "model": "grill",
+        "furniture": true
       }
     },
     "notDrawable": [
@@ -576,7 +608,9 @@
           0,
           1
         ],
-        "deck": 0
+        "deck": 0,
+        "table": 0.6,
+        "grill": 0.5
       },
       {
         "id": "dry-garden",
@@ -597,7 +631,9 @@
           0,
           0
         ],
-        "deck": 0
+        "deck": 0,
+        "table": 0.4,
+        "grill": 0.5
       },
       {
         "id": "kitchen-garden",
@@ -618,7 +654,9 @@
           2,
           4
         ],
-        "deck": 0
+        "deck": 0,
+        "table": 0.5,
+        "grill": 0.85
       },
       {
         "id": "courtyard",
@@ -639,7 +677,9 @@
           0,
           2
         ],
-        "deck": 0
+        "deck": 0,
+        "table": 0.9,
+        "grill": 0.7
       }
     ],
     "colors": {
@@ -655,6 +695,12 @@
       "wood-deck": "#e0a040",
       "composite-deck": "#85807a",
       "raised-bed-wood": "#b0582a"
+    },
+    "furniture": {
+      "attempts": 240,
+      "gapFt": 1.5,
+      "edgeFt": 0.5,
+      "grillOutsideAttempts": 160
     }
   },
   "fruit": {
@@ -881,7 +927,55 @@
       },
       "displayFt": 0.36
     },
-    "maxStepS": 0.1
+    "maxStepS": 0.1,
+    "dining": {
+      "bias": 0.14,
+      "groupSize": [
+        2,
+        5
+      ],
+      "approachFt": 0.9,
+      "pullFt": 1.3,
+      "pullS": 1.0,
+      "sitS": 1.3,
+      "pushS": 0.9,
+      "riseS": 1.1,
+      "talkS": [
+        35,
+        90
+      ],
+      "speakerS": [
+        2.5,
+        5.5
+      ],
+      "sitDropFt": 0.95,
+      "scootShare": 0.3,
+      "headTurnMax": 1.0
+    },
+    "movie": {
+      "screenBuilding": "garage",
+      "startMin": 1200,
+      "endMin": 1380,
+      "attendBias": 0.7,
+      "joinBias": 0.5,
+      "widthFt": 9,
+      "bottomFt": 3.4,
+      "heightFt": 5,
+      "spotFromWallFt": [
+        6,
+        13
+      ],
+      "spotLateralFt": 8,
+      "spotGapFt": 2.2,
+      "projectorFromWallFt": 17,
+      "projectorHeightFt": 5.2
+    },
+    "night": {
+      "startMin": 1380,
+      "endMin": 360,
+      "jumpMin": 30,
+      "riseSpreadS": 50
+    }
   },
   "branches": {
     "limbs": [
@@ -946,5 +1040,56 @@
     ],
     "anglePitch": 0.7,
     "sidePitch": 0.1
+  },
+  "litter": {
+    "fallMonths": 1,
+    "decayMonths": 3,
+    "fallAmount": 0.6,
+    "leavesPerSqFt": 0.7,
+    "minLeaves": 6,
+    "maxLeaves": 220,
+    "fallingShare": 0.4,
+    "leafSizeFt": 0.55,
+    "radiusFraction": 1.0,
+    "humusRadiusFraction": 0.92,
+    "humusOpacity": 0.5,
+    "soilColor": "#4a3424",
+    "autumnColor": "#cf7f2a",
+    "autumnBlend": 0.8,
+    "fallSpeedFtPerSec": 2.4,
+    "swayFt": 0.9,
+    "groundZ": 0.14
+  },
+  "holiday": {
+    "lightedParts": [
+      "house-porch",
+      "house-front",
+      "adu-bedroom",
+      "adu-great"
+    ],
+    "thanksgiving": {
+      "month": 11,
+      "weekday": 4,
+      "nth": 4
+    },
+    "seasonEndMonth": 12,
+    "sunsetElevationDeg": -0.833,
+    "bulbSpacingFt": 0.9,
+    "bulbRadiusFt": 0.12,
+    "glowRadiusFt": 0.42,
+    "glowOpacity": 0.32,
+    "offDim": 0.3,
+    "colors": [
+      "#ff3b30",
+      "#34c759",
+      "#ffd60a",
+      "#2f8bff",
+      "#ff9f0a",
+      "#ffffff"
+    ],
+    "wireColor": "#1d3b29",
+    "outwardFt": 0.14,
+    "liftFt": 0.1,
+    "twinkleHz": 0.45
   }
 }

@@ -9,7 +9,7 @@ import { footprint } from '../src/engine/hardscape';
 import { emptyScenarioData } from '../src/engine/scenario';
 import { lookAlikes, mulberry32, shuffleScenario } from '../src/engine/shuffle';
 import { activeStructures, loadSite } from '../src/engine/site';
-import type { EngineConfig, Material, SpeciesLibrary } from '../src/engine/types';
+import type { EngineConfig, HardscapeElement, Material, SpeciesLibrary } from '../src/engine/types';
 import { makeAppStore } from '../src/store/store';
 
 const site = loadSite(siteRaw);
@@ -268,6 +268,9 @@ describe('concept hardscape variety', () => {
       // areas never overlap each other; a path starts on the edge of what it leaves, so paths are checked against the rest only
       const areas = els.filter((x) => x.e.type !== 'path');
       for (let i = 0; i < areas.length; i++) for (let j = i + 1; j < areas.length; j++) {
+        // a table or grill stands on the patio
+        const onPatio = (a: HardscapeElement, b: HardscapeElement) => (a.type === 'table' || a.type === 'grill') && b.type === 'patio';
+        if (onPatio(areas[i].e, areas[j].e) || onPatio(areas[j].e, areas[i].e)) continue;
         expect(polygonsIntersect(areas[i].poly, areas[j].poly), `${areas[i].e.name} overlaps ${areas[j].e.name}`).toBe(false);
       }
     }

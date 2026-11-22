@@ -208,3 +208,25 @@ export function distanceToPolygon(x: number, y: number, poly: Pt[]): number {
   }
   return best;
 }
+
+/** A four-cornered outline whose corners are all right angles (a rectangle at any angle). */
+export function isRectangle(pts: Pt[], toleranceDeg = 0.5): boolean {
+  if (pts.length !== 4) return false;
+  const cosTol = Math.sin((toleranceDeg * Math.PI) / 180);
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i], b = pts[(i + 1) % 4], c = pts[(i + 2) % 4];
+    const ux = b[0] - a[0], uy = b[1] - a[1], vx = c[0] - b[0], vy = c[1] - b[1];
+    const lu = Math.hypot(ux, uy), lv = Math.hypot(vx, vy);
+    if (lu < 1e-6 || lv < 1e-6) return false;
+    if (Math.abs((ux * vx + uy * vy) / (lu * lv)) > cosTol) return false;
+  }
+  return true;
+}
+
+/** The points turned `degrees` counterclockwise (seen from above, X right and Y up) about their center. */
+export function rotatePoints(pts: Pt[], degrees: number): Pt[] {
+  const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+  const t = (degrees * Math.PI) / 180, cos = Math.cos(t), sin = Math.sin(t);
+  const round = (v: number) => Number(v.toFixed(4));
+  return pts.map(([x, y]): Pt => [round(cx + (x - cx) * cos - (y - cy) * sin), round(cy + (x - cx) * sin + (y - cy) * cos)]);
+}

@@ -51,7 +51,7 @@ describe('plant forms across every species and growth stage', () => {
       for (const s of trajectory(sp)) {
         const h = Math.max(s.height, MIN_FORM_SIZE);
         const r = Math.max(s.width / 2, MIN_FORM_SIZE / 2);
-        const parts = plantParts(sp.habit, r, s.height, trunkFrac, 3);
+        const parts = plantParts(sp.habit, r, s.height, trunkFrac, 3, sp.crown?.profile);
         const where = `${sp.id} ${s.label} (h ${s.height.toFixed(2)}, w ${s.width.toFixed(2)})`;
         expect(parts.length, where).toBeGreaterThan(0);
         for (const p of parts) {

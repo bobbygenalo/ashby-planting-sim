@@ -40,7 +40,7 @@ export function saveNow(): boolean {
 }
 
 export const WATCHED: (keyof AppState)[] = [
-  'instances', 'palette', 'hardscape', 'hydrozones', 'autoIrrigation', 'useRain', 'aduEnabled', 'scenarios', 'activeScenarioId', 'saved',
+  'instances', 'palette', 'hardscape', 'hydrozones', 'autoIrrigation', 'useRain', 'aduEnabled', 'hive', 'scenarios', 'activeScenarioId', 'saved',
   'shares', 'soilProfiles', 'playZones', 'library',
 ];
 

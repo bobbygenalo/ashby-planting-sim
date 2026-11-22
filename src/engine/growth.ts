@@ -1,3 +1,4 @@
+import { crownSections } from './canopy';
 import type { Solid } from './site';
 import type { EngineConfig, PlantInstance, Pt3, Species } from './types';
 
@@ -47,25 +48,27 @@ export function plantSolid(inst: PlantInstance, sp: Species, size: PlantSize, cf
   const [cx, cy] = inst.position;
   const r = size.width / 2;
   const base = size.height * (cfg.trunkClearanceFraction[sp.type] ?? 0);
-  const mid = (base + size.height) / 2;
   const pts: Pt3[] = [];
-  const ring = (z: number, radius: number) => {
+  // The same crown the plant is drawn with, cut into sections, so the shade it casts matches what is seen.
+  for (const [z, radius] of crownSections(sp.habit, r, base, size.height - base, cfg.shadowLevels, base <= 0.02, sp.crown?.profile)) {
     for (let i = 0; i < rings; i++) {
       const a = (i / rings) * Math.PI * 2;
       pts.push([cx + Math.cos(a) * radius, cy + Math.sin(a) * radius, z]);
     }
-  };
-  ring(base, r * 0.6);
-  ring(mid, r);
-  ring(size.height, r * (sp.habit === 'columnar' ? 0.7 : 0.45));
-  const density = cfg.shadowDensityByType[sp.type] ?? 0.7;
+  }
+  const density = crownDensity(sp, cfg);
   const deciduous = !sp.evergreen && sp.leafOffMonths.length > 0;
   return {
     id: `plant:${inst.id}`,
     points: pts,
     density,
-    ...(deciduous ? { leafOffMonths: sp.leafOffMonths, leafOffDensity: density * cfg.leafOffDensityFactor } : {}),
+    ...(deciduous ? { leafOffMonths: sp.leafOffMonths, leafOffDensity: sp.crown?.leafOffDensity ?? density * cfg.leafOffDensityFactor } : {}),
   };
+}
+
+/** Share of sunlight a plant's crown blocks in leaf: its own value, or its plant type's. Less light passes the denser it is. */
+export function crownDensity(sp: Species, cfg: GrowthCfg): number {
+  return sp.crown?.density ?? cfg.shadowDensityByType[sp.type] ?? 0.7;
 }
 
 export type SunFit = 'ok' | 'too-shaded' | 'too-sunny';

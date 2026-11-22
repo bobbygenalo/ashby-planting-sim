@@ -307,6 +307,9 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers, NC State"
+      },
+      "crown": {
+        "density": 0.75
       }
     },
     {
@@ -1317,6 +1320,9 @@
         "behavior": "shallow",
         "minFoundationFt": 2,
         "minPavingFt": 1
+      },
+      "crown": {
+        "density": 0.8
       }
     },
     {
@@ -1626,6 +1632,9 @@
         "behavior": "moderate",
         "minFoundationFt": 10,
         "minPavingFt": 5
+      },
+      "crown": {
+        "density": 0.85
       }
     },
     {
@@ -1677,6 +1686,9 @@
         "behavior": "moderate",
         "minFoundationFt": 10,
         "minPavingFt": 5
+      },
+      "crown": {
+        "density": 0.9
       }
     },
     {
@@ -1733,6 +1745,9 @@
         "behavior": "moderate",
         "minFoundationFt": 8,
         "minPavingFt": 4
+      },
+      "crown": {
+        "density": 0.75
       }
     },
     {
@@ -1849,6 +1864,9 @@
         ],
         "count": 70,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.9
       }
     },
     {
@@ -1917,6 +1935,9 @@
         ],
         "count": 40,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.9
       }
     },
     {
@@ -1989,6 +2010,9 @@
         ],
         "count": 22,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.88
       }
     },
     {
@@ -2964,6 +2988,9 @@
         ],
         "count": 30,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.85
       }
     },
     {
@@ -3039,6 +3066,9 @@
         ],
         "count": 28,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.8
       }
     },
     {
@@ -3113,6 +3143,9 @@
         ],
         "count": 30,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.8
       }
     },
     {
@@ -3191,6 +3224,9 @@
         ],
         "count": 70,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.55
       }
     },
     {
@@ -3269,6 +3305,55 @@
         ],
         "count": 70,
         "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.55,
+        "profile": [
+          [
+            0,
+            0.3
+          ],
+          [
+            0.08,
+            0.5
+          ],
+          [
+            0.2,
+            0.72
+          ],
+          [
+            0.35,
+            0.88
+          ],
+          [
+            0.5,
+            0.97
+          ],
+          [
+            0.62,
+            1.0
+          ],
+          [
+            0.74,
+            0.96
+          ],
+          [
+            0.85,
+            0.82
+          ],
+          [
+            0.93,
+            0.6
+          ],
+          [
+            0.98,
+            0.34
+          ],
+          [
+            1,
+            0
+          ]
+        ]
       }
     },
     {
@@ -3393,6 +3478,9 @@
         ],
         "count": 110,
         "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+      },
+      "crown": {
+        "density": 0.8
       }
     },
     {
@@ -3457,6 +3545,9 @@
         ],
         "count": 140,
         "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+      },
+      "crown": {
+        "density": 0.8
       }
     },
     {
@@ -3524,9 +3615,13 @@
         ],
         "count": 90,
         "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+      },
+      "crown": {
+        "density": 0.7
       }
     }
   ],
   "soilNote": "Soil needs (drainage, texture, pH) are general horticultural expectations, unverified: confidence low.",
-  "rootsNote": "Root behavior and minimum distances from foundations and paving follow general guidance by plant size. Unverified: confidence low. Check with an arborist before planting a tree near a building."
+  "rootsNote": "Root behavior and minimum distances from foundations and paving follow general guidance by plant size. Unverified: confidence low. Check with an arborist before planting a tree near a building.",
+  "crownNote": "Crown density (share of sunlight blocked in leaf) is a general estimate from leaf size and canopy openness, unverified; olives are silvery and open, citrus and persimmon dense. Species without a value use their plant type's default (engine.json growth.shadowDensityByType)."
 }

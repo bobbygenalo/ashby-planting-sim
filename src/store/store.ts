@@ -2,7 +2,7 @@ import { createStore, useStore } from 'zustand';
 import siteRaw from '../data/site.json';
 import engineRaw from '../data/engine.json';
 import type { Conflict } from '../engine/conflicts';
-import { polygonArea, polylineLength } from '../engine/geometry';
+import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engine/geometry';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
 import { buildSunMap, type SunMap } from '../engine/placement';
@@ -30,6 +30,7 @@ export interface ScenarioSnapshot {
   hydrozones: Hydrozone[];
   autoIrrigation: Record<string, Irrigation>;
   useRain: boolean;
+  hive: Pt | null;
 }
 
 export type HsDrag = { id: string; kind: 'vertex'; index: number } | { id: string; kind: 'move'; last: Pt };
@@ -132,7 +133,8 @@ export interface AppState {
   setPaletteSpecies: (id: string, on: boolean) => void;
   addInstance: (speciesId: string, position: Pt, opts?: Partial<PlantInstance>) => string | null;
   updateInstance: (id: string, patch: Partial<Omit<PlantInstance, 'id'>>, opts?: { silent?: boolean }) => void;
-  duplicateInstance: (id: string) => void;
+  /** Copy a plant, by default 2 ft to its east; returns the copy's id. */
+  duplicateInstance: (id: string, offset?: Pt) => string | null;
   deleteInstance: (id: string) => void;
   setTimelineMonth: (m: number) => void;
   setTimelinePlaying: (p: boolean) => void;
@@ -156,6 +158,10 @@ export interface AppState {
   addDrawPoint: (p: Pt) => void;
   removeLastDrawPoint: () => void;
   finishDrawing: () => string | null;
+  /** Furniture and fixtures: place one of the drawing type's preset size, centered on a point. */
+  placePreset: (center: Pt) => string | null;
+  /** Turn a rectangular element about its center, a quarter turn by default (counterclockwise from above; negative turns the other way). */
+  rotateElement: (id: string, degrees?: number) => void;
   /** Keep a drawing in progress if it already has enough points (switching tools never throws it away). */
   commitDrawing: () => void;
   /** Copy an element (offset slightly, as new work) and select the copy. */
@@ -224,6 +230,15 @@ export interface AppState {
   autoIrrigation: Record<string, Irrigation>;
   /** Subtract effective rainfall from demand (WS-8). */
   useRain: boolean;
+  /** Where the owner put the beehive (null: the app picks a spot), whether it is selected, and whether it is being dragged. */
+  hive: Pt | null;
+  hiveSelected: boolean;
+  hiveDragging: boolean;
+  setHive: (p: Pt | null) => void;
+  /** Move the hive while dragging or nudging: no undo step of its own (call beginGesture first). */
+  moveHive: (p: Pt) => void;
+  selectHive: (on: boolean) => void;
+  setHiveDragging: (on: boolean) => void;
   soilProfiles: Record<string, SoilProfile>;
   /** Yard zones the owner tags as play areas (POL-6). */
   playZones: Record<string, boolean>;
@@ -269,7 +284,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     };
     const snapshot = (): ScenarioSnapshot => ({
       instances: get().instances, palette: get().palette, hardscape: get().hardscape,
-      hydrozones: get().hydrozones, autoIrrigation: get().autoIrrigation, useRain: get().useRain,
+      hydrozones: get().hydrozones, autoIrrigation: get().autoIrrigation, useRain: get().useRain, hive: get().hive,
     });
     // Push an undo step. Repeated edits with the same key within a second count as one step.
     const record = (key?: string) => {
@@ -299,12 +314,12 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     };
     const currentData = (): ScenarioData => ({
       palette: get().palette, instances: get().instances, hardscape: get().hardscape, hydrozones: get().hydrozones,
-      autoIrrigation: get().autoIrrigation, useRain: get().useRain, aduEnabled: get().aduEnabled,
+      autoIrrigation: get().autoIrrigation, useRain: get().useRain, aduEnabled: get().aduEnabled, hive: get().hive,
     });
     // Replace the working fields with a scenario's data and clear everything tied to the old one.
     const applyData = (d: ScenarioData) =>
       set({
-        ...clone(d), hardscape: syncExistingHardscape(clone(d.hardscape), get().site), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
+        ...clone(d), hive: d.hive ?? null, hiveSelected: false, hiveDragging: false, hardscape: syncExistingHardscape(clone(d.hardscape), get().site), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
         hsDrag: null, dragId: null, measureActive: false, measurePoints: [], suggestion: null, suggestFocus: null,
       });
     const customSpeciesList = () => get().library.species.filter((s) => !baseSpeciesIds.has(s.id));
@@ -420,12 +435,13 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         if (opts?.silent) mutate(next);
         else scenario(next, `inst:${id}`);
       },
-      duplicateInstance: (id) => {
+      duplicateInstance: (id, offset = [2, 0]) => {
         const src = get().instances.find((i) => i.id === id);
-        if (!src || get().mode !== 'edit') return;
-        const copy = { ...src, id: uid('p'), position: [src.position[0] + 2, src.position[1]] as Pt };
+        if (!src || get().mode !== 'edit') return null;
+        const copy = { ...src, id: uid('p'), position: [src.position[0] + offset[0], src.position[1] + offset[1]] as Pt };
         record();
-        set({ instances: [...get().instances, copy], selectedId: copy.id, selectedElementId: null });
+        set({ instances: [...get().instances, copy], selectedId: copy.id, selectedElementId: null, hiveSelected: false });
+        return copy.id;
       },
       deleteInstance: (id) => {
         if (get().mode !== 'edit') return;
@@ -434,7 +450,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       },
       setTimelineMonth: (m) => set({ timelineMonth: Math.min(engine.timeline.maxYears * 12, Math.max(0, Math.round(m))) }),
       setTimelinePlaying: (p) => set({ timelinePlaying: p }),
-      select: (id) => set({ selectedId: id, selectedElementId: id ? null : get().selectedElementId }),
+      select: (id) => set({ selectedId: id, selectedElementId: id ? null : get().selectedElementId, ...(id ? { hiveSelected: false } : {}) }),
       setPlacing: (id) => {
         get().commitDrawing();
         set({ placingSpeciesId: get().mode === 'edit' ? id : null, measureActive: false, drawing: null });
@@ -500,6 +516,27 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         set({ hardscape: [...get().hardscape, el], drawing: null, selectedElementId: id, hover: null });
         return id;
       },
+      placePreset: ([cx, cy]) => {
+        const d = get().drawing;
+        if (!d || get().mode !== 'edit') return null;
+        const cfgT = engine.hardscape.types[d.type];
+        if (!cfgT.placeSize) return null;
+        const [a, b] = cfgT.placeSize;
+        const x = Math.min(Math.max(cx, a / 2), get().site.lot.width - a / 2), y = Math.min(Math.max(cy, b / 2), get().site.lot.depth - b / 2);
+        const id = uid('h');
+        const el: HardscapeElement = {
+          id, type: d.type, name: cfgT.label, points: [[x - a / 2, y - b / 2], [x + a / 2, y - b / 2], [x + a / 2, y + b / 2], [x - a / 2, y + b / 2]],
+          materialId: cfgT.material, height: cfgT.height, depthIn: cfgT.depthIn, width: cfgT.width, existing: false,
+        };
+        record();
+        set({ hardscape: [...get().hardscape, el], drawing: null, selectedElementId: id, hover: null });
+        return id;
+      },
+      rotateElement: (id, degrees = 90) => {
+        const el = get().hardscape.find((e) => e.id === id);
+        if (!el || el.existing || get().mode !== 'edit' || engine.hardscape.types[el.type].shape !== 'polygon' || !isRectangle(el.points)) return;
+        scenario({ hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, points: rotatePoints(e.points, degrees) } : e)) });
+      },
       commitDrawing: () => {
         const d = get().drawing;
         if (d) get().finishDrawing();
@@ -517,7 +554,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         scenario({ hardscape: [...get().hardscape, copy], selectedElementId: copyId, selectedId: null });
         return copyId;
       },
-      selectElement: (id) => set({ selectedElementId: id, selectedId: id ? null : get().selectedId }),
+      selectElement: (id) => set({ selectedElementId: id, selectedId: id ? null : get().selectedId, ...(id ? { hiveSelected: false } : {}) }),
       updateElement: (id, patch, opts) => {
         const next = { hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, ...patch } : e)) };
         if (opts?.silent) mutate(next);
@@ -602,7 +639,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
           mulberry32(seed),
         );
         const c = result.counts;
-        const made = c.patio + c.deck + c.path + c.beds + c.raisedBeds + c.lawn + c.gravel + c.mulch + c.plants;
+        const made = c.patio + c.table + c.grill + c.deck + c.path + c.beds + c.raisedBeds + c.lawn + c.gravel + c.mulch + c.plants;
         if (made === 0) return { seed, counts: result.counts, theme: result.theme, notes: result.notes, scenarioId: null };
         const n = get().scenarios.filter((s) => s.name.startsWith('Concept')).length + 1;
         const scenarioId = addScenario(result.theme ? `Concept ${n}: ${result.theme}` : `Concept ${n}`, { ...result.data, aduEnabled: get().aduEnabled });
@@ -728,6 +765,13 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       hydrozones: [],
       autoIrrigation: {},
       useRain: false,
+      hive: null,
+      hiveSelected: false,
+      hiveDragging: false,
+      setHive: (p) => scenario({ hive: p }),
+      moveHive: (p) => mutate({ hive: p }),
+      selectHive: (on) => set({ hiveSelected: on, ...(on ? { selectedId: null, selectedElementId: null } : {}) }),
+      setHiveDragging: (on) => set({ hiveDragging: on }),
       soilProfiles: Object.fromEntries(site.zones.map((z) => [z.id, { ...soil.defaultProfile }])),
       playZones: {},
 

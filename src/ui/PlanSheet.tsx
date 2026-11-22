@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { bbox } from '../engine/geometry';
 import { footprint, takeoff } from '../engine/hardscape';
-import { feetToInches, northAngleDeg, planKey, scaleBarFeet, SHEET_SCALE_FT_PER_IN } from '../engine/plansheet';
+import { feetToInches, northAngleDeg, planKey, planKeySize, scaleBarFeet, SHEET_SCALE_FT_PER_IN } from '../engine/plansheet';
 import { plantSchedule } from '../engine/schedule';
+import { hardscapeCosts, money, money2, priceLabel } from '../engine/pricing';
 import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
 import { usePlaced } from '../store/derived';
@@ -27,7 +28,11 @@ export function PlanSheet() {
     return () => window.removeEventListener('keydown', onKey);
   }, [s]);
 
-  const schedule = useMemo(() => plantSchedule(plants, s.engine.growth, s.water), [plants, s.engine, s.water]);
+  const schedule = useMemo(() => plantSchedule(plants, s.engine.growth, s.water, { prices: s.prices, cfg: s.engine.pricing }), [plants, s.engine, s.water, s.prices]);
+  const costs = useMemo(() => hardscapeCosts(s.hardscape, s.materials, s.engine.hardscape, s.prices), [s.hardscape, s.materials, s.engine, s.prices]);
+  const costOf = useMemo(() => new Map(costs.rows.map((r) => [r.materialId, r])), [costs]);
+  const cur = s.engine.pricing;
+  const plantTotal = schedule.reduce((a, r) => a + r.total, 0);
   const tk = useMemo(() => takeoff(s.hardscape, s.materials, s.engine.hardscape), [s.hardscape, s.materials, s.engine]);
   const keys = useMemo(() => {
     const ids = [...new Set(plants.map((p) => p.species.id))].sort((a, b) => (s.library.species.find((x) => x.id === a)?.common ?? '').localeCompare(s.library.species.find((x) => x.id === b)?.common ?? ''));
@@ -141,12 +146,18 @@ export function PlanSheet() {
             ))}
 
             {/* plants, keyed to the schedule */}
-            {plants.map((p) => (
-              <g key={p.inst.id}>
-                <circle cx={p.inst.position[0]} cy={Y(p.inst.position[1])} r={Math.max(p.size.width / 2, 0.8)} fill={p.species.foliageColor} fillOpacity={0.55} stroke="#2d5a27" strokeWidth={0.25} strokeDasharray={p.inst.existing ? '1 0.8' : undefined} />
-                <text x={p.inst.position[0]} y={Y(p.inst.position[1]) + fs * 0.33} fontSize={fs * 0.9} textAnchor="middle" fontWeight={700} fill="#111">{keys.get(p.species.id)}</text>
-              </g>
-            ))}
+            {plants.map((p) => {
+              // The key letter is smaller than the circle it sits in: about half its width, never larger than the sheet's text, and
+              // never so small it cannot be read.
+              const r = Math.max(p.size.width / 2, 0.8);
+              const keySize = planKeySize(fs, r);
+              return (
+                <g key={p.inst.id}>
+                  <circle cx={p.inst.position[0]} cy={Y(p.inst.position[1])} r={r} fill={p.species.foliageColor} fillOpacity={0.55} stroke="#2d5a27" strokeWidth={0.25} strokeDasharray={p.inst.existing ? '1 0.8' : undefined} />
+                  <text x={p.inst.position[0]} y={Y(p.inst.position[1]) + keySize * 0.35} fontSize={keySize} textAnchor="middle" fontWeight={700} fill="#111">{keys.get(p.species.id)}</text>
+                </g>
+              );
+            })}
 
             {/* dimensions */}
             <g {...line} strokeWidth={0.2}>
@@ -175,16 +186,17 @@ export function PlanSheet() {
             <h2>Plant schedule</h2>
             {schedule.length === 0 ? <p>No new plants.</p> : (
               <table>
-                <thead><tr><th>Key</th><th>Plant</th><th>Qty</th><th>Size</th><th>Spacing</th><th>Water</th><th>Sun</th></tr></thead>
+                <thead><tr><th>Key</th><th>Plant</th><th>Qty</th><th>Size</th><th>Spacing</th><th>Water</th><th>Sun</th><th>Each</th><th>Total</th></tr></thead>
                 <tbody>
                   {schedule.map((r) => (
                     <tr key={`${r.speciesId}|${r.container}`}>
                       <td><b>{keys.get(r.speciesId)}</b></td>
                       <td>{r.common}<br /><i>{r.botanical}</i></td>
                       <td>{r.quantity}</td><td>{r.container}</td><td>{formatFeetInches(r.spacingFt, 2)}</td><td>{r.water}</td><td>{r.sun}</td>
+                      <td>{money2(r.unitPrice, cur)}</td><td>{money(r.total, cur)}</td>
                     </tr>
                   ))}
-                  <tr><td colSpan={2}><b>Total new plants</b></td><td><b>{schedule.reduce((a, r) => a + r.quantity, 0)}</b></td><td colSpan={4} /></tr>
+                  <tr><td colSpan={2}><b>Total new plants</b></td><td><b>{schedule.reduce((a, r) => a + r.quantity, 0)}</b></td><td colSpan={5} /><td><b>{money(plantTotal, cur)}</b></td></tr>
                 </tbody>
               </table>
             )}
@@ -195,13 +207,23 @@ export function PlanSheet() {
             <h2>Hardscape takeoff</h2>
             {tk.rows.length === 0 ? <p>No new hardscape.</p> : (
               <table>
-                <thead><tr><th>Material</th><th>Sq ft</th><th>Lin ft</th><th>Surface cu yd</th><th>Base cu yd</th></tr></thead>
+                <thead><tr><th>Material</th><th>Sq ft</th><th>Lin ft</th><th>Surface cu yd</th><th>Base cu yd</th><th>Price</th><th>Cost</th></tr></thead>
                 <tbody>
-                  {tk.rows.map((r) => <tr key={r.materialId}><td>{r.name}</td><td>{fmt(r.areaSf, 1)}</td><td>{fmt(r.edgeLf, 1)}</td><td>{fmt(r.surfaceCuYd, 2)}</td><td>{fmt(r.baseCuYd, 2)}</td></tr>)}
-                  <tr><td><b>Total</b></td><td>{fmt(tk.total.areaSf, 1)}</td><td>{fmt(tk.total.edgeLf, 1)}</td><td>{fmt(tk.total.surfaceCuYd, 2)}</td><td>{fmt(tk.total.baseCuYd, 2)}</td></tr>
+                  {tk.rows.map((r) => <tr key={r.materialId}><td>{r.name}</td><td>{fmt(r.areaSf, 1)}</td><td>{fmt(r.edgeLf, 1)}</td><td>{fmt(r.surfaceCuYd, 2)}</td><td>{fmt(r.baseCuYd, 2)}</td><td>{costOf.get(r.materialId) ? `${money2(costOf.get(r.materialId)!.unitPrice, cur)}/${priceLabel[costOf.get(r.materialId)!.basis]}` : ''}</td><td>{money(costOf.get(r.materialId)?.total ?? 0, cur)}</td></tr>)}
+                  <tr><td><b>Total</b></td><td>{fmt(tk.total.areaSf, 1)}</td><td>{fmt(tk.total.edgeLf, 1)}</td><td>{fmt(tk.total.surfaceCuYd, 2)}</td><td>{fmt(tk.total.baseCuYd, 2)}</td><td /><td><b>{money(costs.total, cur)}</b></td></tr>
                 </tbody>
               </table>
             )}
+
+            <h2>Estimated cost</h2>
+            <table>
+              <tbody>
+                <tr><td>New plants</td><td>{money(plantTotal, cur)}</td></tr>
+                <tr><td>New hardscape</td><td>{money(costs.total, cur)}</td></tr>
+                <tr><td><b>Total</b></td><td><b>{money(plantTotal + costs.total, cur)}</b></td></tr>
+              </tbody>
+            </table>
+            <p className="small">Estimate only, from stand-in prices unless set in the app: not a quote. Existing plants and hardscape are not counted; tax, delivery, soil, irrigation and labor beyond the installed hardscape prices are not included.</p>
 
             <h2>Legend</h2>
             <ul className="small">

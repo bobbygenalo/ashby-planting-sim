@@ -17,11 +17,15 @@ export function GrowthStagesDialog() {
   const doy = useApp((s) => s.doy);
   const [month, setMonth] = useState(() => doyToMonthDay(doy)[0]);
   const [side, setSide] = useState(false);
-  const [other, setOther] = useState('');
+  const [others, setOthers] = useState<string[]>([]);
   const sp = library.species.find((x) => x.id === id);
   if (!sp) return null;
-  const compare = library.species.find((x) => x.id === other);
-  const list = compare ? [sp, compare] : [sp];
+  // The plant opened, plus up to maxPlants - 1 more to compare it with.
+  const room = cfg.maxPlants - 1;
+  const chosen = others.map((id) => library.species.find((x) => x.id === id)).filter((x): x is NonNullable<typeof x> => !!x && x.id !== sp.id);
+  const list = [sp, ...chosen];
+  const slots = chosen.length < room ? [...chosen.map((x) => x.id), ''] : chosen.map((x) => x.id);
+  const setSlot = (slot: number, id: string) => setOthers(id === '' ? chosen.map((x) => x.id).filter((_, i) => i !== slot) : slots.map((cur, i) => (i === slot ? id : cur)).filter((x) => x !== ''));
   return (
     <Dialog title={`${sp.common}: growth stages`} onClose={close} wide>
       <div className="row wrap" style={{ margin: '8px 0' }}>
@@ -30,12 +34,14 @@ export function GrowthStagesDialog() {
             {MONTHS.map((m) => <option key={m} value={m}>{monthName(m)}</option>)}
           </select>
         </label>
-        <label>Compare with
-          <select value={other} onChange={(e) => setOther(e.target.value)} aria-label="Compare with another plant">
-            <option value="">Nothing</option>
-            {library.species.filter((x) => x.id !== sp.id).map((x) => <option key={x.id} value={x.id}>{x.common}</option>)}
-          </select>
-        </label>
+        {slots.map((cur, slot) => (
+          <label key={slot}>{slot === 0 ? 'Compare with' : 'and'}
+            <select value={cur} onChange={(e) => setSlot(slot, e.target.value)} aria-label={`Compare with another plant${slot > 0 ? `, ${slot + 1}` : ''}`}>
+              <option value="">{slot === 0 ? 'Nothing' : 'Remove'}</option>
+              {library.species.filter((x) => x.id !== sp.id && (x.id === cur || !slots.includes(x.id))).map((x) => <option key={x.id} value={x.id}>{x.common}</option>)}
+            </select>
+          </label>
+        ))}
         <label className="check"><input type="checkbox" checked={side} onChange={(e) => setSide(e.target.checked)} />Side view</label>
       </div>
       <div className="stagescanvas">

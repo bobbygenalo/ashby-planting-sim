@@ -320,7 +320,7 @@ describe('plant schedule (OUT-1)', () => {
 describe('assumptions panel (OUT-3)', () => {
   it('lists the sources for water, soil, growth, pollinators and the site', () => {
     const groups = buildAssumptions({ engine, water, soil, site, library: lib });
-    expect(groups.map((g) => g.title)).toEqual(['Water demand', 'Soil and planting', 'Growth and light', 'Pollinators and outputs', 'Site']);
+    expect(groups.map((g) => g.title)).toEqual(['Water demand', 'Soil and planting', 'Growth and light', 'Pollinators and outputs', 'Prices and costs', 'Site']);
     const all = groups.flatMap((g) => g.items);
     expect(all.every((i) => i.source.length > 0)).toBe(true);
     expect(all.find((i) => i.label === 'Formula')!.value).toContain('0.62');

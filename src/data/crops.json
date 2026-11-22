@@ -239,7 +239,7 @@
    "leafColor": "#4f8a45",
    "produce": {
     "color": "#d4263a",
-    "sizeFt": 0.15,
+    "sizeFt": 0.1,
     "count": 10
    },
    "perennial": true,

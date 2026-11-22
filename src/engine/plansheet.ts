@@ -32,3 +32,11 @@ export function planKey(index: number): string {
   } while (n >= 0);
   return s;
 }
+
+/**
+ * The size of the key letter inside a plant's circle on the sheet, in feet: about the circle's own width, never bigger than
+ * the sheet's text and never so small it cannot be read, so a small plant's letter fits in its circle.
+ */
+export function planKeySize(textFt: number, circleRadiusFt: number): number {
+  return Math.min(textFt * 0.9, Math.max(circleRadiusFt * 0.95, textFt * 0.5));
+}

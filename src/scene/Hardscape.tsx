@@ -9,6 +9,7 @@ import { formatFeetInches } from '../engine/units';
 import type { HardscapeElement, Material, Pt } from '../engine/types';
 import { tableLayout } from '../engine/furniture';
 import { chairPull } from './chairState';
+import { partyState } from './partyState';
 import { chairGeometry, modelFor, rectFrame } from './furniture';
 import { useApp } from '../store/store';
 
@@ -53,7 +54,15 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
   useEffect(() => () => chairGeo?.dispose(), [chairGeo]);
   const seats = useMemo(() => (modelKind === 'table' && frame ? tableLayout(frame.long, frame.short).seats : []), [modelKind, frame]);
   const chairRefs = useRef<(THREE.Group | null)[]>([]);
-  useFrame(() => {
+  const cakeRef = useRef<THREE.Group>(null);
+  const flames = useRef<(THREE.Mesh | null)[]>([]);
+  const cakeCfg = useApp((st) => st.engine.birthday.cake);
+  useFrame(({ clock }) => {
+    // A birthday cake with lit candles on the middle of the table while the cake is out.
+    if (cakeRef.current) {
+      cakeRef.current.visible = partyState.cake && modelKind === 'table';
+      if (cakeRef.current.visible) flames.current.forEach((f, i) => f?.scale.setScalar(0.8 + 0.35 * Math.sin(clock.elapsedTime * 11 + i * 1.7)));
+    }
     seats.forEach((seat, i) => {
       const g = chairRefs.current[i];
       if (!g) return;
@@ -96,6 +105,34 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
               <meshStandardMaterial color={ghost ? '#c0392b' : (m.color ?? base)} roughness={0.85} transparent={ghost} opacity={ghost ? 0.3 : 1} />
             </mesh>
           ))}
+          {modelKind === 'table' && (
+            <group ref={cakeRef} visible={false} position={[0, 0, 2.5]}>
+              <mesh castShadow position={[0, 0, cakeCfg.heightFt * 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[cakeCfg.widthFt / 2, cakeCfg.widthFt / 2, cakeCfg.heightFt * 0.6, 24]} />
+                <meshStandardMaterial color="#f7e3c4" />
+              </mesh>
+              <mesh castShadow position={[0, 0, cakeCfg.heightFt * 0.75]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[cakeCfg.widthFt * 0.32, cakeCfg.widthFt * 0.32, cakeCfg.heightFt * 0.4, 24]} />
+                <meshStandardMaterial color="#f48fb1" />
+              </mesh>
+              {Array.from({ length: cakeCfg.candles }, (_, i) => {
+                const a = (i / cakeCfg.candles) * Math.PI * 2;
+                const x = Math.cos(a) * cakeCfg.widthFt * 0.2, y = Math.sin(a) * cakeCfg.widthFt * 0.2;
+                return (
+                  <group key={i} position={[x, y, cakeCfg.heightFt * 0.95]}>
+                    <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.09]}>
+                      <cylinderGeometry args={[0.016, 0.016, 0.18, 6]} />
+                      <meshStandardMaterial color={['#ffffff', '#4cc9f0', '#ffd60a'][i % 3]} />
+                    </mesh>
+                    <mesh ref={(m) => { flames.current[i] = m; }} position={[0, 0, 0.22]} scale={[0.7, 0.7, 1.4]}>
+                      <sphereGeometry args={[0.03, 6, 5]} />
+                      <meshBasicMaterial color="#ffb703" toneMapped={false} />
+                    </mesh>
+                  </group>
+                );
+              })}
+            </group>
+          )}
           {chairGeo && seats.map((seat, i) => (
             <group key={i} ref={(g) => { chairRefs.current[i] = g; }} position={[seat.x, seat.y, 0]} rotation={[0, 0, Math.atan2(seat.fy, seat.fx)]}>
               <mesh geometry={chairGeo} castShadow receiveShadow onClick={onClick} onPointerDown={onDown}>

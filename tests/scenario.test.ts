@@ -265,7 +265,7 @@ describe('comparing scenarios (SC-3)', () => {
   it('builds side-by-side rows with the difference and which way is better', () => {
     const rows = compareMetrics(scenarioMetrics(plain, mctx), scenarioMetrics(thirsty, mctx));
     const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
-    expect(rows.map((r) => r.id)).toEqual(['plants', 'canopySf', 'annualWaterGal', 'hardscapeSf', 'hardscapeCuYd', 'conflicts', 'highValueShare', 'bloomGapMonths']);
+    expect(rows.map((r) => r.id)).toEqual(['plants', 'canopySf', 'annualWaterGal', 'hardscapeSf', 'hardscapeCuYd', 'projectCost', 'conflicts', 'highValueShare', 'bloomGapMonths']);
     expect(byId.annualWaterGal.delta).toBeCloseTo(byId.annualWaterGal.b - byId.annualWaterGal.a, 9);
     expect(byId.annualWaterGal.better).toBe('lower');
     expect(byId.highValueShare.a).toBe(100); // shown as a percent

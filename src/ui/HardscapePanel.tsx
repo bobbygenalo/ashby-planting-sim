@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { permeabilityReport, takeoff, takeoffCsv } from '../engine/hardscape';
+import { hardscapeCosts, money, priceLabel } from '../engine/pricing';
 import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
 import type { HardscapeType } from '../engine/types';
@@ -25,6 +26,9 @@ export function HardscapePanel() {
   const types = (Object.keys(cfg.types) as HardscapeType[]).filter((t) => !cfg.notDrawable?.includes(t));
 
   const tk = useMemo(() => takeoff(s.hardscape, s.materials, cfg), [s.hardscape, s.materials, cfg]);
+  const costs = useMemo(() => hardscapeCosts(s.hardscape, s.materials, cfg, s.prices), [s.hardscape, s.materials, cfg, s.prices]);
+  const costOf = useMemo(() => new Map(costs.rows.map((r) => [r.materialId, r])), [costs]);
+  const cur = s.engine.pricing;
   const perm = useMemo(
     () => permeabilityReport(s.hardscape, s.materials, activeStructures(s.site, { aduEnabled: s.aduEnabled }), s.site.zones, s.site.lot, cfg),
     [s.hardscape, s.materials, s.site, s.aduEnabled, cfg],
@@ -90,22 +94,23 @@ export function HardscapePanel() {
       ) : (
         <>
           <table className="tbl">
-            <thead><tr><th>Material</th><th className="num">Sq ft</th><th className="num">Lin ft</th><th className="num">Surface cu yd</th><th className="num">Base cu yd</th></tr></thead>
+            <thead><tr><th>Material</th><th className="num">Sq ft</th><th className="num">Lin ft</th><th className="num">Surface cu yd</th><th className="num">Base cu yd</th><th className="num">Cost</th></tr></thead>
             <tbody>
               {tk.rows.map((r) => (
                 <tr key={r.materialId}>
                   <td>{r.name}{r.count > 1 && <small className="muted"> ×{r.count}</small>}</td>
                   <td className="num">{fmt(r.areaSf, 1)}</td><td className="num">{fmt(r.edgeLf, 1)}</td>
                   <td className="num">{fmt(r.surfaceCuYd, 2)}</td><td className="num">{fmt(r.baseCuYd, 2)}</td>
+                  <td className="num">{money(costOf.get(r.materialId)?.total ?? 0, cur)}</td>
                 </tr>
               ))}
-              <tr className="total"><td>Total</td><td className="num">{fmt(tk.total.areaSf, 1)}</td><td className="num">{fmt(tk.total.edgeLf, 1)}</td><td className="num">{fmt(tk.total.surfaceCuYd, 2)}</td><td className="num">{fmt(tk.total.baseCuYd, 2)}</td></tr>
+              <tr className="total"><td>Total</td><td className="num">{fmt(tk.total.areaSf, 1)}</td><td className="num">{fmt(tk.total.edgeLf, 1)}</td><td className="num">{fmt(tk.total.surfaceCuYd, 2)}</td><td className="num">{fmt(tk.total.baseCuYd, 2)}</td><td className="num">{money(costs.total, cur)}</td></tr>
             </tbody>
           </table>
-          <div className="row"><button onClick={() => downloadCsv('hardscape-takeoff.csv', takeoffCsv(tk.rows))}>Download CSV</button></div>
+          <div className="row"><button onClick={() => downloadCsv('hardscape-takeoff.csv', takeoffCsv(tk.rows, new Map(costs.rows.map((r) => [r.materialId, { unitPrice: r.unitPrice, basis: priceLabel[r.basis], total: r.total }]))))}>Download CSV</button></div>
         </>
       )}
-      <p className="muted small">Surface = area × surface depth. Base = area × the material's base depth (footing for walls). Footings for decks and fence posts are not included. Quantities are net, with no waste factor.</p>
+      <p className="muted small">Surface = area × surface depth. Base = area × the material's base depth (footing for walls). Footings for decks and fence posts are not included. Quantities are net, with no waste factor. Costs use stand-in installed prices (per sq ft, lin ft or piece); set your own under Outputs.</p>
 
       <h2>Permeable vs impervious</h2>
       <table className="tbl">

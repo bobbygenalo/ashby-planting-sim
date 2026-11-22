@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { plantPrice } from '../engine/pricing';
 import { fruitState, monthRange, sizeFraction } from '../engine/fruit';
 import { placedPlants, sunFit } from '../engine/growth';
 import { doyToMonthDay } from '../engine/time';
@@ -126,6 +127,15 @@ export function PlantInspector({ growing }: { growing: SunHoursResult | null }) 
           </select>
         </label>
         <label>Planted (year){num(inst.plantedMonth / 12, (n) => s.updateInstance(inst.id, { plantedMonth: Math.round(n * 12) }), 0.25)}</label>
+        {!inst.existing && (
+          <label>Price each ({s.engine.pricing.currency})
+            <input
+              type="number" min={0} step={1} disabled={!edit} aria-label="Price of this plant"
+              value={inst.price ?? ''} placeholder={String(Math.round(plantPrice({ ...inst, price: undefined }, sp, s.prices, s.engine.pricing).price))}
+              onChange={(e) => s.updateInstance(inst.id, { price: e.target.value.trim() === '' || Number(e.target.value) < 0 ? undefined : Number(e.target.value) })}
+            />
+          </label>
+        )}
       </div>
       <label className="grid2" style={{ display: 'grid', gridTemplateColumns: '1fr' }}>
         Hydrozone

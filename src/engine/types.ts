@@ -106,7 +106,40 @@ export interface DoorCfg {
   note?: string;
 }
 
+/** Someone who lives here, and the day of the year they have a birthday. */
+export interface Resident {
+  name: string;
+  month: number;
+  day: number;
+}
+
+export interface BirthdayCfg {
+  /** The yard people gather in (a zone id in the site file). */
+  zone: string;
+  /** The party runs this many hours either side of sunset. */
+  partyHoursBefore: number;
+  partyHoursAfter: number;
+  /** Everyone crowds the table for cake from this many minutes before sunset to this many after. */
+  cakeMinutesBefore: number;
+  cakeMinutesAfter: number;
+  presents: {
+    count: number;
+    /** Share of the presents placed close around the communal table. */
+    nearTableShare: number;
+    /** How far from the table's edge the near ones lie, in feet, as [least, most]. */
+    nearTableFt: [number, number];
+    sizeFt: [number, number];
+    colors: string[];
+    ribbons: string[];
+  };
+  hat: { heightFt: number; radiusFt: number; colors: string[] };
+  /** Bunches of balloons tied outside each door: how many to a bunch, how far out from the wall and to the side of the door, how long the strings are, how big the balloons, how far they sway. */
+  balloons: { perBunch: number; sideFt: number; outFt: number; stringFt: [number, number]; sizeFt: number; colors: string[]; swayFt: number };
+  cake: { widthFt: number; heightFt: number; candles: number };
+}
+
 export interface SiteConfig {
+  residents?: Resident[];
   schema: string;
   name: string;
   latitude: number;
@@ -254,6 +287,10 @@ export interface SpeciesFruit {
   unripeColor?: string;
   ripeMonths: number[];
   unripeMonths?: number[];
+  /** Draw this species' fruit this many times its real size, instead of the usual scale (small berries want less than the olives do). */
+  displayScale?: number;
+  /** The smallest this fruit is drawn, in feet, instead of the usual minimum. */
+  minDisplayFt?: number;
   /** Fruit shown on a full-size plant. */
   count: number;
   source?: string;
@@ -322,7 +359,99 @@ export interface NightCfg {
   riseSpreadS: number;
 }
 
+export interface BirdSpeciesCfg {
+  id: string;
+  name: string;
+  /** Months it is here (1 to 12): resident birds all year, winter visitors October to April, summer visitors April to August. */
+  months: number[];
+  /** What it does in a yard: scratch on the ground, work the shrubs and trees, come for fruit and berries, or sip nectar. */
+  guild: 'ground' | 'canopy' | 'fruit' | 'nectar';
+  /** How many come together, as [fewest, most]. */
+  flock: [number, number];
+  body: string;
+  belly: string;
+  accent: string;
+  /** Length in feet. */
+  sizeFt: number;
+  note: string;
+}
+
+export interface CritterCfg {
+  birds: {
+    /** The most birds in the yard at once. */
+    max: number;
+    /** They are about between these minutes of the day (360 is 6 am, 1110 is 6:30 pm). */
+    fromMin: number;
+    toMin: number;
+    speedFt: [number, number];
+    hopFt: number;
+    perchS: [number, number];
+    forageS: [number, number];
+    fadeS: number;
+    species: BirdSpeciesCfg[];
+  };
+  hummer: {
+    max: number;
+    /** One hummingbird for this many flowers in bloom that they visit (rounded up, up to the most). */
+    bloomsPerBird: number;
+    /** They are about between these minutes of the day (360 is 6 am, 1140 is 7 pm). */
+    fromMin: number;
+    toMin: number;
+    speedFt: [number, number];
+    hoverS: [number, number];
+    perchS: [number, number];
+    bodyFt: number;
+    flapHz: number;
+    bobFt: number;
+    fadeS: number;
+  };
+  butterfly: {
+    max: number;
+    perFlower: number;
+    /** Months they are about (3 to 11: March to November). */
+    months: number[];
+    fromMin: number;
+    toMin: number;
+    /** They keep to flowers that get at least this many hours of growing-season sun a day. */
+    minSunHours: number;
+    speedFt: [number, number];
+    landS: [number, number];
+    wingFt: number;
+    flapHz: [number, number];
+    altFt: [number, number];
+    fadeS: number;
+  };
+  worms: {
+    max: number;
+    /** How active worms are in each month, January first, 0 to 1: most in the cool wet months. */
+    activityByMonth: number[];
+    /** They come up at night, from nightFromMin until nightToMin; by day only in the shade. */
+    nightFromMin: number;
+    nightToMin: number;
+    dayShade: number;
+    daySun: number;
+    /** Ground getting no more than this many hours of sun counts as shade. */
+    shadeMaxSunHours: number;
+    lengthFt: number;
+    thickFt: number;
+    wiggleHz: number;
+    /** Every this-many cells is a candidate spot, at most spotCap of them. */
+    spotStride: number;
+    spotCap: number;
+    litterWeight: number;
+    compostWeight: number;
+    richWeight: number;
+    shadeWeight: number;
+    sunWeight: number;
+    emergeRate: number;
+    segments: number;
+  };
+}
+
 export interface LifeCfg {
+  /** At a birthday party: the chance, when choosing where to go next, of heading for the party yard; the chance of joining the cake when it comes out; and how much less often people go indoors. */
+  party: { backyardBias: number; cakeBias: number; visitFactor: number; /** The balloons are tied up from this minute of a birthday (480 is 8 am) until night. */ balloonsFromMin: number };
+  critters: CritterCfg;
   night: NightCfg;
   dining: DiningCfg;
   movie: MovieCfg;
@@ -433,11 +562,24 @@ export interface HolidayCfg {
   twinkleHz: number;
 }
 
+export interface PricingCfg {
+  currency: string;
+  /** What one plant costs by container size when nothing else says. */
+  plantByContainer: Record<string, number>;
+  source: string;
+  /** The public price lists the container defaults come from. */
+  references?: { name: string; url: string; covers: string; note: string }[];
+  /** Spread of the prices found in those lists, by container: count, lowest, quartiles, median, highest. */
+  reference?: Record<string, { n: number; min: number; p25: number; median: number; p75: number; max: number }>;
+}
+
 export interface EngineConfig {
+  birthday: BirthdayCfg;
+  pricing: PricingCfg;
   holiday: HolidayCfg;
   litter: LitterCfg;
   /** The growth-stages view: the ages shown and the two camera heights (angled, side-on). */
-  growthStages: { years: number[]; anglePitch: number; sidePitch: number };
+  growthStages: { years: number[]; anglePitch: number; sidePitch: number; /** The most plants shown side by side, the one opened included. */ maxPlants: number };
   crops: CropCfg;
   branches: BranchCfg;
   life: LifeCfg;
@@ -552,6 +694,8 @@ export interface Species {
   sun: 'full' | 'part' | 'shade';
   /** Crown outline and light transmission (shadow and drawing share the outline). */
   crown?: CrownData;
+  /** Berries and seeds birds eat, in these months, besides any `fruit`. */
+  birdFood?: { months: number[] };
   wucols: 'very low' | 'low' | 'moderate' | 'high';
   bloomMonths: number[];
   bloomColor: string;
@@ -592,6 +736,8 @@ export interface PlantInstance {
   currentWidth?: number;
   /** Explicit hydrozone. Without one, the plant joins an automatic zone for its water-use category. */
   hydrozoneId?: string;
+  /** The owner's price for this one plant in dollars, replacing the species and container prices. */
+  price?: number;
 }
 
 export type HardscapeType = 'patio' | 'path' | 'bed' | 'lawn' | 'deck' | 'gravel' | 'raisedBed' | 'wall' | 'fence' | 'table' | 'grill';
@@ -609,6 +755,9 @@ export interface Material {
   unit: 'sf' | 'lf';
   color: string;
   note?: string;
+  /** Stand-in installed price in dollars per `priceBasis`: per square foot, per linear foot, or each. The owner can override it. */
+  price?: number;
+  priceBasis?: 'sf' | 'lf' | 'each';
 }
 
 export interface HardscapeElement {
@@ -625,6 +774,8 @@ export interface HardscapeElement {
   /** Width of a path, or thickness of a wall or fence, in feet. Ignored for polygons. */
   width: number;
   existing: boolean;
+  /** The owner's price for this element in dollars, replacing the one worked out from its material and size. */
+  price?: number;
   /** Display color chosen by the owner; falls back to the material's color. */
   color?: string;
   /** Existing elements a scenario removes. */
@@ -734,4 +885,12 @@ export interface CropCfg {
 export interface CropPlan {
   cool: string;
   warm: string;
+}
+
+/** Prices the owner has set for this scenario, in dollars; anything not set falls back to the defaults. */
+export interface Prices {
+  /** Per plant, by species id: applies to every container of that species. */
+  plant: Record<string, number>;
+  /** Per material, by material id: per square foot, linear foot or each, as the material's basis says. */
+  material: Record<string, number>;
 }

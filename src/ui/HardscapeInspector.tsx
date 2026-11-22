@@ -4,6 +4,7 @@ import { activeCrop, planOf, seasonOf } from '../engine/crops';
 import { doyToMonthDay } from '../engine/time';
 import { isRectangle } from '../engine/geometry';
 import { elementMetrics, hardscapeWarnings } from '../engine/hardscape';
+import { elementPrice, money, priceLabel } from '../engine/pricing';
 import { formatFeetInches } from '../engine/units';
 import { useApp } from '../store/store';
 
@@ -69,6 +70,11 @@ export function HardscapeInspector() {
                 <tr><td>Area</td><td>{fmt(m.areaSf, 1)} sq ft</td></tr>
                 <tr><td>Edge</td><td>{fmt(m.edgeLf, 1)} lin ft</td></tr>
                 {!cfg.types[sel.type].furniture && <tr><td>Surface</td><td>{fmt(m.surfaceCuYd, 2)} cu yd at {sel.depthIn} in</td></tr>}
+                {!sel.existing && (() => {
+                  const mat = matById.get(sel.materialId)!;
+                  const p = elementPrice(sel, mat, cfg, s.prices);
+                  return <tr><td>Cost</td><td>{money(p.total, s.engine.pricing)} <small className="muted">{p.source === 'item' ? 'your price' : p.basis === 'each' ? `${money(p.unit, s.engine.pricing)} each` : `${fmt(p.quantity, 1)} ${priceLabel[p.basis]} at ${s.engine.pricing.currency}${p.unit.toFixed(2)}`}</small></td></tr>;
+                })()}
                 {!cfg.types[sel.type].furniture && <tr><td>Base</td><td>{fmt(m.baseCuYd, 2)} cu yd at {matById.get(sel.materialId)?.baseDepthIn} in</td></tr>}
               </tbody>
             </table>
@@ -123,6 +129,15 @@ export function HardscapeInspector() {
           </>
         );
       })()}
+      {!sel.existing && (
+        <label>Price for this element ({s.engine.pricing.currency})
+          <input
+            type="number" min={0} step={10} disabled={!edit} aria-label="Price of this element"
+            value={sel.price ?? ''} placeholder={String(Math.round(elementPrice({ ...sel, price: undefined }, matById.get(sel.materialId)!, cfg, s.prices).total))}
+            onChange={(e) => s.updateElement(sel.id, { price: e.target.value.trim() === '' || Number(e.target.value) < 0 ? undefined : Number(e.target.value) })}
+          />
+        </label>
+      )}
       {!sel.existing && edit && (
         <div className="row wrap">
           <span className="muted small">Nudge {formatFeetInches(s.snap)}</span>

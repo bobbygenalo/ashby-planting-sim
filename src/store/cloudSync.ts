@@ -63,12 +63,21 @@ let lastPushAt = 0;
 
 const client = () => (state.key ? cloudClient(API_BASE, state.key) : null);
 
-async function push(): Promise<void> {
+// Saves go one at a time: two at once with the same version would make the second look like a conflict with another device.
+let flight: Promise<void> = Promise.resolve();
+function push(): Promise<void> {
+  flight = flight.then(doPush, doPush);
+  return flight;
+}
+
+async function doPush(): Promise<void> {
   const c = client();
   if (!c || state.status === 'conflict') return;
+  const key = state.key;
   lastPushAt = Date.now();
   set({ status: 'syncing', message: null });
   const r = await c.put(appStore.getState().toWorkspace(), read(SYNCED));
+  if (state.key !== key) return; // backup was turned off or moved to another key meanwhile: this answer is for the old one
   if (r.ok) {
     write(SYNCED, r.value.updatedAt);
     write(DIRTY, null);
@@ -102,8 +111,10 @@ function applyRemote(workspace: unknown, updatedAt: string): boolean {
 async function reconcile(): Promise<void> {
   const c = client();
   if (!c) return;
+  const key = state.key;
   set({ status: 'syncing', message: null });
   const r = await c.get();
+  if (state.key !== key) return; // the key changed while waiting: whoever changed it is in charge now
   if (!r.ok) return set({ status: 'error', message: MESSAGES[r.kind] });
   const dirty = read(DIRTY) === '1';
   if (!r.value) return void (await push());

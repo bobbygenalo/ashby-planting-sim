@@ -8,7 +8,9 @@
     "baseDepthIn": 4,
     "unit": "sf",
     "color": "#b8b8b4",
-    "note": "Base is compacted aggregate."
+    "note": "Base is compacted aggregate.",
+    "price": 12,
+    "priceBasis": "sf"
   },
   {
     "id": "pavers-sand",
@@ -19,7 +21,9 @@
     "baseDepthIn": 4,
     "unit": "sf",
     "color": "#c9a98b",
-    "note": "Sand-set joints let a little water through."
+    "note": "Sand-set joints let a little water through.",
+    "price": 18,
+    "priceBasis": "sf"
   },
   {
     "id": "flagstone-mortar",
@@ -30,7 +34,9 @@
     "baseDepthIn": 4,
     "unit": "sf",
     "color": "#a99f94",
-    "note": ""
+    "note": "",
+    "price": 28,
+    "priceBasis": "sf"
   },
   {
     "id": "flagstone-dry",
@@ -41,7 +47,9 @@
     "baseDepthIn": 4,
     "unit": "sf",
     "color": "#b4aa9d",
-    "note": "Set in sand or fine gravel with open joints."
+    "note": "Set in sand or fine gravel with open joints.",
+    "price": 22,
+    "priceBasis": "sf"
   },
   {
     "id": "decomposed-granite",
@@ -52,7 +60,9 @@
     "baseDepthIn": 3,
     "unit": "sf",
     "color": "#c8b48a",
-    "note": "Compacted DG over a base."
+    "note": "Compacted DG over a base.",
+    "price": 4,
+    "priceBasis": "sf"
   },
   {
     "id": "gravel",
@@ -63,7 +73,9 @@
     "baseDepthIn": 2,
     "unit": "sf",
     "color": "#bdb7aa",
-    "note": ""
+    "note": "",
+    "price": 3.5,
+    "priceBasis": "sf"
   },
   {
     "id": "soil-bed",
@@ -74,7 +86,9 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#6e5640",
-    "note": "Surface depth is the mulch layer."
+    "note": "Surface depth is the mulch layer.",
+    "price": 2.5,
+    "priceBasis": "sf"
   },
   {
     "id": "lawn",
@@ -85,7 +99,9 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#7fb06a",
-    "note": "Depth is soil preparation under sod or seed."
+    "note": "Depth is soil preparation under sod or seed.",
+    "price": 2.5,
+    "priceBasis": "sf"
   },
   {
     "id": "wood-deck",
@@ -96,7 +112,9 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#a9825a",
-    "note": "Surface depth is board thickness. Footings are not included."
+    "note": "Surface depth is board thickness. Footings are not included.",
+    "price": 38,
+    "priceBasis": "sf"
   },
   {
     "id": "composite-deck",
@@ -107,7 +125,9 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#8d7b6b",
-    "note": "Footings are not included."
+    "note": "Footings are not included.",
+    "price": 58,
+    "priceBasis": "sf"
   },
   {
     "id": "raised-bed-wood",
@@ -118,7 +138,9 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#8a6a47",
-    "note": "Soil fill volume is calculated with the water and soil work."
+    "note": "Soil fill volume is calculated with the water and soil work.",
+    "price": 40,
+    "priceBasis": "sf"
   },
   {
     "id": "cmu-wall",
@@ -129,7 +151,9 @@
     "baseDepthIn": 12,
     "unit": "lf",
     "color": "#a6a29a",
-    "note": "Base depth is the footing. Surface volume is zero."
+    "note": "Base depth is the footing. Surface volume is zero.",
+    "price": 90,
+    "priceBasis": "lf"
   },
   {
     "id": "wood-fence",
@@ -140,7 +164,9 @@
     "baseDepthIn": 0,
     "unit": "lf",
     "color": "#b49a78",
-    "note": "Post footings are not included."
+    "note": "Post footings are not included.",
+    "price": 45,
+    "priceBasis": "lf"
   },
   {
     "id": "mulch",
@@ -151,7 +177,9 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#3f2d22",
-    "note": "Surface depth is the mulch layer. Replace every year or two."
+    "note": "Surface depth is the mulch layer. Replace every year or two.",
+    "price": 1.5,
+    "priceBasis": "sf"
   },
   {
     "id": "outdoor-table",
@@ -162,7 +190,9 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#a8794a",
-    "note": "A table about 8 ft by 3 ft with three chairs along each side and one at each end; the footprint is the table plus the chairs pulled out."
+    "note": "A table about 8 ft by 3 ft with three chairs along each side and one at each end; the footprint is the table plus the chairs pulled out.",
+    "price": 2400,
+    "priceBasis": "each"
   },
   {
     "id": "grill-station",
@@ -173,6 +203,8 @@
     "baseDepthIn": 0,
     "unit": "sf",
     "color": "#8f8a80",
-    "note": "A standard barbecue grill about 2.5 ft wide with a counter about 2 ft wide on each side, 3 ft high."
+    "note": "A standard barbecue grill about 2.5 ft wide with a counter about 2 ft wide on each side, 3 ft high.",
+    "price": 6500,
+    "priceBasis": "each"
   }
 ]

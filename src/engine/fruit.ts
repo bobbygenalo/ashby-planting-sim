@@ -38,7 +38,7 @@ export function fruitState(sp: Species, size: PlantSize, month: number, cfg: Fru
     phase: ripe ? 'ripe' : 'unripe',
     color: ripe ? f.ripeColor : f.unripeColor ?? f.ripeColor,
     count,
-    diameterFt: Math.max(f.diameterFt * cfg.displayScale, cfg.minDisplayDiameterFt) * (ripe ? 1 : cfg.unripeScale),
+    diameterFt: Math.max(f.diameterFt * (f.displayScale ?? cfg.displayScale), f.minDisplayFt ?? cfg.minDisplayDiameterFt) * (ripe ? 1 : cfg.unripeScale),
     aspect: f.shape === 'oval' ? f.aspect ?? 1.3 : 1,
   };
 }

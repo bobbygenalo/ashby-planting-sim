@@ -1,4 +1,4 @@
-import type { Confidence, EngineConfig, SiteConfig, SoilConfig, SpeciesLibrary, WaterConfig } from './types';
+import type { Confidence, EngineConfig, Material, SiteConfig, SoilConfig, SpeciesLibrary, WaterConfig } from './types';
 
 export interface AssumptionItem {
   label: string;
@@ -24,8 +24,10 @@ export function buildAssumptions(args: {
   soil: SoilConfig;
   site: SiteConfig;
   library: SpeciesLibrary;
+  materials?: Material[];
 }): AssumptionGroup[] {
   const { engine, water, soil, site, library } = args;
+  const materials = args.materials ?? [];
   const g = engine.growth;
   const irr = (k: keyof WaterConfig['irrigation']) => `${water.irrigation[k].label} ${water.irrigation[k].efficiency}`;
   return [
@@ -78,6 +80,15 @@ export function buildAssumptions(args: {
         { label: 'Plant library values', value: `${library.species.length} species`, source: library.provenanceDefault.source, confidence: library.provenanceDefault.confidence },
         { label: 'Plant spacing', value: `${water.outputs.spacingFactor} x mature width, on center`, source: water.outputs.spacingSource },
         { label: 'Hardscape quantities', value: 'Net of waste. Surface = area x depth; base = area x material base depth', source: 'Design choice' },
+      ],
+    },
+    {
+      title: 'Prices and costs',
+      items: [
+        { label: 'Plant prices', value: `Per plant by container: ${Object.entries(engine.pricing.plantByContainer).map(([k, v]) => `${k} ${engine.pricing.currency}${v}`).join(', ')}, unless set per species or per plant`, source: engine.pricing.source, confidence: 'medium' },
+        ...(materials.length ? [{ label: 'Hardscape prices', value: materials.filter((m) => m.price !== undefined).map((m) => `${m.name} ${engine.pricing.currency}${m.price}/${m.priceBasis === 'each' ? 'each' : m.priceBasis === 'lf' ? 'lin ft' : 'sq ft'}`).join('; '), source: 'Stand-in installed prices for the Los Angeles area; no public data set was used. Replace them with quotes.', confidence: 'low' as Confidence, placeholder: true }] : []),
+        ...(engine.pricing.references ?? []).map((r) => ({ label: `Price source: ${r.name}`, value: `${r.covers}. ${r.note}`, source: r.url, confidence: 'medium' as Confidence })),
+        { label: 'What the cost covers', value: 'New plants and new hardscape only; installed prices for hardscape, nursery prices for plants. Not included: tax, delivery, soil and amendments, irrigation, design fees.', source: 'Design choice' },
       ],
     },
     {

@@ -1,6 +1,9 @@
 import { distanceToPolygon, pointInPolygon } from './geometry';
 import { footprint } from './hardscape';
 import { worldSeats, type WorldSeat } from './furniture';
+import { cakeOn, partyOn, type BirthdayDay } from './birthday';
+import { litterState } from './litter';
+import { sunHoursAt, type SunMap } from './placement';
 import { isBlooming, type PlacedPlant } from './growth';
 import { mulberry32 } from './shuffle';
 import type { EngineConfig, HardscapeElement, Material, Pt, SiteConfig, StructureCfg } from './types';
@@ -21,6 +24,35 @@ export interface Bloom {
 }
 
 /** The yard as the walkers and the bees see it. */
+/** A blooming plant, for the hummingbirds and butterflies: where, how big, which visitors it draws, and how much sun it gets. */
+export interface Flower {
+  x: number;
+  y: number;
+  radius: number;
+  height: number;
+  groups: string[];
+  /** Growing-season sun hours a day where it stands, or null when no sun map was given. */
+  sun: number | null;
+}
+
+/** A place a worm might come up: in soil, mulch or under a bed, more likely in shade, under fallen leaves and under compost. */
+export interface WormSpot {
+  x: number;
+  y: number;
+  /** Planting bed or mulch: richer ground. */
+  rich: boolean;
+  litter: 'none' | 'fresh' | 'compost';
+  shade: boolean;
+}
+
+/** A plant with fruit or berries ready for the birds this month. */
+export interface BirdFood {
+  x: number;
+  y: number;
+  radius: number;
+  height: number;
+}
+
 export interface LifeWorld {
   lot: { width: number; depth: number };
   nx: number;
@@ -47,6 +79,16 @@ export interface LifeWorld {
   tables: LifeTable[];
   /** The wall the evening movie is shown on, or null when the plan has no such wall or no room to watch from. */
   screen: LifeScreen | null;
+  /** Calendar month the world was built for (1 to 12). */
+  month: number;
+  flowers: Flower[];
+  /** Tops of plants a hummingbird can sit on. */
+  perches: { x: number; y: number; z: number }[];
+  wormSpots: WormSpot[];
+  /** Plants with ripe fruit or berries now, which fruit-eating birds come for. */
+  birdFood: BirdFood[];
+  /** Open, reachable ground in the party yard (the back yard), where people gather on a birthday. */
+  partyCells: number[];
 }
 
 export interface LifeTable {
@@ -91,6 +133,8 @@ export interface LifeWorldInput {
   hive?: { x: number; y: number } | null;
   /** Where the owner put the hive: used as it is, a good spot or not. */
   hiveAt?: { x: number; y: number } | null;
+  /** Growing-season sun hours across the lot; butterflies keep to sunny flowers and worms to shade when it is given. */
+  sunMap?: SunMap;
 }
 
 const idx = (w: { nx: number }, i: number, j: number) => j * w.nx + i;
@@ -110,7 +154,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null,
+    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], partyCells: [],
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -158,6 +202,21 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
     .filter((p) => p.size.planted && isBlooming(p.species, input.month) && p.species.pollinator.groups.some((g) => g === 'honey bees' || g === 'native bees'))
     .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3) }));
 
+  const sunAt = (x: number, y: number) => (input.sunMap ? sunHoursAt(input.sunMap, x, y) : null);
+  w.flowers = input.plants
+    .filter((p) => p.size.planted && isBlooming(p.species, input.month) && p.species.pollinator.groups.length > 0)
+    .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3), groups: [...p.species.pollinator.groups], sun: sunAt(p.inst.position[0], p.inst.position[1]) }));
+  w.perches = input.plants
+    .filter((p) => p.size.planted && p.size.height >= 3 && ['tree', 'shrub', 'edible'].includes(p.species.type))
+    .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], z: p.size.height * 0.92 }));
+  w.wormSpots = buildWormSpots(w, input, cfg, classes, sunAt);
+  w.birdFood = input.plants
+    .filter((p) => {
+      if (!p.size.planted || p.size.height < p.species.matureHeight * 0.55) return false; // too young to bear
+      return !!p.species.fruit?.ripeMonths.includes(input.month) || !!p.species.birdFood?.months.includes(input.month);
+    })
+    .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3) }));
+
   // The hive: keep the old spot while it is still good, otherwise find a new one.
   const hive = input.hiveAt ?? (input.hive && hiveSpotIsGood(w, input.hive, cfg) ? input.hive : chooseHiveSpot(w, cfg, mulberry32(7)));
   w.hive = hive;
@@ -171,6 +230,8 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   }
   finishWorld(w, cfg);
   w.doors = buildDoors(w, input, cfg);
+  const yard = input.site.zones.find((z) => z.id === input.engine.birthday.zone);
+  if (yard) w.partyCells = w.reachable.filter((k) => pointInPolygon(((k % w.nx) + 0.5) * w.cell, (Math.floor(k / w.nx) + 0.5) * w.cell, yard.polygon));
   w.tables = buildTables(w, input, cfg);
   w.screen = buildScreen(w, input, cfg);
   return w;
@@ -198,6 +259,44 @@ function buildDoors(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeDoor[] {
   return out;
 }
 
+
+/** Candidate spots for worms across the soil: not under paving, buildings or raised beds, on a loose grid. */
+function buildWormSpots(w: LifeWorld, input: LifeWorldInput, cfg: Cfg, classes: { el: HardscapeElement; poly: Pt[] }[], sunAt: (x: number, y: number) => number | null): WormSpot[] {
+  const wc = cfg.critters.worms;
+  const hard = new Set(['patio', 'deck', 'path', 'table', 'grill', 'raisedBed', 'wall', 'fence']);
+  const order = input.engine.hardscape.drawOrder;
+  const ranked = [...classes].sort((a, b) => order.indexOf(b.el.type) - order.indexOf(a.el.type)); // topmost first
+  const shed = input.plants.filter((p) => p.size.planted).map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], r: p.size.width / 2, litter: litterState(p.species, input.month, input.engine.litter).phase }));
+  const out: WormSpot[] = [];
+  for (let j = 0; j < w.ny; j += wc.spotStride) {
+    for (let i = 0; i < w.nx; i += wc.spotStride) {
+      const [x, y] = center(w, i, j);
+      if (x < cfg.margins.lotFt || y < cfg.margins.lotFt || x > w.lot.width - cfg.margins.lotFt || y > w.lot.depth - cfg.margins.lotFt) continue;
+      if (w.structures.some((st) => pointInPolygon(x, y, st) || distanceToPolygon(x, y, st) < 1)) continue;
+      const top = ranked.find((c) => pointInPolygon(x, y, c.poly));
+      let rich = false;
+      if (top) {
+        const t = top.el.type;
+        if (hard.has(t)) continue;
+        if (t === 'gravel' && top.el.materialId !== 'mulch') continue;
+        rich = t === 'bed' || t === 'gravel';
+      }
+      let litter: WormSpot['litter'] = 'none';
+      let under = false;
+      for (const p of shed) {
+        if (Math.hypot(p.x - x, p.y - y) > p.r) continue;
+        under = true;
+        if (p.litter === 'composting') litter = 'compost';
+        else if ((p.litter === 'lying' || p.litter === 'falling') && litter === 'none') litter = 'fresh';
+      }
+      const sun = sunAt(x, y);
+      out.push({ x, y, rich, litter, shade: sun !== null ? sun <= wc.shadeMaxSunHours : under });
+    }
+  }
+  if (out.length <= wc.spotCap) return out;
+  const step = out.length / wc.spotCap;
+  return Array.from({ length: wc.spotCap }, (_, k) => out[Math.floor(k * step)]);
+}
 
 /** Tables in the plan, with the seats whose standing place behind the chair people can reach. */
 function buildTables(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeTable[] {
@@ -425,7 +524,8 @@ export function findRoute(w: LifeWorld, from: Pt, to: Pt): Pt[] | null {
 /** What a person is doing apart from walking: taking a seat at a table, or watching the movie. */
 export type Act =
   | { kind: 'dine'; seat: string; phase: 'to' | 'pull' | 'sit' | 'talk' | 'rise' | 'push'; t: number; left: number }
-  | { kind: 'watch'; phase: 'to' | 'watch'; spot: Pt };
+  | { kind: 'watch'; phase: 'to' | 'watch'; spot: Pt }
+  | { kind: 'cake'; seat: string; phase: 'to' | 'gather' };
 
 export interface Walker {
   kind: 'person' | 'dog';
@@ -450,6 +550,8 @@ export interface Walker {
   sit: number;
   /** True while this person is the one speaking at their table. */
   talking: boolean;
+  /** True while they are cheering and clapping around the cake. */
+  cheer: boolean;
   /** How far their head is turned from straight ahead, toward whoever is speaking, in radians. */
   headTurn: number;
   /** Age in years: a dog is 0. */
@@ -503,6 +605,15 @@ export class LifeSim {
   /** Minute of the day, set by the caller; the movie shows between the configured start and end. */
   minutes = 720;
   movieOn = false;
+  /** The day's birthday, if there is one: set by the caller. */
+  birthday: BirthdayDay | null = null;
+  /** The party is on (hats, the party yard), and the cake is out (everyone at the table). */
+  party = false;
+  cake = false;
+  /** Presents are out from the start of the party until night. */
+  presentsOut = false;
+  /** Balloons are tied up outside the doors from the morning of a birthday until night. */
+  balloonsOut = false;
   private clock = 0;
   private rng: () => number;
   private cfg: Cfg;
@@ -540,7 +651,7 @@ export class LifeSim {
       } else if (!person && this.counts.people > 0) leader = (n - this.counts.people) % this.counts.people;
       this.walkers.push({
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
-        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, talking: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
+        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, talking: false, cheer: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
         replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
       });
     }
@@ -560,7 +671,7 @@ export class LifeSim {
       wk.route = [];
       // A seat, or the screen, that is gone ends what they were doing there; the rest carry on.
       if (wk.act) {
-        const ok = wk.act.kind === 'dine' ? !!this.findSeat(wk.act.seat) : !!world.screen;
+        const ok = wk.act.kind === 'watch' ? !!world.screen : !!this.findSeat(wk.act.seat);
         if (!ok) this.endAct(wk);
         else if (wk.act.phase !== 'to') continue; // seated or watching: already where they are
       }
@@ -607,7 +718,10 @@ export class LifeSim {
     const w = this.world;
     for (let tries = 0; tries < 20; tries++) {
       let p: Pt | null;
-      if (w.pathCells.length && this.rng() < this.cfg.people.pathBias) {
+      if (this.party && w.partyCells.length && this.rng() < this.cfg.party.backyardBias) {
+        const k = w.partyCells[Math.floor(this.rng() * w.partyCells.length)];
+        p = center(w, k % w.nx, Math.floor(k / w.nx));
+      } else if (w.pathCells.length && this.rng() < this.cfg.people.pathBias) {
         const k = w.pathCells[Math.floor(this.rng() * w.pathCells.length)];
         p = center(w, k % w.nx, Math.floor(k / w.nx));
       } else p = this.randomCell();
@@ -629,7 +743,7 @@ export class LifeSim {
   /** Sometimes a grown-up or older child heads for a building instead of just somewhere in the yard. */
   private pickDoor(wk: Walker): LifeDoor | null {
     const doors = this.world.doors;
-    if (!doors.length || wk.leader !== null || wk.kind !== 'person' || this.rng() >= this.cfg.people.visitBias) return null;
+    if (!doors.length || wk.leader !== null || wk.kind !== 'person' || this.rng() >= this.cfg.people.visitBias * (this.party ? this.cfg.party.visitFactor : 1)) return null;
     const buildings = [...new Set(doors.map((d) => d.building))];
     const building = buildings[Math.floor(this.rng() * buildings.length)];
     const options = doors.filter((d) => d.building === building);
@@ -650,6 +764,7 @@ export class LifeSim {
     }
     // Free to choose: the movie, if it is showing, or a seat at the table, now and then.
     if (this.idle(wk)) {
+      if (this.cake && this.rng() < this.cfg.party.cakeBias && this.sendToCake(wk)) return;
       if (this.movieOn && this.rng() < this.cfg.movie.joinBias && this.assignWatch(wk)) return;
       if (this.world.tables.length && this.rng() < this.cfg.dining.bias && this.startDinner(wk)) return;
     }
@@ -750,6 +865,8 @@ export class LifeSim {
       this.seatTaken.delete(a.seat);
       this.chairs.set(a.seat, 0);
     }
+    if (a?.kind === 'cake') this.seatTaken.delete(a.seat);
+    wk.cheer = false;
     wk.act = null;
     wk.sit = 0;
     wk.talking = false;
@@ -769,7 +886,7 @@ export class LifeSim {
     const a = wk.act;
     if (!a) return null;
     if (a.kind === 'watch') return a.spot;
-    return this.findSeat(a.seat)?.approach ?? null;
+    return this.findSeat(a.seat)?.approach ?? null; // a chair or a place at the cake
   }
 
   /** They have walked to the chair or the viewing spot: start the next part. */
@@ -780,6 +897,14 @@ export class LifeSim {
     wk.speed = 0;
     if (a.kind === 'watch') {
       a.phase = 'watch';
+      return;
+    }
+    if (a.kind === 'cake') {
+      const place = this.findSeat(a.seat);
+      if (!place) return this.endAct(wk);
+      wk.x = place.approach[0];
+      wk.y = place.approach[1];
+      a.phase = 'gather';
       return;
     }
     const seat = this.findSeat(a.seat);
@@ -908,6 +1033,69 @@ export class LifeSim {
     }
   }
 
+
+  /** Crowded round the table for the cake: standing close, facing it, cheering, until the cake is put away. */
+  private stepCake(wk: Walker) {
+    const a = wk.act as Extract<Act, { kind: 'cake' }>;
+    const place = this.findSeat(a.seat);
+    if (!place || !this.cake) {
+      this.endAct(wk);
+      return;
+    }
+    wk.heading = place.facing;
+    wk.speed = 0;
+    wk.cheer = true;
+  }
+
+  /** The cake comes out: nearly everyone heads for a place round the table. */
+  private gatherCake() {
+    for (const wk of this.walkers) {
+      if (!this.idle(wk) || this.rng() >= this.cfg.party.cakeBias) continue;
+      this.sendToCake(wk);
+    }
+  }
+
+  private sendToCake(wk: Walker): boolean {
+    const places = this.world.tables.flatMap((t) => t.seats).filter((st) => !this.seatTaken.has(st.id));
+    if (!places.length) return false;
+    // The nearest free place, so people do not cross the yard past an empty one.
+    const place = places.reduce((best, st) => (Math.hypot(st.approach[0] - wk.x, st.approach[1] - wk.y) < Math.hypot(best.approach[0] - wk.x, best.approach[1] - wk.y) ? st : best));
+    const route = findRoute(this.world, [wk.x, wk.y], place.approach);
+    if (!route) return false;
+    wk.act = { kind: 'cake', seat: place.id, phase: 'to' };
+    wk.route = route.slice(1);
+    wk.pauseLeft = 0;
+    this.seatTaken.set(place.id, this.walkers.indexOf(wk));
+    if (route.length <= 1) this.arrive(wk);
+    return true;
+  }
+
+  /** Tell the sim the day's birthday, or null. Call before `setClock`. */
+  setBirthday(day: BirthdayDay | null) {
+    const same = JSON.stringify(day) === JSON.stringify(this.birthday);
+    this.birthday = day;
+    if (!same) this.applyBirthday(true);
+  }
+
+  /** Work out whether the party, the cake and the movie are on at this moment and react to a change. */
+  private applyBirthday(force = false) {
+    const night = this.night;
+    const party = !night && partyOn(this.birthday, this.minutes);
+    const cake = !night && cakeOn(this.birthday, this.minutes) && this.world.tables.length > 0;
+    this.presentsOut = !night && !!this.birthday && this.minutes >= this.birthday.partyStart;
+    this.balloonsOut = !night && !!this.birthday && this.minutes >= this.cfg.party.balloonsFromMin;
+    if (party !== this.party || force) {
+      this.party = party;
+      // Everyone free picks a fresh destination: the party yard.
+      if (party) for (const wk of this.walkers) if (this.idle(wk)) wk.route = [];
+    }
+    if (cake !== this.cake) {
+      this.cake = cake;
+      if (cake) this.gatherCake();
+      else for (const wk of this.walkers) if (wk.act?.kind === 'cake') this.endAct(wk);
+    }
+  }
+
   /** True between the configured night hours (11 pm to 6 am): everyone is indoors. */
   night = false;
 
@@ -922,7 +1110,8 @@ export class LifeSim {
     const night = minutes >= nc.startMin || minutes < nc.endMin;
     const jumped = Math.abs(minutes - prev) > nc.jumpMin;
     const mc = this.cfg.movie;
-    const on = !night && !!this.world.screen && minutes >= mc.startMin && minutes < mc.endMin;
+    const movieStart = this.birthday ? Math.min(this.birthday.movieStart, mc.endMin) : mc.startMin;
+    const on = !night && !!this.world.screen && minutes >= movieStart && minutes < mc.endMin;
     if (on !== this.movieOn) {
       this.movieOn = on;
       if (on) {
@@ -936,6 +1125,7 @@ export class LifeSim {
       if (night) this.sendIn(jumped);
       else this.bringOut();
     }
+    this.applyBirthday();
   }
 
   /** Night falls: everyone heads for the nearest door, or is simply gone from the yard when the clock jumped. */
@@ -1061,6 +1251,7 @@ export class LifeSim {
       if (wk.leader !== null) wk.replan -= dt;
       if (wk.act && wk.act.phase !== 'to') {
         if (wk.act.kind === 'dine') this.stepDine(wk, dt);
+        else if (wk.act.kind === 'cake') this.stepCake(wk);
         else this.stepWatch(wk, dt);
         continue;
       }

@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { useThree, type ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PlacedPlant } from '../engine/growth';
 import { fruitPositions, fruitState, seedFromId } from '../engine/fruit';
 import { isBlooming, isLeafOff, placedPlants } from '../engine/growth';
+import { pointInPolygon } from '../engine/geometry';
+import { activeStructures } from '../engine/site';
 import { doyToMonthDay } from '../engine/time';
 import { useApp } from '../store/store';
 import { branchSkeleton, type Skeleton } from '../engine/branches';
@@ -141,6 +143,45 @@ export function Form({ p, month }: { p: PlacedPlant; month: number }) {
   );
 }
 
+/**
+ * The cursor while placing a plant: the pointer itself is hidden and a disc lies flat on the ground where it points,
+ * pulsing so it is easy to find. It turns red over a spot where nothing can be planted (inside a building or off the lot).
+ */
+function PlaceCursor({ x, y, ok }: { x: number; y: number; ok: boolean }) {
+  const group = useRef<THREE.Group>(null);
+  const disc = useRef<THREE.MeshBasicMaterial>(null);
+  useFrame(({ clock, camera, size }) => {
+    const t = clock.elapsedTime;
+    const wave = 0.5 + 0.5 * Math.sin(t * 5.2);
+    // Keep it a readable size on screen (about 11 px across the disc's radius) however far the camera is.
+    let perPx: number;
+    if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
+      const c = camera as THREE.OrthographicCamera;
+      perPx = (c.top - c.bottom) / c.zoom / size.height;
+    } else {
+      const c = camera as THREE.PerspectiveCamera;
+      const d = camera.position.distanceTo(new THREE.Vector3(x, 0, -y));
+      perPx = (2 * d * Math.tan((c.fov * Math.PI) / 360)) / size.height;
+    }
+    const base = Math.max(1, (11 * perPx) / 0.65);
+    group.current?.scale.setScalar(base * (0.85 + 0.35 * wave));
+    if (disc.current) disc.current.opacity = 0.3 + 0.5 * (1 - wave);
+  });
+  const color = ok ? '#16a34a' : '#dc2626';
+  return (
+    <group ref={group} position={[x, y, 0.2]} renderOrder={8}>
+      <mesh renderOrder={8}>
+        <circleGeometry args={[0.65, 40]} />
+        <meshBasicMaterial ref={disc} color={color} transparent opacity={0.6} depthTest={false} />
+      </mesh>
+      <mesh renderOrder={9}>
+        <ringGeometry args={[0.72, 0.9, 40]} />
+        <meshBasicMaterial color={color} transparent opacity={0.95} depthTest={false} />
+      </mesh>
+    </group>
+  );
+}
+
 function Ring({ x, y, radius, color, opacity = 0.9 }: { x: number; y: number; radius: number; color: string; opacity?: number }) {
   return (
     <mesh position={[x, y, 0.16]} renderOrder={5}>
@@ -186,6 +227,20 @@ export function PlantLayer() {
   );
   const selected = plants.find((p) => p.inst.id === selectedId);
   const placingSp = placing ? library.species.find((s) => s.id === placing) : undefined;
+  const site = useApp((s) => s.site);
+  const aduEnabled = useApp((s) => s.aduEnabled);
+  const placeOk = !hover || (hover[0] >= 0 && hover[1] >= 0 && hover[0] <= site.lot.width && hover[1] <= site.lot.depth && !activeStructures(site, { aduEnabled }).some((st) => pointInPolygon(hover[0], hover[1], st.footprint)));
+  // The pointer is replaced by the cursor disc while placing.
+  const gl = useThree((st) => st.gl);
+  useEffect(() => {
+    if (!placing) return;
+    const el = gl.domElement;
+    const before = el.style.cursor;
+    el.style.cursor = 'none';
+    return () => {
+      el.style.cursor = before;
+    };
+  }, [placing, gl]);
 
   const onClick = (id: string) => (e: ThreeEvent<MouseEvent>) => {
     if (measureActive || placing) return; // let the ground handle it
@@ -223,7 +278,8 @@ export function PlantLayer() {
           <Ring x={selected.inst.position[0]} y={selected.inst.position[1]} radius={Math.max(selected.size.width / 2, 0.2)} color="#f59e0b" opacity={0.95} />
         </>
       )}
-      {placingSp && hover && <Ring x={hover[0]} y={hover[1]} radius={placingSp.matureWidth / 2} color="#16a34a" />}
+      {placingSp && hover && <Ring x={hover[0]} y={hover[1]} radius={placingSp.matureWidth / 2} color={placeOk ? '#16a34a' : '#dc2626'} />}
+      {placingSp && hover && <PlaceCursor x={hover[0]} y={hover[1]} ok={placeOk} />}
     </group>
   );
 }

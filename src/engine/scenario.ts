@@ -2,10 +2,11 @@ import { detectConflicts } from './conflicts';
 import { placedPlants } from './growth';
 import { takeoff } from './hardscape';
 import { bloomCalendar } from './pollinator';
+import { emptyPrices, projectCost } from './pricing';
 import { SHARE_FORMAT } from '../share/format';
 import { activeStructures } from './site';
 import type {
-  EngineConfig, HardscapeElement, Hydrozone, Irrigation, Material, PlantInstance, SiteConfig, SoilProfile, Species, WaterConfig,
+  EngineConfig, HardscapeElement, Hydrozone, Irrigation, Material, PlantInstance, Prices, SiteConfig, SoilProfile, Species, WaterConfig,
 } from './types';
 import { waterDemand } from './water';
 
@@ -27,6 +28,8 @@ export interface ScenarioData {
   aduEnabled: boolean;
   /** Where the owner put the beehive; without it the app picks a spot. */
   hive?: [number, number] | null;
+  /** Prices the owner set; without them the stand-in prices apply. */
+  prices?: Prices;
 }
 
 export interface ScenarioMeta {
@@ -99,6 +102,7 @@ export function emptyScenarioData(site: SiteConfig): ScenarioData {
     useRain: false,
     aduEnabled: true,
     hive: null,
+    prices: { plant: {}, material: {} },
   };
 }
 
@@ -254,6 +258,13 @@ export function validateScenarioData(raw: unknown, ctx: ValidationContext, extra
     for (const [k, v] of Object.entries(raw.autoIrrigation)) if (typeof v === 'string' && IRRIGATION.has(v)) autoIrrigation[k] = v as Irrigation;
   }
   if (typeof raw.useRain !== 'boolean') errors.push('The rainfall setting is missing.');
+  // Prices are optional: records of finite, non-negative dollar amounts, or the stand-in prices apply.
+  const priceRecord = (v: unknown): Record<string, number> => {
+    const out: Record<string, number> = {};
+    if (isRecord(v)) for (const [k, n] of Object.entries(v)) if (typeof n === 'number' && Number.isFinite(n) && n >= 0) out[k] = n;
+    return out;
+  };
+  const prices: Prices = { plant: priceRecord(isRecord(raw.prices) ? raw.prices.plant : undefined), material: priceRecord(isRecord(raw.prices) ? raw.prices.material : undefined) };
   // The hive position is optional: a pair of finite numbers, or the app picks a spot.
   const hive: [number, number] | null = Array.isArray(raw.hive) && raw.hive.length === 2 && raw.hive.every((v) => typeof v === 'number' && Number.isFinite(v)) ? [raw.hive[0] as number, raw.hive[1] as number] : null;
   if (typeof raw.aduEnabled !== 'boolean') errors.push('The ADU setting is missing.');
@@ -261,7 +272,7 @@ export function validateScenarioData(raw: unknown, ctx: ValidationContext, extra
   warnings.push(...replaced);
   if (errors.length) return { data: null, errors, warnings };
   return {
-    data: { palette, instances, hardscape, hydrozones, autoIrrigation, useRain: raw.useRain as boolean, aduEnabled: raw.aduEnabled as boolean, hive },
+    data: { palette, instances, hardscape, hydrozones, autoIrrigation, useRain: raw.useRain as boolean, aduEnabled: raw.aduEnabled as boolean, hive, prices },
     errors,
     warnings,
   };
@@ -461,6 +472,8 @@ export interface ScenarioMetrics {
   conflicts: number;
   highValueShare: number;
   bloomGapMonths: number;
+  /** Estimated cost of the new plants and hardscape, in dollars. */
+  projectCost: number;
 }
 
 /** The numbers the brief asks to compare: plant count, canopy cover, annual water, materials, conflicts. */
@@ -482,6 +495,7 @@ export function scenarioMetrics(data: ScenarioData, ctx: MetricsContext): Scenar
   return {
     plants: plants.length, canopySf, annualWaterGal: demand.lot.annualGal, hardscapeSf: tk.areaSf, hardscapeCuYd: tk.surfaceCuYd + tk.baseCuYd,
     conflicts: conflicts.length, highValueShare: plants.length ? high / plants.length : 0, bloomGapMonths: plants.length ? cal.gaps.length : 12,
+    projectCost: projectCost(plants, data.hardscape, ctx.materials, ctx.engine, data.prices ?? emptyPrices()).total,
   };
 }
 
@@ -502,6 +516,7 @@ const ROWS: { id: keyof ScenarioMetrics; label: string; unit: string; better: 'l
   { id: 'annualWaterGal', label: 'Water per year', unit: 'gal', better: 'lower' },
   { id: 'hardscapeSf', label: 'New hardscape area', unit: 'sq ft', better: null },
   { id: 'hardscapeCuYd', label: 'Hardscape surface + base', unit: 'cu yd', better: null },
+  { id: 'projectCost', label: 'Estimated cost', unit: 'USD', better: 'lower' },
   { id: 'conflicts', label: 'Conflicts', unit: '', better: 'lower' },
   { id: 'highValueShare', label: 'High-value pollinator plants', unit: '%', better: 'higher' },
   { id: 'bloomGapMonths', label: 'Months with no high-value bloom', unit: 'months', better: 'lower' },

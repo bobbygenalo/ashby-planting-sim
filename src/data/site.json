@@ -1228,5 +1228,82 @@
       "estimate": true,
       "note": "On the entry landing (door 01A) in the great room's south wall; its exact position along the wall is estimated."
     }
+  ],
+  "residents": [
+    {
+      "name": "Jemma",
+      "month": 3,
+      "day": 30
+    },
+    {
+      "name": "Kepler",
+      "month": 7,
+      "day": 6
+    },
+    {
+      "name": "Bobby",
+      "month": 8,
+      "day": 15
+    },
+    {
+      "name": "Nonna",
+      "month": 3,
+      "day": 9
+    },
+    {
+      "name": "Grandpa",
+      "month": 4,
+      "day": 22
+    },
+    {
+      "name": "PopZ",
+      "month": 10,
+      "day": 17
+    },
+    {
+      "name": "Oma",
+      "month": 3,
+      "day": 4
+    },
+    {
+      "name": "Madeleine",
+      "month": 6,
+      "day": 4
+    },
+    {
+      "name": "Abby",
+      "month": 6,
+      "day": 4
+    },
+    {
+      "name": "Kody",
+      "month": 12,
+      "day": 10
+    },
+    {
+      "name": "Henry",
+      "month": 8,
+      "day": 11
+    },
+    {
+      "name": "Caroline",
+      "month": 2,
+      "day": 24
+    },
+    {
+      "name": "Cate",
+      "month": 9,
+      "day": 18
+    },
+    {
+      "name": "Chris",
+      "month": 4,
+      "day": 2
+    },
+    {
+      "name": "Beth",
+      "month": 12,
+      "day": 2
+    }
   ]
 }

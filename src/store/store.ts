@@ -6,6 +6,7 @@ import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engin
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
 import { buildSunMap, type SunMap } from '../engine/placement';
+import { emptyPrices } from '../engine/pricing';
 import { generateConcept, type ConceptCounts, type ConceptOptions } from '../engine/concept';
 import { mulberry32, shuffleScenario, type ShuffleChanges, type ShuffleOptions } from '../engine/shuffle';
 import {
@@ -18,7 +19,7 @@ import materialsRaw from '../data/materials.json';
 import waterRaw from '../data/water.json';
 import soilRaw from '../data/soil.json';
 import type {
-  ContainerId, EngineConfig, HardscapeElement, HardscapeType, Hydrozone, Irrigation, Material, PlantInstance, Pt, SiteConfig, SoilConfig,
+  ContainerId, EngineConfig, HardscapeElement, HardscapeType, Hydrozone, Irrigation, Material, PlantInstance, Prices, Pt, SiteConfig, SoilConfig,
   SoilProfile, Species, SpeciesLibrary, WaterConfig,
 } from '../engine/types';
 
@@ -31,6 +32,7 @@ export interface ScenarioSnapshot {
   autoIrrigation: Record<string, Irrigation>;
   useRain: boolean;
   hive: Pt | null;
+  prices: Prices;
 }
 
 export type HsDrag = { id: string; kind: 'vertex'; index: number } | { id: string; kind: 'move'; last: Pt };
@@ -232,6 +234,12 @@ export interface AppState {
   useRain: boolean;
   /** Where the owner put the beehive (null: the app picks a spot), whether it is selected, and whether it is being dragged. */
   hive: Pt | null;
+  /** Prices the owner set (in dollars) for plants by species and materials by id; the rest use stand-in defaults. */
+  prices: Prices;
+  /** Set the price of every plant of a species, or clear it with null. */
+  setPlantPrice: (speciesId: string, price: number | null) => void;
+  /** Set the unit price of a material (per sq ft, lin ft or each), or clear it with null. */
+  setMaterialPrice: (materialId: string, price: number | null) => void;
   hiveSelected: boolean;
   hiveDragging: boolean;
   setHive: (p: Pt | null) => void;
@@ -266,7 +274,7 @@ const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${(idCounter
 
 let sunMapCache: { key: string; map: SunMap } | null = null;
 /** The growing-season sun map for shuffles and concepts. Computed once per site and ADU setting, since it takes a moment. */
-function sunMapFor(site: SiteConfig, aduEnabled: boolean): SunMap {
+export function sunMapFor(site: SiteConfig, aduEnabled: boolean): SunMap {
   const key = `${site.name}|${site.latitude}|${site.structures.length}|${aduEnabled}`;
   if (sunMapCache?.key !== key) sunMapCache = { key, map: buildSunMap(site, aduEnabled, engine) };
   return sunMapCache.map;
@@ -284,7 +292,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     };
     const snapshot = (): ScenarioSnapshot => ({
       instances: get().instances, palette: get().palette, hardscape: get().hardscape,
-      hydrozones: get().hydrozones, autoIrrigation: get().autoIrrigation, useRain: get().useRain, hive: get().hive,
+      hydrozones: get().hydrozones, autoIrrigation: get().autoIrrigation, useRain: get().useRain, hive: get().hive, prices: get().prices,
     });
     // Push an undo step. Repeated edits with the same key within a second count as one step.
     const record = (key?: string) => {
@@ -314,12 +322,12 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     };
     const currentData = (): ScenarioData => ({
       palette: get().palette, instances: get().instances, hardscape: get().hardscape, hydrozones: get().hydrozones,
-      autoIrrigation: get().autoIrrigation, useRain: get().useRain, aduEnabled: get().aduEnabled, hive: get().hive,
+      autoIrrigation: get().autoIrrigation, useRain: get().useRain, aduEnabled: get().aduEnabled, hive: get().hive, prices: get().prices,
     });
     // Replace the working fields with a scenario's data and clear everything tied to the old one.
     const applyData = (d: ScenarioData) =>
       set({
-        ...clone(d), hive: d.hive ?? null, hiveSelected: false, hiveDragging: false, hardscape: syncExistingHardscape(clone(d.hardscape), get().site), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
+        ...clone(d), hive: d.hive ?? null, prices: d.prices ?? emptyPrices(), hiveSelected: false, hiveDragging: false, hardscape: syncExistingHardscape(clone(d.hardscape), get().site), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
         hsDrag: null, dragId: null, measureActive: false, measurePoints: [], suggestion: null, suggestFocus: null,
       });
     const customSpeciesList = () => get().library.species.filter((s) => !baseSpeciesIds.has(s.id));
@@ -766,6 +774,19 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       autoIrrigation: {},
       useRain: false,
       hive: null,
+      prices: emptyPrices(),
+      setPlantPrice: (speciesId, price) => {
+        const plant = { ...get().prices.plant };
+        if (price === null || !Number.isFinite(price) || price < 0) delete plant[speciesId];
+        else plant[speciesId] = price;
+        scenario({ prices: { ...get().prices, plant } }, `price:plant:${speciesId}`);
+      },
+      setMaterialPrice: (materialId, price) => {
+        const material = { ...get().prices.material };
+        if (price === null || !Number.isFinite(price) || price < 0) delete material[materialId];
+        else material[materialId] = price;
+        scenario({ prices: { ...get().prices, material } }, `price:material:${materialId}`);
+      },
       hiveSelected: false,
       hiveDragging: false,
       setHive: (p) => scenario({ hive: p }),

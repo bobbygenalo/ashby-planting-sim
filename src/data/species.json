@@ -1037,6 +1037,14 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, Calscape; choose cultivar"
+      },
+      "birdFood": {
+        "months": [
+          6,
+          7,
+          8,
+          9
+        ]
       }
     },
     {
@@ -1689,6 +1697,14 @@
       },
       "crown": {
         "density": 0.9
+      },
+      "birdFood": {
+        "months": [
+          11,
+          12,
+          1,
+          2
+        ]
       }
     },
     {
@@ -2549,6 +2565,15 @@
         "behavior": "moderate",
         "minFoundationFt": 5,
         "minPavingFt": 2.5
+      },
+      "birdFood": {
+        "months": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
       }
     },
     {
@@ -3461,7 +3486,7 @@
       },
       "fruit": {
         "shape": "sphere",
-        "diameterFt": 0.06,
+        "diameterFt": 0.05,
         "ripeColor": "#3b4b8f",
         "unripeColor": "#a5b36a",
         "ripeMonths": [
@@ -3472,8 +3497,10 @@
           3,
           4
         ],
-        "count": 110,
-        "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+        "count": 170,
+        "source": "General estimate for display; ripening months vary with variety, year and microclimate.",
+        "displayScale": 1.8,
+        "minDisplayFt": 0.08
       },
       "crown": {
         "density": 0.8
@@ -3528,7 +3555,7 @@
       },
       "fruit": {
         "shape": "sphere",
-        "diameterFt": 0.06,
+        "diameterFt": 0.05,
         "ripeColor": "#34478f",
         "unripeColor": "#9fb06a",
         "ripeMonths": [
@@ -3539,8 +3566,10 @@
         "unripeMonths": [
           3
         ],
-        "count": 140,
-        "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+        "count": 170,
+        "source": "General estimate for display; ripening months vary with variety, year and microclimate.",
+        "displayScale": 1.8,
+        "minDisplayFt": 0.08
       },
       "crown": {
         "density": 0.8
@@ -3598,7 +3627,7 @@
       },
       "fruit": {
         "shape": "sphere",
-        "diameterFt": 0.07,
+        "diameterFt": 0.075,
         "ripeColor": "#241431",
         "unripeColor": "#9a4a5c",
         "ripeMonths": [
@@ -3609,11 +3638,712 @@
         "unripeMonths": [
           4
         ],
-        "count": 90,
-        "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+        "count": 95,
+        "source": "General estimate for display; ripening months vary with variety, year and microclimate.",
+        "displayScale": 1.5,
+        "minDisplayFt": 0.1
       },
       "crown": {
         "density": 0.7
+      }
+    },
+    {
+      "id": "iris-douglasiana",
+      "botanical": "Iris douglasiana",
+      "common": "Douglas iris",
+      "type": "perennial",
+      "origin": "california native",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 1.5,
+      "matureWidth": 3.0,
+      "yearsToMaturity": 2,
+      "habit": "clump",
+      "sun": "part",
+      "wucols": "low",
+      "bloomMonths": [
+        3,
+        4,
+        5
+      ],
+      "bloomColor": "#8d7bd6",
+      "foliageColor": "#4f7d45",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": true,
+      "maintenance": "low",
+      "notes": "California native iris, forms clumps of dark evergreen blades; handles clay and part shade, and is toxic if eaten. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "tolerant",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 5.5,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 2.0,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "dryopteris-arguta",
+      "botanical": "Dryopteris arguta",
+      "common": "Coastal wood fern",
+      "type": "perennial",
+      "origin": "california native",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 2.5,
+      "matureWidth": 3.0,
+      "yearsToMaturity": 3,
+      "habit": "vase",
+      "sun": "shade",
+      "wucols": "moderate",
+      "bloomMonths": [],
+      "bloomColor": "#9aa889",
+      "foliageColor": "#4f7a45",
+      "pollinator": {
+        "value": "low",
+        "groups": [],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Evergreen California fern for shady spots; accepts clay loam if it drains. Wants some summer water. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 5.5,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 2.0,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "polystichum-munitum",
+      "botanical": "Polystichum munitum",
+      "common": "Western sword fern",
+      "type": "perennial",
+      "origin": "california native",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 3.5,
+      "matureWidth": 4.0,
+      "yearsToMaturity": 4,
+      "habit": "vase",
+      "sun": "shade",
+      "wucols": "moderate",
+      "bloomMonths": [],
+      "bloomColor": "#9aa889",
+      "foliageColor": "#3f7a3c",
+      "pollinator": {
+        "value": "low",
+        "groups": [],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Large evergreen fern for deep shade; clay is fine when it drains, and it needs regular water through a Los Angeles summer. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 5.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 3.0,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "ribes-viburnifolium",
+      "botanical": "Ribes viburnifolium",
+      "common": "Catalina perfume currant",
+      "type": "groundcover",
+      "origin": "california native",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 2.0,
+      "matureWidth": 6.0,
+      "yearsToMaturity": 3,
+      "habit": "spreading",
+      "sun": "part",
+      "wucols": "low",
+      "bloomMonths": [
+        2,
+        3,
+        4
+      ],
+      "bloomColor": "#a0344a",
+      "foliageColor": "#4f7d3c",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "hummingbirds",
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Evergreen, scented, sprawling currant for dry shade under trees; tolerates clay. Roots where stems touch the ground. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "tolerant",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 6.0,
+        "phMax": 8.0
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 2.0,
+        "minPavingFt": 1
+      },
+      "birdFood": {
+        "months": [
+          5,
+          6,
+          7
+        ]
+      }
+    },
+    {
+      "id": "berberis-aquifolium",
+      "botanical": "Berberis aquifolium",
+      "common": "Oregon grape",
+      "type": "shrub",
+      "origin": "california native",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 5.0,
+      "matureWidth": 5.0,
+      "yearsToMaturity": 6,
+      "habit": "round",
+      "sun": "part",
+      "wucols": "low",
+      "bloomMonths": [
+        2,
+        3,
+        4
+      ],
+      "bloomColor": "#f5d94a",
+      "foliageColor": "#2f6a3c",
+      "pollinator": {
+        "value": "high",
+        "groups": [
+          "native bees",
+          "honey bees",
+          "hummingbirds"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Evergreen shrub with spiny holly-like leaves, winter yellow flowers and blue berries; takes clay and dry shade. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "tolerant",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 5.5,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 4.0,
+        "minPavingFt": 2.0
+      },
+      "birdFood": {
+        "months": [
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    },
+    {
+      "id": "carex-divulsa",
+      "botanical": "Carex divulsa",
+      "common": "Berkeley sedge",
+      "type": "grass",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 1.5,
+      "matureWidth": 2.5,
+      "yearsToMaturity": 2,
+      "habit": "clump",
+      "sun": "part",
+      "wucols": "low",
+      "bloomMonths": [
+        4,
+        5
+      ],
+      "bloomColor": "#d9d2a2",
+      "foliageColor": "#8aa86a",
+      "pollinator": {
+        "value": "low",
+        "groups": [],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Fine, arching evergreen sedge that fills dry shade and tolerates clay; a common lawn alternative. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "tolerant",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 6.0,
+        "phMax": 8.0
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 1.5,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "aspidistra-elatior",
+      "botanical": "Aspidistra elatior",
+      "common": "Cast iron plant",
+      "type": "perennial",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 2.5,
+      "matureWidth": 3.0,
+      "yearsToMaturity": 4,
+      "habit": "vase",
+      "sun": "shade",
+      "wucols": "low",
+      "bloomMonths": [],
+      "bloomColor": "#9aa889",
+      "foliageColor": "#2f5d3a",
+      "pollinator": {
+        "value": "low",
+        "groups": [],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Nearly indestructible in deep shade; accepts clay and neglect. Burns in strong sun. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "tolerant",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 5.5,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 1.5,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "liriope-muscari",
+      "botanical": "Liriope muscari",
+      "common": "Lilyturf",
+      "type": "grass",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 1.2,
+      "matureWidth": 1.8,
+      "yearsToMaturity": 2,
+      "habit": "clump",
+      "sun": "part",
+      "wucols": "low",
+      "bloomMonths": [
+        8,
+        9
+      ],
+      "bloomColor": "#8a6fcf",
+      "foliageColor": "#3f7a45",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "honey bees",
+          "butterflies"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Tough evergreen clumps with lavender flower spikes; tolerates clay, shade and heat. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "tolerant",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 5.5,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 1.0,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "helleborus-hybridus",
+      "botanical": "Helleborus x hybridus",
+      "common": "Lenten rose",
+      "type": "perennial",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 2.0,
+      "matureWidth": 2.5,
+      "yearsToMaturity": 3,
+      "habit": "round",
+      "sun": "shade",
+      "wucols": "moderate",
+      "bloomMonths": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "bloomColor": "#d6a3c4",
+      "foliageColor": "#355f3e",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "honey bees",
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": true,
+      "maintenance": "low",
+      "notes": "Winter-blooming evergreen perennial for shade; likes alkaline clay. Toxic if eaten. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "clay loam",
+          "clay",
+          "loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 8.0
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 2.0,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "clivia-miniata",
+      "botanical": "Clivia miniata",
+      "common": "Clivia",
+      "type": "perennial",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 2.0,
+      "matureWidth": 2.5,
+      "yearsToMaturity": 4,
+      "habit": "vase",
+      "sun": "shade",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4,
+        5
+      ],
+      "bloomColor": "#f28c28",
+      "foliageColor": "#2d5a35",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "hummingbirds"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": true,
+      "maintenance": "low",
+      "notes": "Strap-leaved plant with orange spring flowers for dry shade; protect from hard frost. Toxic if eaten. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "loam",
+          "clay loam"
+        ],
+        "phMin": 5.5,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 2.0,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "clinopodium-douglasii",
+      "botanical": "Clinopodium douglasii",
+      "common": "Yerba buena",
+      "type": "groundcover",
+      "origin": "california native",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 0.3,
+      "matureWidth": 4.0,
+      "yearsToMaturity": 2,
+      "habit": "mat",
+      "sun": "shade",
+      "wucols": "moderate",
+      "bloomMonths": [
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "bloomColor": "#f4f4ee",
+      "foliageColor": "#6f9a52",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "native bees",
+          "butterflies"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Trailing, minty California native groundcover for moist shade; clay is fine. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "loam",
+          "silt loam",
+          "clay loam",
+          "clay"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 0.5,
+        "minPavingFt": 1
+      }
+    },
+    {
+      "id": "fragaria-vesca-alexandria",
+      "botanical": "Fragaria vesca",
+      "common": "Alpine strawberry 'Alexandria'",
+      "type": "edible",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 0.5,
+      "matureWidth": 1.2,
+      "yearsToMaturity": 1,
+      "habit": "mat",
+      "sun": "part",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "bloomColor": "#ffffff",
+      "foliageColor": "#5a8f4a",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "native bees",
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Small, sweet berries from spring to fall; unlike garden strawberries it does well in part shade and does not send out runners. Grow it in amended soil or a raised bed where clay is heavy. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 5.5,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 0.5,
+        "minPavingFt": 1
+      },
+      "fruit": {
+        "shape": "oval",
+        "aspect": 1.25,
+        "diameterFt": 0.045,
+        "displayScale": 1.6,
+        "minDisplayFt": 0.05,
+        "ripeColor": "#c8203a",
+        "unripeColor": "#a8b562",
+        "ripeMonths": [
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "unripeMonths": [
+          3,
+          4
+        ],
+        "count": 28,
+        "source": "General estimate for display; fruiting months vary with weather."
+      }
+    },
+    {
+      "id": "fragaria-seascape",
+      "botanical": "Fragaria x ananassa",
+      "common": "Seascape strawberry",
+      "type": "edible",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 0.8,
+      "matureWidth": 1.5,
+      "yearsToMaturity": 1,
+      "habit": "mat",
+      "sun": "full",
+      "wucols": "high",
+      "bloomMonths": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "bloomColor": "#ffffff",
+      "foliageColor": "#4f8a45",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "native bees",
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Day-neutral strawberry that fruits from spring into fall in mild coastal climates, and bears through heat. Needs fast drainage and regular water: plant it in a raised bed or amended soil where clay is heavy. Size, water category, bloom months and soil needs are general estimates, unverified.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 5.5,
+        "phMax": 6.8
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 0.5,
+        "minPavingFt": 1
+      },
+      "fruit": {
+        "shape": "oval",
+        "aspect": 1.2,
+        "diameterFt": 0.1,
+        "displayScale": 1.3,
+        "minDisplayFt": 0.08,
+        "ripeColor": "#d4263a",
+        "unripeColor": "#b9c476",
+        "ripeMonths": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "unripeMonths": [
+          3
+        ],
+        "count": 36,
+        "source": "General estimate for display; fruiting months vary with weather."
       }
     }
   ],

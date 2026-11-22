@@ -713,7 +713,7 @@
       0.2,
       0.95
     ],
-    "maxCount": 80,
+    "maxCount": 170,
     "minDisplayDiameterFt": 0.4
   },
   "life": {
@@ -975,6 +975,377 @@
       "endMin": 360,
       "jumpMin": 30,
       "riseSpreadS": 50
+    },
+    "critters": {
+      "hummer": {
+        "max": 3,
+        "bloomsPerBird": 2,
+        "fromMin": 360,
+        "toMin": 1140,
+        "speedFt": [
+          11,
+          16
+        ],
+        "hoverS": [
+          2,
+          4.5
+        ],
+        "perchS": [
+          2.5,
+          7
+        ],
+        "bodyFt": 0.42,
+        "flapHz": 38,
+        "bobFt": 0.07,
+        "fadeS": 1.2
+      },
+      "butterfly": {
+        "max": 8,
+        "perFlower": 0.8,
+        "months": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "fromMin": 600,
+        "toMin": 1000,
+        "minSunHours": 4,
+        "speedFt": [
+          1.6,
+          2.8
+        ],
+        "landS": [
+          3,
+          8
+        ],
+        "wingFt": 0.5,
+        "flapHz": [
+          5,
+          9
+        ],
+        "altFt": [
+          1.5,
+          5
+        ],
+        "fadeS": 1.5
+      },
+      "worms": {
+        "max": 36,
+        "activityByMonth": [
+          1,
+          0.95,
+          0.85,
+          0.6,
+          0.35,
+          0.2,
+          0.15,
+          0.15,
+          0.25,
+          0.45,
+          0.8,
+          1
+        ],
+        "nightFromMin": 1200,
+        "nightToMin": 420,
+        "dayShade": 0.55,
+        "daySun": 0.08,
+        "shadeMaxSunHours": 4,
+        "lengthFt": 0.45,
+        "thickFt": 0.035,
+        "wiggleHz": 1.4,
+        "spotStride": 2,
+        "spotCap": 900,
+        "litterWeight": 4,
+        "compostWeight": 6,
+        "richWeight": 2,
+        "shadeWeight": 2.5,
+        "sunWeight": 0.5,
+        "emergeRate": 0.6,
+        "segments": 6
+      },
+      "birds": {
+        "max": 20,
+        "fromMin": 360,
+        "toMin": 1110,
+        "speedFt": [
+          9,
+          16
+        ],
+        "hopFt": 0.12,
+        "perchS": [
+          2,
+          6
+        ],
+        "forageS": [
+          3,
+          8
+        ],
+        "fadeS": 1.0,
+        "species": [
+          {
+            "id": "california-towhee",
+            "name": "California towhee",
+            "months": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ],
+            "guild": "ground",
+            "flock": [
+              1,
+              2
+            ],
+            "body": "#8b6b4a",
+            "belly": "#c19a6b",
+            "accent": "#b5532d",
+            "sizeFt": 0.75,
+            "note": "Scratches in leaf litter under shrubs, all year."
+          },
+          {
+            "id": "bushtit",
+            "name": "Bushtit",
+            "months": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ],
+            "guild": "canopy",
+            "flock": [
+              4,
+              6
+            ],
+            "body": "#8e8f8b",
+            "belly": "#c9c2b0",
+            "accent": "#6b5b4b",
+            "sizeFt": 0.38,
+            "note": "Roams in chattering flocks through shrubs and trees, all year."
+          },
+          {
+            "id": "california-scrub-jay",
+            "name": "California scrub-jay",
+            "months": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ],
+            "guild": "fruit",
+            "flock": [
+              1,
+              2
+            ],
+            "body": "#3f6fd8",
+            "belly": "#c8c5bd",
+            "accent": "#2a3f8f",
+            "sizeFt": 1.0,
+            "note": "Raids fruit and acorns, all year."
+          },
+          {
+            "id": "northern-mockingbird",
+            "name": "Northern mockingbird",
+            "months": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ],
+            "guild": "fruit",
+            "flock": [
+              1,
+              1
+            ],
+            "body": "#9a9a95",
+            "belly": "#ebebe6",
+            "accent": "#555555",
+            "sizeFt": 0.85,
+            "note": "Eats fruit and berries, all year."
+          },
+          {
+            "id": "house-finch",
+            "name": "House finch",
+            "months": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ],
+            "guild": "canopy",
+            "flock": [
+              2,
+              3
+            ],
+            "body": "#9b7b66",
+            "belly": "#d8c3b0",
+            "accent": "#cc3b3b",
+            "sizeFt": 0.55,
+            "note": "Perches in shrubs and trees, all year."
+          },
+          {
+            "id": "cedar-waxwing",
+            "name": "Cedar waxwing",
+            "months": [
+              11,
+              12,
+              1,
+              2,
+              3,
+              4
+            ],
+            "guild": "fruit",
+            "flock": [
+              4,
+              6
+            ],
+            "body": "#b99568",
+            "belly": "#e5d3a1",
+            "accent": "#f2d230",
+            "sizeFt": 0.6,
+            "note": "Winter flocks that strip berries and fruit, November to April."
+          },
+          {
+            "id": "white-crowned-sparrow",
+            "name": "White-crowned sparrow",
+            "months": [
+              10,
+              11,
+              12,
+              1,
+              2,
+              3,
+              4
+            ],
+            "guild": "ground",
+            "flock": [
+              2,
+              4
+            ],
+            "body": "#8a7f72",
+            "belly": "#bdbab2",
+            "accent": "#2a2a2a",
+            "sizeFt": 0.5,
+            "note": "Winters here, feeding on the ground, October to April."
+          },
+          {
+            "id": "yellow-rumped-warbler",
+            "name": "Yellow-rumped warbler",
+            "months": [
+              10,
+              11,
+              12,
+              1,
+              2,
+              3,
+              4
+            ],
+            "guild": "canopy",
+            "flock": [
+              1,
+              3
+            ],
+            "body": "#7d8795",
+            "belly": "#d6d8d4",
+            "accent": "#f2d230",
+            "sizeFt": 0.45,
+            "note": "Winters here, hunting insects in shrubs and trees, October to April."
+          },
+          {
+            "id": "black-headed-grosbeak",
+            "name": "Black-headed grosbeak",
+            "months": [
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "guild": "canopy",
+            "flock": [
+              1,
+              2
+            ],
+            "body": "#c8691f",
+            "belly": "#e9a24b",
+            "accent": "#1e1e1e",
+            "sizeFt": 0.75,
+            "note": "A summer visitor that nests in trees, April to August."
+          },
+          {
+            "id": "hooded-oriole",
+            "name": "Hooded oriole",
+            "months": [
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "guild": "nectar",
+            "flock": [
+              1,
+              2
+            ],
+            "body": "#f2a31b",
+            "belly": "#f6c04a",
+            "accent": "#1e1e1e",
+            "sizeFt": 0.7,
+            "note": "A summer visitor that sips nectar from flowers, April to August."
+          }
+        ]
+      }
+    },
+    "party": {
+      "backyardBias": 0.85,
+      "cakeBias": 0.9,
+      "visitFactor": 0.3,
+      "balloonsFromMin": 480
     }
   },
   "branches": {
@@ -1039,7 +1410,8 @@
       20
     ],
     "anglePitch": 0.7,
-    "sidePitch": 0.1
+    "sidePitch": 0.1,
+    "maxPlants": 4
   },
   "litter": {
     "fallMonths": 1,
@@ -1091,5 +1463,145 @@
     "outwardFt": 0.14,
     "liftFt": 0.1,
     "twinkleHz": 0.45
+  },
+  "pricing": {
+    "currency": "$",
+    "plantByContainer": {
+      "1gal": 12,
+      "5gal": 44,
+      "15gal": 83,
+      "24box": 200
+    },
+    "source": "Median retail container prices from public nursery price lists: Growing Works (Turning Point Foundation, Santa Barbara County, California) retail availability list, February 2026, for 1, 5 and 10/15 gallon (about 280 priced plants); 24 inch box from the public price pages of GDNC Nursery and Moosa Creek Nursery. Hardscape prices are still stand-ins.",
+    "references": [
+      {
+        "name": "Growing Works retail availability, February 2026 (Turning Point Foundation)",
+        "url": "https://www.turningpointfoundation.org/assets/pdf/GrowingWorksBigsRetailAvailabilityFeb2026.pdf",
+        "covers": "1gal, 5gal, 15gal",
+        "note": "Median of every priced plant on the list: 1 gal $12 (quartiles 12 to 22, 183 plants), 2 gal $25, 5 gal $44 (quartiles 38 to 47, 283 plants), 10/15 gal $83 (quartiles 72 to 87, 283 plants). The list includes a clearance on succulents, which lowers the 1 gallon figures a little."
+      },
+      {
+        "name": "GDNC Nursery, general plant pricing",
+        "url": "https://gdncnursery.com/general-plant-pricing",
+        "covers": "15gal, 24box",
+        "note": "24 inch box trees $200 to $250; 15 gallon $120 (desert trees, retail)."
+      },
+      {
+        "name": "Moosa Creek Nursery wholesale availability",
+        "url": "https://moosacreeknursery.com/wholesale-availability",
+        "covers": "24box",
+        "note": "A 24 inch box tree $179.95 wholesale (San Diego County, California natives)."
+      },
+      {
+        "name": "USDA NASS Census of Horticultural Specialties (2024)",
+        "url": "https://www.nass.usda.gov/Publications/AgCensus/2022/Online_Resources/Census_of_Horticulture_Specialties/hortic_1_001_001.pdf",
+        "covers": "context",
+        "note": "National nursery stock sales by operation and container type; it reports dollars sold, not a price for each plant, so it is not used for the defaults."
+      }
+    ],
+    "reference": {
+      "1gal": {
+        "n": 183,
+        "min": 6,
+        "p25": 12,
+        "median": 12,
+        "p75": 22,
+        "max": 54
+      },
+      "5gal": {
+        "n": 283,
+        "min": 22,
+        "p25": 38,
+        "median": 44,
+        "p75": 47,
+        "max": 85
+      },
+      "15gal": {
+        "n": 283,
+        "min": 22,
+        "p25": 72,
+        "median": 83,
+        "p75": 87,
+        "max": 156
+      },
+      "24box": {
+        "n": 4,
+        "min": 179.95,
+        "p25": 200,
+        "median": 200,
+        "p75": 250,
+        "max": 250
+      }
+    }
+  },
+  "birthday": {
+    "zone": "back_yard",
+    "partyHoursBefore": 3,
+    "partyHoursAfter": 3,
+    "cakeMinutesBefore": 60,
+    "cakeMinutesAfter": 60,
+    "presents": {
+      "count": 9,
+      "nearTableShare": 0.65,
+      "nearTableFt": [
+        1.0,
+        6.5
+      ],
+      "sizeFt": [
+        0.7,
+        1.4
+      ],
+      "colors": [
+        "#e63946",
+        "#2a9d8f",
+        "#f4a261",
+        "#457b9d",
+        "#9b5de5",
+        "#ffd166",
+        "#06d6a0"
+      ],
+      "ribbons": [
+        "#ffffff",
+        "#ffd166",
+        "#e63946",
+        "#1d3557"
+      ]
+    },
+    "hat": {
+      "heightFt": 0.75,
+      "radiusFt": 0.28,
+      "colors": [
+        "#ff4d6d",
+        "#ffd60a",
+        "#4cc9f0",
+        "#7ae582",
+        "#b388ff",
+        "#ff9f1c"
+      ]
+    },
+    "cake": {
+      "widthFt": 1.3,
+      "heightFt": 0.55,
+      "candles": 7
+    },
+    "balloons": {
+      "perBunch": 5,
+      "sideFt": 1.3,
+      "outFt": 1.4,
+      "stringFt": [
+        4.2,
+        6.6
+      ],
+      "sizeFt": 0.52,
+      "colors": [
+        "#ff4d6d",
+        "#ffd60a",
+        "#4cc9f0",
+        "#7ae582",
+        "#b388ff",
+        "#ff9f1c"
+      ],
+      "swayFt": 0.28
+    }
   }
 }

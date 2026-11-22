@@ -67,10 +67,14 @@ export function takeoff(elements: HardscapeElement[], materials: Material[], cfg
   return { rows: list, total };
 }
 
-export function takeoffCsv(rows: TakeoffRow[]): string {
-  const head = ['Material', 'Count', 'Area (sq ft)', 'Edge (lin ft)', 'Surface (cu yd)', 'Base (cu yd)'];
+export function takeoffCsv(rows: TakeoffRow[], costs?: Map<string, { unitPrice: number; basis: string; total: number }>): string {
+  const head = ['Material', 'Count', 'Area (sq ft)', 'Edge (lin ft)', 'Surface (cu yd)', 'Base (cu yd)', ...(costs ? ['Price per unit (USD)', 'Unit', 'Total (USD)'] : [])];
   const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
-  const lines = rows.map((r) => [q(r.name), r.count, r.areaSf.toFixed(1), r.edgeLf.toFixed(1), r.surfaceCuYd.toFixed(2), r.baseCuYd.toFixed(2)].join(','));
+  const lines = rows.map((r) => {
+    const c = costs?.get(r.materialId);
+    return [q(r.name), r.count, r.areaSf.toFixed(1), r.edgeLf.toFixed(1), r.surfaceCuYd.toFixed(2), r.baseCuYd.toFixed(2), ...(costs ? [c ? c.unitPrice.toFixed(2) : '', q(c?.basis ?? ''), c ? c.total.toFixed(2) : ''] : [])].join(',');
+  });
+  if (costs) lines.push([q('Total'), '', '', '', '', '', '', '', [...costs.values()].reduce((a, c) => a + c.total, 0).toFixed(2)].join(','));
   return [head.map(q).join(','), ...lines].join('\n');
 }
 

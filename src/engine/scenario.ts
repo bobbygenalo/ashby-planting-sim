@@ -13,7 +13,7 @@ import { waterDemand } from './water';
 export const OWNER_PICKS = [
   'salvia-leucantha', 'oenothera-lindheimeri', 'achillea-millefolium', 'lomandra-longifolia', 'bougainvillea', 'lantana-montevidensis',
   'coleonema-pulchellum', 'coleonema-sunset-gold', 'polygala-myrtifolia', 'polygala-petite-butterflies', 'loropetalum-chinense',
-  'phormium-tenax', 'agapanthus-africanus', 'tulbaghia-violacea', 'phyla-nodiflora', 'juncus-patens', 'arctostaphylos-howard-mcminn',
+  'phormium-tenax', 'agapanthus-africanus', 'tulbaghia-violacea', 'phyla-nodiflora', 'juncus-patens', 'arctostaphylos-howard-mcminn', 'citrus-satsuma',
 ];
 
 /** What a scenario holds (SC-1): palette, plants, hardscape, hydrozones, and settings. */

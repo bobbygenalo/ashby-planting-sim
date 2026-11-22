@@ -196,7 +196,7 @@ describe('scenarios (SC-1, SC-2)', () => {
     expect(s.getState().scenarios[0].name).toBe('Scenario 1');
     expect(s.getState().activeScenarioId).toBe(s.getState().scenarios[0].id);
     expect(s.getState().hardscape.map((e) => e.id)).toEqual(['driveway']);
-    expect(Object.keys(s.getState().palette).length).toBe(17);
+    expect(Object.keys(s.getState().palette).length).toBe(18);
   });
 
   it('creates a blank scenario, parks the old one, and switches back without losing anything', () => {

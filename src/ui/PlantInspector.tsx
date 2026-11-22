@@ -77,6 +77,7 @@ export function PlantInspector({ growing }: { growing: SunHoursResult | null }) 
     <div className="inspector">
       <h3>{sp.common}</h3>
       <p className="muted small"><i>{sp.botanical}</i></p>
+      <div className="row"><button onClick={() => s.setGrowthStagesFor(sp.id)} title="See this plant at several ages, through the seasons">Growth stages…</button></div>
       <div className="row wrap">
         <PollBadge v={sp.pollinator.value} />
         {sp.origin === 'california native' && <span className="pill native">CA native</span>}

@@ -322,3 +322,6 @@ button.icon .feather { display: block; }
   .app.panel-closed { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 60vh; }
   .app.panel-closed .right { display: none; }
 }
+
+.dialog.wide { width: min(1100px, 100%); }
+.stagescanvas { position: relative; height: min(520px, 60vh); border-radius: 10px; overflow: hidden; background: #dfe7ee; }

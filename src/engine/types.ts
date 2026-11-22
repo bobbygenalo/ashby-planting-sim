@@ -323,6 +323,8 @@ export interface BranchCfg {
 }
 
 export interface EngineConfig {
+  /** The growth-stages view: the ages shown and the two camera heights (angled, side-on). */
+  growthStages: { years: number[]; anglePitch: number; sidePitch: number };
   crops: CropCfg;
   branches: BranchCfg;
   life: LifeCfg;

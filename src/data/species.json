@@ -3025,7 +3025,7 @@
       "fruit": {
         "shape": "sphere",
         "diameterFt": 0.3,
-        "ripeColor": "#c4bb4b",
+        "ripeColor": "#c62d2d",
         "unripeColor": "#86a84c",
         "ripeMonths": [
           10,
@@ -3100,7 +3100,7 @@
       "fruit": {
         "shape": "sphere",
         "diameterFt": 0.25,
-        "ripeColor": "#d9505f",
+        "ripeColor": "#d1303f",
         "unripeColor": "#8aa84c",
         "ripeMonths": [
           8,
@@ -3329,6 +3329,201 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, Calscape"
+      }
+    },
+    {
+      "id": "vaccinium-sunshine-blue",
+      "botanical": "Vaccinium corymbosum hybrid 'Sunshine Blue'",
+      "common": "Sunshine Blue blueberry",
+      "type": "edible",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 3.5,
+      "matureWidth": 3.5,
+      "yearsToMaturity": 4,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4
+      ],
+      "bloomColor": "#f6dfe6",
+      "foliageColor": "#3f6e45",
+      "pollinator": {
+        "value": "high",
+        "groups": [
+          "native bees",
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Compact southern highbush blueberry bred for mild-winter gardens (low chill, about 150 hours); stays leafy most of the year and suits a large pot or a raised bed. Needs acidic soil (pH 4.5 to 5.5) and steady moisture, so it is flagged wherever the soil is not acidic. Size, water, chill and fruiting months are general estimates.",
+      "soil": {
+        "drainageNeed": "fast",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "loamy sand"
+        ],
+        "phMin": 4.5,
+        "phMax": 5.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 4,
+        "minPavingFt": 2
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.06,
+        "ripeColor": "#3b4b8f",
+        "unripeColor": "#a5b36a",
+        "ripeMonths": [
+          5,
+          6
+        ],
+        "unripeMonths": [
+          3,
+          4
+        ],
+        "count": 110,
+        "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+      }
+    },
+    {
+      "id": "vaccinium-misty",
+      "botanical": "Vaccinium corymbosum hybrid 'Misty'",
+      "common": "Misty blueberry",
+      "type": "edible",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 5,
+      "matureWidth": 4,
+      "yearsToMaturity": 5,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4
+      ],
+      "bloomColor": "#faf1f3",
+      "foliageColor": "#2f6a4a",
+      "pollinator": {
+        "value": "high",
+        "groups": [
+          "native bees",
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Southern highbush blueberry for mild winters (low chill, about 300 hours), upright and a little taller than Sunshine Blue; semi-evergreen. Plant it with a second variety nearby for a heavier crop. Needs acidic soil (pH 4.5 to 5.5) and steady moisture. Size, water, chill and fruiting months are general estimates.",
+      "soil": {
+        "drainageNeed": "fast",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "loamy sand"
+        ],
+        "phMin": 4.5,
+        "phMax": 5.5
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 4,
+        "minPavingFt": 2
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.06,
+        "ripeColor": "#34478f",
+        "unripeColor": "#9fb06a",
+        "ripeMonths": [
+          4,
+          5,
+          6
+        ],
+        "unripeMonths": [
+          3
+        ],
+        "count": 140,
+        "source": "General estimate for display; ripening months vary with variety, year and microclimate."
+      }
+    },
+    {
+      "id": "rubus-arapaho",
+      "botanical": "Rubus fruticosus 'Arapaho'",
+      "common": "Arapaho blackberry (thornless)",
+      "type": "edible",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        12,
+        1
+      ],
+      "matureHeight": 5,
+      "matureWidth": 4,
+      "yearsToMaturity": 3,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4
+      ],
+      "bloomColor": "#fbf4f6",
+      "foliageColor": "#3e6b35",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "native bees",
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Thornless, upright blackberry with a low chill need that suits mild-winter gardens; canes fruit in their second year, so cut the old ones to the ground after harvest. Best on a wire or trellis a foot or two from a path. Fruit is eaten by birds and people alike. Size, water, chill and fruiting months are general estimates.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam"
+        ],
+        "phMin": 5.5,
+        "phMax": 6.8
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 4,
+        "minPavingFt": 2
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.07,
+        "ripeColor": "#241431",
+        "unripeColor": "#9a4a5c",
+        "ripeMonths": [
+          5,
+          6,
+          7
+        ],
+        "unripeMonths": [
+          4
+        ],
+        "count": 90,
+        "source": "General estimate for display; ripening months vary with variety, year and microclimate."
       }
     }
   ],

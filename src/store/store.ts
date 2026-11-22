@@ -106,6 +106,9 @@ export interface AppState {
   setLifeSettings: (patch: Partial<{ people: number; dogs: number; bees: boolean }>) => void;
   /** Whether the shuffle bar is showing over the yard (view state, not part of a scenario). */
   shuffleOpen: boolean;
+  /** The species whose growth-stages dialog is open, or null. */
+  growthStagesFor: string | null;
+  setGrowthStagesFor: (id: string | null) => void;
   setShuffleOpen: (open: boolean) => void;
   addMeasurePoint: (p: Pt) => void;
   clearMeasure: () => void;
@@ -354,6 +357,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       sunPeriod: 'day',
       measureActive: false,
       shuffleOpen: false,
+      growthStagesFor: null,
+      setGrowthStagesFor: (id) => set({ growthStagesFor: id }),
       lifeSettings: { people: 3, dogs: 2, bees: true },
       setLifeSettings: (patch) => set({ lifeSettings: { ...get().lifeSettings, ...patch } }),
       setShuffleOpen: (open) => set({ shuffleOpen: open }),

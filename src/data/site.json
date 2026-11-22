@@ -947,7 +947,7 @@
     },
     {
       "id": "front",
-      "label": "Front yard",
+      "label": "Front",
       "kind": "perspective",
       "position": [
         44,
@@ -962,7 +962,7 @@
     },
     {
       "id": "back",
-      "label": "Back yard",
+      "label": "Back",
       "kind": "perspective",
       "position": [
         30,
@@ -977,7 +977,7 @@
     },
     {
       "id": "adu",
-      "label": "ADU door",
+      "label": "ADU",
       "kind": "perspective",
       "position": [
         28,

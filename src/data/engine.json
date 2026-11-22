@@ -935,5 +935,16 @@
     "produceDisplayScale": 1.6,
     "produceMinFt": 0.12,
     "soilDepthFt": 0.1
+  },
+  "growthStages": {
+    "years": [
+      0,
+      2,
+      5,
+      10,
+      20
+    ],
+    "anglePitch": 0.7,
+    "sidePitch": 0.1
   }
 }

@@ -158,6 +158,7 @@ export function PlantsPanel() {
                 {sp.origin === 'california native' && <span className="pill native">CA native</span>}
                 {sp.invasive && <span className="pill warn">invasive</span>}
                 <span className="pill">{formatFeetInches(sp.matureHeight, 2)}×{formatFeetInches(sp.matureWidth, 2)}</span>
+                <button onClick={() => s.setGrowthStagesFor(sp.id)} title={`See ${sp.common} at several ages, through the seasons`}>Growth</button>
                 {edit && (
                   <button className={placing ? 'on' : ''} onClick={() => s.setPlacing(placing ? null : sp.id)}>
                     {placing ? 'Click the yard…' : 'Place'}

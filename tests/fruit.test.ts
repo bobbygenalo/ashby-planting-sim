@@ -14,9 +14,10 @@ const grown = (s: Species, fraction: number) => ({ planted: true, height: s.matu
 describe('fruit data', () => {
   const fruiting = lib.species.filter((s) => s.fruit);
 
-  it('covers the edible fruiting trees: apples, olives, lemon, kumquat, satsuma and persimmon', () => {
+  it('covers the edible fruiting plants: apples, olives, lemon, kumquat, satsuma, persimmon, two blueberries and a blackberry', () => {
     expect(fruiting.map((s) => s.id).sort()).toEqual([
       'citrus-kumquat', 'citrus-meyer-lemon', 'citrus-satsuma', 'diospyros-kaki-hachiya', 'malus-mutsu', 'malus-pink-pearl', 'olea-arbequina', 'olea-frantoio',
+      'rubus-arapaho', 'vaccinium-misty', 'vaccinium-sunshine-blue',
     ]);
     expect(fruiting.every((s) => s.type === 'edible')).toBe(true);
   });

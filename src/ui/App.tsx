@@ -7,6 +7,7 @@ import { OutputsPanel } from './OutputsPanel';
 import { LayoutPanel } from './LayoutPanel';
 import { ScenariosPanel } from './ScenariosPanel';
 import { Dialog } from './Dialog';
+import { GrowthStagesDialog } from './GrowthStagesDialog';
 import { TopBar } from './TopBar';
 import { CanvasToolbar } from './CanvasToolbar';
 import { SimDock } from './SimDock';
@@ -205,6 +206,7 @@ function Planner() {
         </div>
       </aside>
     </div>
+    <GrowthStagesDialog />
     {scenariosOpen && <Dialog title="Scenarios" onClose={() => setScenariosOpen(false)}><ScenariosPanel /></Dialog>}
     {sheetOpen && <PlanSheet />}
     </>

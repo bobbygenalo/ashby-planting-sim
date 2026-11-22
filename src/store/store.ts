@@ -338,7 +338,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setDrag: (id) => set({ dragId: get().mode === 'edit' ? id : null }),
       setPaletteSpecies: (id, on) => scenario({ palette: { ...get().palette, [id]: on } }),
       addInstance: (speciesId, position, opts = {}) => {
-        if (get().mode !== 'edit' || !get().palette[speciesId]) return null;
+        if (get().mode !== 'edit') return null;
         const id = uid('p');
         const inst: PlantInstance = {
           id,

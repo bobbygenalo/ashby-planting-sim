@@ -23,8 +23,10 @@ export function LayoutPanel({ growing }: { growing: SunHoursResult | null }) {
   const mine = s.conflicts.filter((c) => c.instanceIds.length > 0);
   const siteOnly = s.conflicts.filter((c) => c.instanceIds.length === 0);
   const errors = mine.filter((c) => c.severity === 'error').length;
-  const palette = useMemo(() => s.library.species.filter((sp) => s.palette[sp.id]).sort((a, b) => a.common.localeCompare(b.common)), [s.library, s.palette]);
-  const chosen = s.library.species.find((sp) => sp.id === (speciesId || palette[0]?.id));
+  const byName = (a: { common: string }, b: { common: string }) => a.common.localeCompare(b.common);
+  const shortlist = useMemo(() => s.library.species.filter((sp) => s.palette[sp.id]).sort(byName), [s.library, s.palette]);
+  const others = useMemo(() => s.library.species.filter((sp) => !s.palette[sp.id]).sort(byName), [s.library, s.palette]);
+  const chosen = s.library.species.find((sp) => sp.id === (speciesId || shortlist[0]?.id || others[0]?.id));
   const structures = activeStructures(s.site, { aduEnabled: s.aduEnabled });
   const sg = s.suggestion;
   const species = sg ? s.library.species.find((sp) => sp.id === sg.speciesId) : undefined;
@@ -96,7 +98,8 @@ export function LayoutPanel({ growing }: { growing: SunHoursResult | null }) {
       <div className="grid2">
         <label>Species
           <select value={chosen?.id ?? ''} onChange={(e) => setSpeciesId(e.target.value)}>
-            {palette.map((sp) => <option key={sp.id} value={sp.id}>{sp.common}</option>)}
+            {shortlist.length > 0 && <optgroup label="Starred">{shortlist.map((sp) => <option key={sp.id} value={sp.id}>{sp.common}</option>)}</optgroup>}
+            <optgroup label="All plants">{others.map((sp) => <option key={sp.id} value={sp.id}>{sp.common}</option>)}</optgroup>
           </select>
         </label>
         <label>Yard
@@ -120,7 +123,6 @@ export function LayoutPanel({ growing }: { growing: SunHoursResult | null }) {
         {sg && <button onClick={() => s.setSuggestion(null)}>Clear</button>}
         <label className="check"><input type="checkbox" checked={s.layers.suggestions} onChange={(e) => s.setLayer('suggestions', e.target.checked)} />Heatmap</label>
       </div>
-      {palette.length === 0 && <p className="muted small">Select a species in the Plants tab first.</p>}
 
       {sg && species && (
         <div>

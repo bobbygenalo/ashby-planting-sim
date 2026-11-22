@@ -191,14 +191,8 @@ export function ScenariosPanel() {
 
   return (
     <div className="scenarios">
-      <p className={`small savestatus ${s.saveStatus.state}`} role="status">
-        {s.saveStatus.state === 'saved' && `Saved in this browser at ${new Date(s.saveStatus.at!).toLocaleTimeString([], { timeStyle: 'short' })}. Changes save automatically.`}
-        {s.saveStatus.state === 'idle' && 'Changes save automatically in this browser.'}
-        {s.saveStatus.state === 'error' && s.saveStatus.message}
-      </p>
       {message && <p className={message.kind === 'ok' ? 'okmsg small' : 'warnings small'} role="status">{message.text}</p>}
 
-      <h2>Scenarios</h2>
       <ul className="species">
         {s.scenarios.map((sc) => {
           const active = sc.id === s.activeScenarioId;

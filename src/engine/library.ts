@@ -33,9 +33,13 @@ export function filterSpecies(all: Species[], f: LibraryFilter): Species[] {
   );
 }
 
-/** Instances whose species is selected in the palette. Deselected ones are hidden, not deleted (PL-4). */
-export function activeInstances(instances: PlantInstance[], palette: Record<string, boolean>): PlantInstance[] {
-  return instances.filter((i) => palette[i.speciesId]);
+/**
+ * Every placed plant is part of the scenario. The palette is only the owner's star shortlist (a way to find
+ * species quickly), so un-starring a species never hides plants already in the yard. The palette argument
+ * is kept so callers do not change.
+ */
+export function activeInstances(instances: PlantInstance[], _palette?: Record<string, boolean>): PlantInstance[] {
+  return instances;
 }
 
 export interface CustomSpeciesInput {

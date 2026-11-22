@@ -79,20 +79,19 @@ describe('library and palette', () => {
     expect(filterSpecies(lib.species, { text: 'cleveland' })[0].id).toBe('salvia-clevelandii');
   });
 
-  it('deselecting a species hides its instances and totals without deleting them', () => {
+  it('treats the palette as a star shortlist: it never hides placed plants, and any plant can be placed', () => {
     const a = inst('salvia-leucantha', { id: 'a' });
     const b = inst('salvia-clevelandii', { id: 'b' });
-    const on = { 'salvia-leucantha': true, 'salvia-clevelandii': true };
-    const off = { ...on, 'salvia-clevelandii': false };
-    expect(activeInstances([a, b], on)).toHaveLength(2);
-    expect(activeInstances([a, b], off).map((i) => i.id)).toEqual(['a']);
-    expect(placedPlants([a, b], off, lib.species, 0, engine.growth)).toHaveLength(1);
+    const off = { 'salvia-leucantha': true, 'salvia-clevelandii': false };
+    expect(activeInstances([a, b], off).map((i) => i.id)).toEqual(['a', 'b']);
+    expect(placedPlants([a, b], off, lib.species, 0, engine.growth)).toHaveLength(2);
     const store = makeAppStore('edit');
-    store.getState().setPaletteSpecies('salvia-clevelandii', true);
+    store.getState().setPaletteSpecies('salvia-clevelandii', false); // not starred
     const id = store.getState().addInstance('salvia-clevelandii', [20, 40])!;
+    expect(id).toBeTruthy();
+    store.getState().setPaletteSpecies('salvia-clevelandii', true);
     store.getState().setPaletteSpecies('salvia-clevelandii', false);
-    expect(store.getState().instances.some((i) => i.id === id)).toBe(true);
-    expect(activeInstances(store.getState().instances, store.getState().palette).some((i) => i.id === id)).toBe(false);
+    expect(activeInstances(store.getState().instances, store.getState().palette).some((i) => i.id === id)).toBe(true);
   });
 
   it('view mode cannot add, move or delete plants', () => {

@@ -41,3 +41,9 @@ Browser-based 3D planner for the 10641 Ashby Ave lot. Build brief: `Ashby Yard P
 ## Known gaps
 - Structure heights, tree positions and fence heights are placeholders flagged in `site.json`.
 - Convex footprints only for shadow casting. Use several structures for L-shapes until parts are supported.
+
+## Layout (UI)
+- Top bar: site, scenario switcher (New, Manage, Share open the scenarios dialog), save status, undo/redo. The scenario is the container for everything, so it leads.
+- Right panel has two levels: Design (Plants, Hardscape), Analyze (Layout, Water & soil, Pollinators, Sun hours), Outputs (plan sheet, schedules, model check, assumptions). Whatever is selected in the yard, plant or hardscape, opens in a `SelectionCard` floating over the panel on any tab.
+- Over the yard: view, layers and measure/snap at top left; one `SimDock` at the bottom for growth and sun.
+- The plant `palette` is only a star shortlist (any plant can be placed); it never hides placed plants.

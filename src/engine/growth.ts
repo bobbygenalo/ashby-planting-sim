@@ -84,10 +84,10 @@ export interface PlacedPlant {
   size: PlantSize;
 }
 
-/** Plants in the palette that exist at the timeline month, with their simulated size (PL-4, GR-2). */
+/** Plants that exist at the timeline month, with their simulated size (PL-4, GR-2). The palette is only a shortlist and does not filter. */
 export function placedPlants(
   instances: PlantInstance[],
-  palette: Record<string, boolean>,
+  _palette: Record<string, boolean>,
   species: Species[],
   timelineMonth: number,
   cfg: GrowthCfg,
@@ -95,7 +95,6 @@ export function placedPlants(
   const byId = new Map(species.map((s) => [s.id, s]));
   const out: PlacedPlant[] = [];
   for (const inst of instances) {
-    if (!palette[inst.speciesId]) continue;
     const sp = byId.get(inst.speciesId);
     if (!sp) continue;
     const size = instanceSize(inst, sp, timelineMonth, cfg);

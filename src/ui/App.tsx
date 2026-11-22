@@ -6,117 +6,35 @@ import { PollinatorPanel } from './PollinatorPanel';
 import { OutputsPanel } from './OutputsPanel';
 import { LayoutPanel } from './LayoutPanel';
 import { ScenariosPanel } from './ScenariosPanel';
+import { Dialog } from './Dialog';
+import { TopBar } from './TopBar';
+import { CanvasToolbar } from './CanvasToolbar';
+import { SimDock } from './SimDock';
+import { SelectionCard } from './SelectionCard';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
 import { startCloudSync } from '../store/cloudSync';
 import { loadSharedPlan, type LoadOutcome } from '../share/service';
 import { useAutosave } from '../store/persistence';
 import { SiteScene } from '../scene/SiteScene';
-import { solarPosition } from '../engine/solar';
-import { checkPrintedDimensions } from '../engine/site';
 import { zoneStats } from '../engine/sunhours';
-import { doyToMonthDay, localToUtc, monthDayToDoy, monthName, tzAbbrev } from '../engine/time';
-import { formatFeetInches } from '../engine/units';
 import { appStore, useApp } from '../store/store';
 import { useSunHours } from '../store/useSunHours';
 import { useConflictSync } from '../store/derived';
 
 type SunHook = ReturnType<typeof useSunHours>;
-type Tab = 'plants' | 'hardscape' | 'layout' | 'water' | 'pollinators' | 'sun' | 'outputs' | 'scenarios';
-const TABS: [Tab, string][] = [['plants', 'Plants'], ['hardscape', 'Hardscape'], ['layout', 'Layout'], ['water', 'Water & soil'], ['pollinators', 'Pollinators'], ['sun', 'Sun hours'], ['outputs', 'Outputs'], ['scenarios', 'Scenarios']];
+type Tab = 'plants' | 'hardscape' | 'layout' | 'water' | 'pollinators' | 'sun' | 'outputs';
+type Group = 'design' | 'analyze' | 'outputs';
+/** The right panel has two levels: what you are doing (design, analyze, outputs), then the tool for it. */
+const GROUPS: { id: Group; label: string; tabs: [Tab, string][] }[] = [
+  { id: 'design', label: 'Design', tabs: [['plants', 'Plants'], ['hardscape', 'Hardscape']] },
+  { id: 'analyze', label: 'Analyze', tabs: [['layout', 'Layout'], ['water', 'Water & soil'], ['pollinators', 'Pollinators'], ['sun', 'Sun hours']] },
+  { id: 'outputs', label: 'Outputs', tabs: [['outputs', 'Plan, schedules, checks']] },
+];
+const groupOf = (tab: Tab) => GROUPS.find((g) => g.tabs.some(([id]) => id === tab))!;
 
 const CLASS_LABELS = ['Shade', 'Part shade', 'Part sun', 'Full sun'];
 const CLASS_COLORS = ['#2d2d69', '#5082cd', '#f5aa37', '#ffe650'];
-
-function fmtTime(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = Math.floor(minutes % 60);
-  const ap = h >= 12 ? 'PM' : 'AM';
-  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${ap}`;
-}
-
-function Sidebar() {
-  const s = useApp((x) => x);
-  const edit = s.mode === 'edit';
-  const checks = useMemo(() => checkPrintedDimensions(s.site, 1), [s.site]);
-  const layerLabels: [keyof typeof s.layers, string][] = [
-    ['sunHours', 'Sun-hours overlay'],
-    ['dimensions', 'Dimensions'],
-    ['setbacks', 'Setback lines'],
-    ['easements', 'Easement'],
-    ['context', 'Trees, fences, pole'],
-    ['bloom', 'Bloom color on plants'],
-    ['conflicts', 'Conflict rings'],
-    ['suggestions', 'Placement heatmap'],
-  ];
-  return (
-    <aside className="sidebar">
-      <h1>{s.site.name}</h1>
-      <p className="muted">
-        {s.site.address}
-        <span className={`badge ${edit ? '' : 'view'}`}>{edit ? 'Edit' : 'View only'}</span>
-      </p>
-
-      <h2>Views</h2>
-      <div className="row wrap">
-        {s.site.views.map((v) => (
-          <button key={v.id} className={s.view === v.id ? 'on' : ''} onClick={() => s.setView(v.id)}>
-            {v.label}
-          </button>
-        ))}
-      </div>
-
-      <h2>Layers</h2>
-      {layerLabels.map(([k, label]) => (
-        <label key={k} className="check">
-          <input type="checkbox" checked={s.layers[k]} onChange={(e) => s.setLayer(k, e.target.checked)} />
-          {label}
-        </label>
-      ))}
-      <label className="check">
-        <input type="checkbox" checked={s.aduEnabled} disabled={!edit} onChange={(e) => s.setAduEnabled(e.target.checked)} />
-        Model the ADU{!edit && ' (plan setting, locked)'}
-      </label>
-
-      <h2>Measure</h2>
-      <div className="row">
-        <button className={s.measureActive ? 'on' : ''} onClick={() => s.setMeasureActive(!s.measureActive)}>
-          {s.measureActive ? 'Measuring: click 2 points' : 'Measure tool'}
-        </button>
-        <select value={s.snap} onChange={(e) => s.setSnap(Number(e.target.value))} aria-label="Snap grid">
-          {s.engine.scene.snapOptionsFt.map((v) => (
-            <option key={v} value={v}>
-              Snap {formatFeetInches(v)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <h2>Plan check</h2>
-      <p className="muted small">Printed dimensions vs. this model (tolerance 1 in).</p>
-      <table className="tbl">
-        <tbody>
-          {checks.map((c) => (
-            <tr key={c.id} className={c.ok ? '' : 'bad'}>
-              <td>{c.label}</td>
-              <td className="num">{formatFeetInches(c.measured, 16)}</td>
-              <td className="num">{c.ok ? '✓' : '✗'} {c.deltaInches >= 0 ? '+' : ''}{c.deltaInches.toFixed(2)}"</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h2>Assumptions</h2>
-      <ul className="assume">
-        {s.site.assumptions.map((a) => (
-          <li key={a.id}>
-            {a.estimate && <span className="tag">estimate</span>} {a.text}
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
-}
 
 function SunPanel({ sun }: { sun: SunHook }) {
   const s = useApp((x) => x);
@@ -161,95 +79,6 @@ function SunPanel({ sun }: { sun: SunHook }) {
         Hours are the daily average over the period (sampled weekly for ranges).
         {result && ` ${result.daysSampled} day${result.daysSampled === 1 ? '' : 's'} sampled.`}
       </p>
-    </div>
-  );
-}
-
-function SunBar() {
-  const s = useApp((x) => x);
-  const [month, day] = doyToMonthDay(s.doy);
-  const utc = localToUtc(s.site.timeZone, s.engine.referenceYear, month, day, 0, s.minutes);
-  const sun = solarPosition(utc, s.site.latitude, s.site.longitude, s.engine.sun.refraction);
-
-  useEffect(() => {
-    if (!s.playing) return;
-    const id = setInterval(() => {
-      const st = (() => { const m = s.minutes + 6; return m > 1320 ? 240 : m; })();
-      s.setMinutes(st);
-    }, 50);
-    return () => clearInterval(id);
-  });
-
-  return (
-    <div className="sunbar">
-      <div className="row wrap">
-        {s.engine.sun.presets.map((p) => (
-          <button key={p.id} className={s.doy === monthDayToDoy(p.month, p.day) ? 'on' : ''} onClick={() => s.setDoy(monthDayToDoy(p.month, p.day))}>
-            {p.label}
-          </button>
-        ))}
-        <button onClick={() => s.setPlaying(!s.playing)}>{s.playing ? '■ Stop' : '▶ Play day'}</button>
-        <strong className="readout">
-          {monthName(month)} {day}, {fmtTime(s.minutes)} {tzAbbrev(s.site.timeZone, utc)}
-        </strong>
-        <span className="muted small">
-          Sun az {sun.azimuthDeg.toFixed(1)}°, el {sun.elevationDeg.toFixed(1)}°{sun.elevationDeg <= 0 ? ' (below horizon)' : ''}
-        </span>
-      </div>
-      <div className="sliders">
-        <label>Date<input type="range" min={1} max={365} value={s.doy} onChange={(e) => s.setDoy(Number(e.target.value))} /></label>
-        <label>Time<input type="range" min={0} max={1439} step={5} value={s.minutes} onChange={(e) => s.setMinutes(Number(e.target.value))} /></label>
-      </div>
-    </div>
-  );
-}
-
-function TimelineBar() {
-  const s = useApp((x) => x);
-  const maxM = s.engine.timeline.maxYears * 12;
-  const years = Math.floor(s.timelineMonth / 12);
-  const months = s.timelineMonth % 12;
-
-  useEffect(() => {
-    if (!s.timelinePlaying) return;
-    const id = setInterval(() => {
-      const next = s.timelineMonth + 1;
-      if (next > maxM) s.setTimelinePlaying(false);
-      else s.setTimelineMonth(next);
-    }, 90);
-    return () => clearInterval(id);
-  });
-
-  return (
-    <div className="sunbar">
-      <div className="row wrap">
-        <strong>Growth timeline</strong>
-        {s.engine.timeline.presets.map((y) => (
-          <button key={y} className={s.timelineMonth === y * 12 ? 'on' : ''} onClick={() => s.setTimelineMonth(y * 12)}>
-            Year {y}
-          </button>
-        ))}
-        <button onClick={() => s.setTimelineMonth(0)}>Today</button>
-        <button onClick={() => s.setTimelinePlaying(!s.timelinePlaying)}>{s.timelinePlaying ? '■ Stop' : '▶ Grow'}</button>
-        <strong className="readout">Year {years}, month {months}</strong>
-      </div>
-      <div className="sliders one">
-        <label>Years<input type="range" min={0} max={maxM} value={s.timelineMonth} onChange={(e) => s.setTimelineMonth(Number(e.target.value))} /></label>
-      </div>
-    </div>
-  );
-}
-
-function UndoRedo() {
-  const edit = useApp((s) => s.mode === 'edit');
-  const past = useApp((s) => s.history.past.length);
-  const future = useApp((s) => s.history.future.length);
-  const undo = useApp((s) => s.undo);
-  const redo = useApp((s) => s.redo);
-  return (
-    <div className="undo">
-      <button title="Undo (Ctrl/Cmd+Z)" disabled={!edit || past === 0} onClick={undo}>↶</button>
-      <button title="Redo (Ctrl/Cmd+Shift+Z)" disabled={!edit || future === 0} onClick={redo}>↷</button>
     </div>
   );
 }
@@ -301,52 +130,54 @@ function Planner() {
   useConflictSync();
   const conflictCount = useApp((s) => s.conflicts.filter((c) => c.instanceIds.length > 0 && c.severity === 'error').length);
   const [tab, setTab] = useState<Tab>('plants');
-  const [controlsOpen, setControlsOpen] = useState(true);
-  // Picking something in the yard opens the panel that can act on it (plants or hardscape), when one of those two is showing.
-  const selPlant = useApp((s) => s.selectedId);
-  const selElement = useApp((s) => s.selectedElementId);
-  useEffect(() => {
-    if (selElement) setTab((t) => (t === 'plants' ? 'hardscape' : t));
-  }, [selElement]);
-  useEffect(() => {
-    if (selPlant) setTab((t) => (t === 'hardscape' ? 'plants' : t));
-  }, [selPlant]);
+  const [scenariosOpen, setScenariosOpen] = useState(false);
+  const group = groupOf(tab);
+  const go = (next: Tab) => {
+    if (next !== 'hardscape') appStore.getState().commitDrawing();
+    setTab(next);
+  };
   return (
     <>
     {shared && <div className="viewer-banner">Shared plan: {shared.name}. You are viewing a read-only copy; only the owner can change it.</div>}
     <div className="app">
-      <Sidebar />
+      <TopBar onScenarios={() => setScenariosOpen(true)} />
       <main className="stage">
         <SiteScene sunResult={sun.result} />
-        <div className="controls">
-          <button className="ctl-toggle" onClick={() => setControlsOpen(!controlsOpen)}>
-            {controlsOpen ? 'Hide timeline and sun controls' : 'Show timeline and sun controls'}
-          </button>
-          {controlsOpen && (
-            <>
-              <TimelineBar />
-              <SunBar />
-            </>
-          )}
-        </div>
+        <CanvasToolbar />
+        <SimDock />
       </main>
       <aside className="right">
-        <div className="tabs">
-          <UndoRedo />
-          {TABS.map(([id, label]) => (
-            <button key={id} className={tab === id ? 'on' : ''} onClick={() => { if (id !== 'hardscape') appStore.getState().commitDrawing(); setTab(id); }}>{label}{id === 'layout' && conflictCount > 0 ? ` (${conflictCount})` : ''}</button>
-          ))}
+        <nav className="rightnav" aria-label="Planner sections">
+          <div className="segmented" role="tablist">
+            {GROUPS.map((g) => (
+              <button key={g.id} role="tab" aria-selected={group.id === g.id} className={group.id === g.id ? 'on' : ''} onClick={() => go(g.tabs[0][0])}>
+                {g.label}{g.id === 'analyze' && conflictCount > 0 ? ` (${conflictCount})` : ''}
+              </button>
+            ))}
+          </div>
+          {group.tabs.length > 1 && (
+            <div className="subtabs" role="tablist">
+              {group.tabs.map(([id, label]) => (
+                <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => go(id)}>{label}{id === 'layout' && conflictCount > 0 ? ` (${conflictCount})` : ''}</button>
+              ))}
+            </div>
+          )}
+        </nav>
+        <div className="rightstack">
+          <div className="rightscroll">
+            {tab === 'plants' && <PlantsPanel />}
+            {tab === 'hardscape' && <HardscapePanel />}
+            {tab === 'layout' && <LayoutPanel growing={sun.growing} />}
+            {tab === 'water' && <WaterSoilPanel />}
+            {tab === 'pollinators' && <PollinatorPanel growing={sun.growing} />}
+            {tab === 'sun' && <SunPanel sun={sun} />}
+            {tab === 'outputs' && <OutputsPanel />}
+          </div>
+          <SelectionCard growing={sun.growing} />
         </div>
-        {tab === 'plants' && <PlantsPanel growing={sun.growing} />}
-        {tab === 'hardscape' && <HardscapePanel />}
-        {tab === 'layout' && <LayoutPanel growing={sun.growing} />}
-        {tab === 'water' && <WaterSoilPanel />}
-        {tab === 'pollinators' && <PollinatorPanel growing={sun.growing} />}
-        {tab === 'sun' && <SunPanel sun={sun} />}
-        {tab === 'outputs' && <OutputsPanel />}
-        {tab === 'scenarios' && <ScenariosPanel />}
       </aside>
     </div>
+    {scenariosOpen && <Dialog title="Scenarios" onClose={() => setScenariosOpen(false)}><ScenariosPanel /></Dialog>}
     {sheetOpen && <PlanSheet />}
     </>
   );

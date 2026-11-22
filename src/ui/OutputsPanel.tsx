@@ -4,6 +4,7 @@ import { plantSchedule, scheduleCsv } from '../engine/schedule';
 import { formatFeetInches } from '../engine/units';
 import { usePlaced } from '../store/derived';
 import { useApp } from '../store/store';
+import { ModelCheck } from './ModelCheck';
 
 function download(name: string, csv: string) {
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -48,7 +49,7 @@ export function OutputsPanel() {
           <div className="row"><button onClick={() => download('plant-schedule.csv', scheduleCsv(rows))}>Download CSV</button></div>
         </>
       )}
-      <p className="muted small">Spacing is on center, equal to mature width. Quantities are the plants in the palette; deselected species are left out.</p>
+      <p className="muted small">Spacing is on center, equal to mature width. Quantities are every plant placed in this scenario.</p>
 
       <h2>Assumptions and sources</h2>
       {todo.length > 0 && (
@@ -72,6 +73,7 @@ export function OutputsPanel() {
           </dl>
         </details>
       ))}
+      <ModelCheck />
     </div>
   );
 }

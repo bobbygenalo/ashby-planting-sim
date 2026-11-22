@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { solarPosition } from '../engine/solar';
 import { doyToMonthDay, localToUtc, monthDayToDoy, monthName, tzAbbrev } from '../engine/time';
 import { useApp } from '../store/store';
@@ -16,6 +16,7 @@ export function fmtTime(minutes: number) {
 export function SimDock() {
   const s = useApp((x) => x);
   const [open, setOpen] = useState(true);
+  const dayAcc = useRef(s.doy);
   const maxM = s.engine.timeline.maxYears * 12;
   const years = s.timelineMonth / 12;
   const [month, day] = doyToMonthDay(s.doy);
@@ -27,9 +28,13 @@ export function SimDock() {
   useEffect(() => {
     if (!s.timelinePlaying) return;
     const id = setInterval(() => {
-      const next = s.timelineMonth + 1;
-      if (next > maxM) s.setTimelinePlaying(false);
-      else s.setTimelineMonth(next);
+      // At the end of the timeline, play wraps back to the start and keeps going; the calendar carries on unbroken.
+      const next = s.timelineMonth + 1 > maxM ? 0 : s.timelineMonth + 1;
+      s.setTimelineMonth(next);
+      // The calendar turns with the growth, so the seasons change in the yard: leaves, fruit and the raised beds.
+      if (Math.round(dayAcc.current) !== s.doy) dayAcc.current = s.doy; // the date was moved by hand
+      dayAcc.current = ((dayAcc.current - 1 + s.engine.timeline.daysPerStep) % 365) + 1;
+      s.setDoy(Math.round(dayAcc.current));
     }, 90);
     return () => clearInterval(id);
   });
@@ -53,7 +58,7 @@ export function SimDock() {
   return (
     <div className="simdock">
       <div className="sim-half">
-        <button className="icon" aria-label={s.timelinePlaying ? 'Stop growth' : 'Play growth'} title="Grow the plants" onClick={() => s.setTimelinePlaying(!s.timelinePlaying)}>{s.timelinePlaying ? '■' : '▶'}</button>
+        <button className="icon" aria-label={s.timelinePlaying ? 'Stop growth' : 'Play growth'} title="Grow the plants; the calendar moves with them, so the seasons change" onClick={() => s.setTimelinePlaying(!s.timelinePlaying)}>{s.timelinePlaying ? '■' : '▶'}</button>
         <span className="sim-title">Growth</span>
         <output className="readout" title="Plants shown at this point in the timeline">{growthLabel}</output>
         <input type="range" aria-label="Years from today" min={0} max={maxM} value={s.timelineMonth} onChange={(e) => s.setTimelineMonth(Number(e.target.value))} />

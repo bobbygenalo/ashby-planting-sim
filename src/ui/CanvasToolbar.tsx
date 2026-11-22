@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { formatFeetInches } from '../engine/units';
 import { useApp } from '../store/store';
 
 const LAYERS = [
@@ -10,6 +9,7 @@ const LAYERS = [
   ['context', 'Trees, fences, pole'],
   ['bloom', 'Bloom color on plants'],
   ['fruit', 'Fruit on trees'],
+  ['crops', 'Raised-bed crops'],
   ['life', 'People, dogs and bees'],
   ['conflicts', 'Conflict rings'],
   ['suggestions', 'Placement heatmap'],
@@ -71,12 +71,6 @@ export function CanvasToolbar() {
           </div>
         )}
       </div>
-      <button className={s.measureActive ? 'on' : ''} onClick={() => s.setMeasureActive(!s.measureActive)}>{s.measureActive ? 'Measuring: click 2 points' : 'Measure'}</button>
-      <label className="pillctl">Snap
-        <select value={s.snap} onChange={(e) => s.setSnap(Number(e.target.value))} aria-label="Snap grid">
-          {s.engine.scene.snapOptionsFt.map((v) => <option key={v} value={v}>{formatFeetInches(v)}</option>)}
-        </select>
-      </label>
       </div>
     </div>
   );

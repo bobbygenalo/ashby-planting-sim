@@ -1,5 +1,7 @@
 import { circleOverlapsPolygon, distanceToPolygon, lineToPolygon, pointInPolygon, polygonsIntersect } from './geometry';
 import { footprint } from './hardscape';
+import { routePaths, type Hub } from './pathnet';
+import { lightSuits, roomRatio, shadesRaisedBed, type SunMap } from './placement';
 import type { ScenarioData } from './scenario';
 import { emptyScenarioData } from './scenario';
 import type { ConceptAreaCfg, EngineConfig, HardscapeElement, HardscapeType, Material, PlantInstance, Pt, SiteConfig, Species, StructureCfg } from './types';
@@ -21,6 +23,8 @@ export interface ConceptContext {
   engine: EngineConfig;
   /** The scenario's starred palette. */
   palette: Record<string, boolean>;
+  /** Growing-season sun hours across the lot. When given, plants go only where their light need is met. */
+  sunMap?: SunMap;
 }
 
 export interface ConceptCounts {
@@ -77,6 +81,7 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
     ...ctx.site.easements.map((e) => e.polygon),
   ];
   const trees = ctx.site.contextObjects.filter((o) => o.kind === 'tree' && o.position);
+  const doors = (ctx.site.doors ?? []).filter((d) => ctx.structures.some((st) => (st.group ?? st.id) === d.building));
   const placed: HardscapeElement[] = [];
   const polyOf = new Map<string, Pt[]>();
 
@@ -120,6 +125,75 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
   };
   const materialName = (id: string) => matsById.get(id)?.name.toLowerCase() ?? id;
 
+  /**
+   * Garden paths join the places people go. Early, before beds and plants take the room, they link the patio, every
+   * door and any lawn or deck; late, once the plants are down, they reach the fruit trees people will harvest, joining
+   * the paths already there.
+   */
+  const usedMaterials: string[] = [];
+  const planPaths = (phase: 'early' | 'late', plants: PlantInstance[]) => {
+    const pp = cfg.path;
+    const half = pp.width / 2;
+    const clear = half + pp.clearFt;
+    const paths = placed.filter((e) => e.type === 'path');
+    const areaPolys = placed.filter((e) => e.type !== 'path').map((e) => polyOf.get(e.id)!);
+    const hubPolys = placed.filter((e) => ['patio', 'lawn', 'deck'].includes(e.type)).map((e) => ({ el: e, poly: polyOf.get(e.id)! }));
+    const fixed = [...base.hardscape.filter((e) => !e.removed).map((e) => footprint(e, ctx.engine.hardscape)), ...ctx.site.easements.map((e) => e.polygon)];
+    const discs = [
+      ...trees.map((o) => ({ x: o.position![0], y: o.position![1], r: (o.canopyWidth ?? 10) / 2 + half })),
+      ...plants.map((i) => {
+        const sp = ctx.species.find((q) => q.id === i.speciesId)!;
+        return { x: i.position[0], y: i.position[1], r: Math.min(sp.matureWidth / 2, pp.plantMaxRadiusFt) + half + 0.3 };
+      }),
+    ];
+    let hubs: Hub[];
+    if (phase === 'early') {
+      hubs = [
+        ...hubPolys.filter((h) => h.el.type === 'patio').map((h) => ({ id: h.el.id, label: 'the patio', polygon: h.poly })),
+        ...doors.map((d) => ({ id: d.id, label: d.label.toLowerCase(), door: { point: d.point, outward: d.outward } })),
+        // The front door's walk goes out to the street; the garage opens onto the driveway and needs none.
+        ...doors.filter((d) => d.outward[1] < 0 && d.building === 'house').map((d) => ({ id: `street-${d.id}`, label: 'the street', door: { point: [d.point[0], 0] as Pt, outward: [0, 1] as Pt } })),
+        ...hubPolys.filter((h) => h.el.type !== 'patio').map((h) => ({ id: h.el.id, label: h.el.name?.toLowerCase() ?? h.el.type, polygon: h.poly })),
+      ];
+    } else {
+      const doorDist = (x: number, y: number) => Math.min(...doors.map((d) => Math.hypot(d.point[0] - x, d.point[1] - y)), Infinity);
+      const fruiting = plants
+        .map((i) => ({ i, sp: ctx.species.find((q) => q.id === i.speciesId)! }))
+        .filter(({ sp }) => !!sp.fruit)
+        .sort((a, b) => doorDist(a.i.position[0], a.i.position[1]) - doorDist(b.i.position[0], b.i.position[1]))
+        .slice(0, pp.maxFruitHubs);
+      hubs = fruiting.map(({ i, sp }) => {
+        const stand = Math.min(sp.matureWidth / 2, pp.plantMaxRadiusFt) + pp.fruitStandFt;
+        // The tree's own blocker is just wide enough to keep the path off the trunk.
+        discs.find((q) => q.x === i.position[0] && q.y === i.position[1])!.r = stand + half + 0.2;
+        return { id: i.id, label: `the ${sp.common.toLowerCase()}`, tree: { x: i.position[0], y: i.position[1], stand } };
+      });
+    }
+    if (hubs.length === 0 || pp.max - paths.length <= 0) return;
+    const hubPolyList = hubPolys.map((h) => h.poly);
+    const net = routePaths({
+      lot: ctx.site.lot, lotMarginFt: cfg.lotMarginFt, halfWidth: half, gridFt: pp.gridFt,
+      blockers: [...ctx.structures.map((st) => ({ poly: st.footprint, clear })), ...[...fixed, ...areaPolys].map((poly) => ({ poly, clear }))],
+      discs, hubs, maxPaths: pp.max - paths.length, reuse: pp.reuse, snap: ([x, y]) => [snap(x), snap(y)],
+      seeds: paths.map((e) => e.points),
+      accept: (line) => {
+        const poly = lineToPolygon(line, pp.width);
+        if (ctx.structures.some((st) => polygonsIntersect(poly, st.footprint))) return false;
+        if (fixed.some((f) => polygonsIntersect(poly, f))) return false;
+        return !areaPolys.some((a) => !hubPolyList.includes(a) && polygonsIntersect(poly, a));
+      },
+    });
+    const label = (id: string) => hubs.find((h) => h.id === id)?.label;
+    for (const route of net) {
+      const choices = pp.materials.filter((m) => !usedMaterials.includes(m));
+      const material = pick(rng, choices.length ? choices : pp.materials);
+      usedMaterials.push(material);
+      const to = route.to === 'path' ? 'the path' : label(route.to);
+      add(make('path', route.points, `Path ${number('path')} to ${label(route.from)}${to ? ` and ${to}` : ''}, ${materialName(material)}`, material));
+      counts.path++;
+    }
+  };
+
   /** Place a rectangle somewhere its area allows; returns its outline, or null when there is no room. */
   const placeArea = (area: ConceptAreaCfg, gap: number, swap = false): Pt[] | null => {
     for (let i = 0; i < area.attempts; i++) {
@@ -142,7 +216,6 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
   const raised: Pt[][] = [];
   const mulches: Pt[][] = [];
   const gravels: Pt[][] = [];
-  let patioPoly: Pt[] | null = null;
 
   if (opts.hardscape && theme) {
     const gap = cfg.beds.gapFt;
@@ -164,7 +237,7 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
       if (found.length > 0) {
         found.sort((a, b) => a.near - b.near);
         const paving = ctx.materials.filter((m) => m.category === 'paving');
-        patioPoly = add(make('patio', found[0].poly, 'Patio', paving.length ? pick(rng, paving).id : undefined));
+        add(make('patio', found[0].poly, 'Patio', paving.length ? pick(rng, paving).id : undefined));
         counts.patio = 1;
       } else notes.push('No room for a patio.');
     }
@@ -184,6 +257,7 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
         counts.deck = 1;
       }
     }
+    planPaths('early', []);
     for (let n = 0, want = betweenInt(rng, theme.gravel); n < want; n++) {
       const poly = placeArea(cfg.areas.gravel, gap);
       if (!poly) break;
@@ -238,34 +312,6 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
       counts.raisedBeds++;
     }
 
-    // Garden paths leave the patio first, then other places, each a different material where it can be.
-    const pp = cfg.path;
-    const sources = (): Pt[][] => [...(patioPoly ? [patioPoly] : []), ...[...polyOf.values()].filter((p) => p !== patioPoly && !placed.some((e) => e.type === 'path' && polyOf.get(e.id) === p))];
-    const wantPaths = Math.min(pp.max, betweenInt(rng, theme.paths));
-    const usedMaterials: string[] = [];
-    for (let n = 0; n < wantPaths; n++) {
-      const from = n === 0 && patioPoly ? patioPoly : pick(rng, sources().length ? sources() : [patioPoly ?? rect(0, 0, 1, 1)]);
-      const xs = from.map((p) => p[0]), ys = from.map((p) => p[1]);
-      const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-      for (let i = 0; i < pp.attempts; i++) {
-        const side = Math.floor(rng() * 4);
-        const start: Pt = side === 0 ? [Math.min(...xs), cy] : side === 1 ? [Math.max(...xs), cy] : side === 2 ? [cx, Math.min(...ys)] : [cx, Math.max(...ys)];
-        const angle = rng() * Math.PI * 2;
-        const len = between(rng, pp.length);
-        const mid: Pt = [snap(start[0] + Math.cos(angle) * len * 0.5), snap(start[1] + Math.sin(angle) * len * 0.5)];
-        const end: Pt = [snap(mid[0] + Math.cos(angle + (rng() - 0.5)) * len * 0.5), snap(mid[1] + Math.sin(angle + (rng() - 0.5)) * len * 0.5)];
-        const line: Pt[] = [[snap(start[0]), snap(start[1])], mid, end];
-        // The first stretch starts on its source's edge, so only the rest has to avoid that.
-        if (!fits(lineToPolygon(line, pp.width), ['back_yard', ...cfg.plants.zones], 0, from)) continue;
-        if (polygonsIntersect(lineToPolygon(line.slice(1), pp.width), from)) continue;
-        const choices = pp.materials.filter((m) => !usedMaterials.includes(m));
-        const material = pick(rng, choices.length ? choices : pp.materials);
-        usedMaterials.push(material);
-        add(make('path', line, `Path ${number('path')}, ${materialName(material)}`, material));
-        counts.path++;
-        break;
-      }
-    }
     if (counts.beds + counts.raisedBeds + counts.mulch + counts.gravel === 0) notes.push('No room for beds.');
   }
 
@@ -300,6 +346,8 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
       for (let k = 0; k < target_n; k++) {
         const candidates = treesPlaced >= pc.maxTrees ? family.filter((s) => s.type !== 'tree') : family;
         if (candidates.length === 0) break;
+        // A species that finds no spot with the light it needs and room to grow gives way to another draw.
+        for (let tryNo = 0, done = false; tryNo < pc.speciesTries && !done; tryNo++) {
         const sp = draw(candidates);
         for (let attempt = 0; attempt < pc.attempts; attempt++) {
           let p: Pt;
@@ -321,19 +369,21 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
           if (base.hardscape.some((e) => pointInPolygon(p[0], p[1], footprint(e, ctx.engine.hardscape)))) continue;
           if (ctx.site.easements.some((e) => pointInPolygon(p[0], p[1], e.polygon))) continue;
           if (trees.some((o) => Math.hypot(o.position![0] - p[0], o.position![1] - p[1]) < (o.canopyWidth ?? 10) / 2)) continue;
-          const crowded = instances.some((o) => {
-            const osp = ctx.species.find((s) => s.id === o.speciesId)!;
-            // Groundcovers can run under taller plants; everything else needs room at maturity.
-            if ((osp.type === 'groundcover') !== (sp.type === 'groundcover')) return false;
-            return Math.hypot(o.position[0] - p[0], o.position[1] - p[1]) < pc.overlapAllowance * (osp.matureWidth + sp.matureWidth) / 2;
-          });
-          if (crowded) continue;
+          if (placed.some((e) => e.type === 'path' && distanceToPolygon(p[0], p[1], polyOf.get(e.id)!) < cfg.path.plantEdgeFt)) continue;
+          if (opts.hardscape && doors.some((d) => Math.hypot(d.point[0] - p[0], d.point[1] - p[1]) < cfg.path.doorKeepClearFt)) continue;
+          // Light: a sun lover is not put in shade, nor a shade plant in full sun.
+          if (!lightSuits(sp, p, ctx.sunMap, ctx.engine)) continue;
+          // Room: neighbors keep their distance at mature size, and a tree's full canopy stays off raised beds.
+          if (roomRatio(sp, p, instances.map((o) => ({ position: o.position, species: ctx.species.find((q) => q.id === o.speciesId)! })), pc.overlapAllowance) < 1) continue;
+          if (shadesRaisedBed(sp, p, raised)) continue;
           instances.push({
             id: `c-plant-${k}`, speciesId: sp.id, position: p, plantedMonth: 0,
             container: (sp.type === 'tree' ? pc.treeContainer : pc.container) as PlantInstance['container'], existing: false,
           });
           if (sp.type === 'tree') treesPlaced++;
+          done = true;
           break;
+        }
         }
       }
       counts.plants = instances.length;
@@ -341,6 +391,8 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
       if (instances.length === 0) notes.push('No room for plants.');
     }
   }
+
+  if (opts.hardscape && theme) planPaths('late', instances);
 
   const hardscape = [...base.hardscape, ...placed];
   return { data: { ...base, palette: { ...ctx.palette }, hardscape, instances }, counts, theme: theme?.label ?? '', notes };

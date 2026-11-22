@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { doyToMonthDay, monthName } from '../engine/time';
 import type { ShuffleOptions } from '../engine/shuffle';
 import { useApp, type ConceptSummary, type ShuffleSummary } from '../store/store';
@@ -12,6 +12,16 @@ const CHOICES: { key: keyof ShuffleOptions; label: string; help: string }[] = [
   { key: 'colors', label: 'Colors', help: 'Try different colors on new hardscape.' },
   { key: 'time', label: 'Time', help: 'Jump to a random year of growth and a random date and time of day.' },
 ];
+
+/** A labelled checkbox: each option is an independent on/off choice. */
+function Check({ checked, onChange, label, title, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; title?: string; disabled?: boolean }) {
+  return (
+    <label className={`check ${disabled ? 'disabled' : ''}`} title={title}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+      <span>{label}</span>
+    </label>
+  );
+}
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -54,6 +64,20 @@ export function ShuffleBar() {
   const [copy, setCopy] = useState(true);
   const [seedText, setSeedText] = useState('');
   const [last, setLast] = useState<Last | null>(null);
+  // Sit just beneath the view buttons, which wrap onto more rows in a narrow yard.
+  const bar = useRef<HTMLDivElement>(null);
+  const [top, setTop] = useState(54);
+  useEffect(() => {
+    if (!open) return;
+    const views = bar.current?.parentElement?.querySelector('.viewbar');
+    const stage = bar.current?.parentElement;
+    if (!views || !stage) return;
+    const place = () => setTop(Math.round(views.getBoundingClientRect().bottom - stage.getBoundingClientRect().top + 8));
+    place();
+    const ro = new ResizeObserver(place);
+    ro.observe(views);
+    return () => ro.disconnect();
+  }, [open]);
   if (!open) return null;
 
   const stars = Object.values(palette).filter(Boolean).length;
@@ -112,9 +136,9 @@ export function ShuffleBar() {
       : `Builds a brand-new plan in a new scenario, ignoring what is placed in "${activeName}". Each one picks a theme and mixes a patio, deck, lawn, gravel, mulch, beds, raised beds and paths, each in its own color. ${concept.plants ? (concept.starredOnly ? `Plants come only from your ${stars} starred.` : 'Plants come from the whole library.') : ''}`;
 
   return (
-    <div className="shufflebar" role="group" aria-label="Shuffle">
-      <div className="segmented small" role="tablist" aria-label="Shuffle mode">
-        <button role="tab" aria-selected={mode === 'vary'} className={mode === 'vary' ? 'on' : ''} onClick={() => setMode('vary')}>Vary this scenario</button>
+    <div className="shufflebar" ref={bar} style={{ top, maxHeight: `calc(100% - ${top}px - 110px)` }} role="group" aria-label="Shuffle">
+      <div className="modetabs" role="tablist" aria-label="Shuffle mode">
+        <button role="tab" aria-selected={mode === 'vary'} className={mode === 'vary' ? 'on' : ''} onClick={() => setMode('vary')}>Scenario data</button>
         <button role="tab" aria-selected={mode === 'concept'} className={mode === 'concept' ? 'on' : ''} onClick={() => setMode('concept')}>New concept</button>
       </div>
       <button className="on" disabled={none || badSeed || (mode === 'concept' && concept.plants && concept.starredOnly && stars < minPool && !concept.hardscape)} onClick={roll}>
@@ -125,23 +149,25 @@ export function ShuffleBar() {
         <>
           <span className="chips" role="group" aria-label="What to shuffle">
             {CHOICES.map((o) => (
-              <button key={o.key} className={`chip ${opts[o.key] ? 'on' : ''}`} aria-pressed={!!opts[o.key]} title={o.help} onClick={() => setOpts({ ...opts, [o.key]: !opts[o.key] })}>{o.label}</button>
+              <Check key={o.key} checked={!!opts[o.key]} label={o.label} title={o.help} onChange={(v) => setOpts({ ...opts, [o.key]: v })} />
             ))}
           </span>
-          <button className={`chip ${starredVary ? 'on' : ''}`} aria-pressed={starredVary} disabled={!opts.species} title="Swap plants only for ones starred in this scenario's palette" onClick={() => setStarredVary(!starredVary)}>★ Starred only ({stars})</button>
-          <button
-            className={`chip ${inCopy ? 'on' : ''}`}
-            aria-pressed={inCopy}
-            disabled={!changesPlan}
-            title={inCopy ? 'Results go in a new scenario; this one stays as it is. Click to change this scenario instead (Undo brings it back).' : 'This scenario changes. Undo (Cmd/Ctrl+Z) brings it back. Click to shuffle into a copy.'}
-            onClick={() => setCopy(!copy)}
-          >In a copy</button>
+          <span className="chips" role="group" aria-label="Options">
+            <Check checked={starredVary} disabled={!opts.species} label={`★ Starred only (${stars})`} title="Swap plants only for ones starred in this scenario's palette" onChange={setStarredVary} />
+            <Check
+              checked={inCopy}
+              disabled={!changesPlan}
+              label="In a copy"
+              title={inCopy ? 'Results go in a new scenario; this one stays as it is. Untick to change this scenario instead (Undo brings it back).' : 'This scenario changes. Undo (Cmd/Ctrl+Z) brings it back. Tick to shuffle into a copy.'}
+              onChange={setCopy}
+            />
+          </span>
         </>
       ) : (
         <span className="chips" role="group" aria-label="What to build">
-          <button className={`chip ${concept.hardscape ? 'on' : ''}`} aria-pressed={concept.hardscape} title="A patio, a garden path and planting beds in free space" onClick={() => setConcept({ ...concept, hardscape: !concept.hardscape })}>Hardscape</button>
-          <button className={`chip ${concept.plants ? 'on' : ''}`} aria-pressed={concept.plants} title="Plants placed in the beds and open ground, with room to grow" onClick={() => setConcept({ ...concept, plants: !concept.plants })}>Plants</button>
-          <button className={`chip ${concept.starredOnly ? 'on' : ''}`} aria-pressed={concept.starredOnly} disabled={!concept.plants} title={concept.starredOnly ? 'Plants come only from your starred palette. Click to use the whole library.' : 'Plants come from the whole library. Click to use only your starred palette.'} onClick={() => setConcept({ ...concept, starredOnly: !concept.starredOnly })}>★ Starred only ({stars})</button>
+          <Check checked={concept.hardscape} label="Hardscape" title="Patio, paths, lawn, gravel, mulch and beds in free space" onChange={(v) => setConcept({ ...concept, hardscape: v })} />
+          <Check checked={concept.plants} label="Plants" title="Plants placed in the beds and open ground, with room to grow" onChange={(v) => setConcept({ ...concept, plants: v })} />
+          <Check checked={concept.starredOnly} disabled={!concept.plants} label={`★ Starred only (${stars})`} title={concept.starredOnly ? 'Plants come only from your starred palette. Untick to use the whole library.' : 'Plants come from the whole library. Tick to use only your starred palette.'} onChange={(v) => setConcept({ ...concept, starredOnly: v })} />
         </span>
       )}
       <input className="seedbox" inputMode="numeric" value={seedText} placeholder="Seed" aria-label="Seed (optional, a whole number)" aria-invalid={badSeed} title="Type the seed from an earlier roll to get the same result again" onChange={(e) => setSeedText(e.target.value)} />

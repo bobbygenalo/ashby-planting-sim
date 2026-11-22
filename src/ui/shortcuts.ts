@@ -5,6 +5,7 @@ export interface KeyLike {
   ctrlKey: boolean;
   altKey: boolean;
   shiftKey?: boolean;
+  repeat?: boolean;
 }
 
 /**
@@ -15,4 +16,10 @@ export function viewForKey(views: { id: string }[], e: KeyLike): string | null {
   if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return null;
   if (!/^[1-9]$/.test(e.key)) return null;
   return views[Number(e.key) - 1]?.id ?? null;
+}
+
+/** The space bar on its own plays and pauses growth. Held-down repeats and combinations with other keys are ignored. */
+export function isPlayPauseKey(e: KeyLike): boolean {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return false;
+  return e.key === ' ' || e.key === 'Spacebar';
 }

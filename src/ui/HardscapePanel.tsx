@@ -22,7 +22,7 @@ export function HardscapePanel() {
   const edit = s.mode === 'edit';
   const cfg = s.engine.hardscape;
   const matById = useMemo(() => new Map(s.materials.map((m) => [m.id, m])), [s.materials]);
-  const types = Object.keys(cfg.types) as HardscapeType[];
+  const types = (Object.keys(cfg.types) as HardscapeType[]).filter((t) => !cfg.notDrawable?.includes(t));
 
   const tk = useMemo(() => takeoff(s.hardscape, s.materials, cfg), [s.hardscape, s.materials, cfg]);
   const perm = useMemo(

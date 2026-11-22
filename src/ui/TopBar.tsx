@@ -3,6 +3,15 @@ import { useCloudState } from '../store/cloudSync';
 import { useApp } from '../store/store';
 import { ShuffleControl } from './ShuffleControl';
 
+/** A 24-unit stroke icon in the style of Feather icons: 2 px round lines, no fill, in the current text color. */
+function FeatherIcon({ d }: { d: string[] }) {
+  return (
+    <svg className="feather" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {d.map((path) => <path key={path} d={path} />)}
+    </svg>
+  );
+}
+
 function UndoRedo() {
   const edit = useApp((s) => s.mode === 'edit');
   const past = useApp((s) => s.history.past.length);
@@ -11,8 +20,8 @@ function UndoRedo() {
   const redo = useApp((s) => s.redo);
   return (
     <div className="undo">
-      <button className="icon" aria-label="Undo" title="Undo (Ctrl/Cmd+Z)" disabled={!edit || past === 0} onClick={undo}>↶</button>
-      <button className="icon" aria-label="Redo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled={!edit || future === 0} onClick={redo}>↷</button>
+      <button className="icon" aria-label="Undo" title="Undo (Ctrl/Cmd+Z)" disabled={!edit || past === 0} onClick={undo}><FeatherIcon d={['M9 14 4 9l5-5', 'M20 20v-7a4 4 0 0 0-4-4H4']} /></button>
+      <button className="icon" aria-label="Redo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled={!edit || future === 0} onClick={redo}><FeatherIcon d={['m15 14 5-5-5-5', 'M4 20v-7a4 4 0 0 1 4-4h12']} /></button>
     </div>
   );
 }
@@ -42,7 +51,7 @@ function SaveStatus() {
  * The scenario is the container for everything else, so it leads: which scenario you are in, switching,
  * making a new one, and sharing, with saving and undo beside it.
  */
-export function TopBar({ onScenarios }: { onScenarios: () => void }) {
+export function TopBar({ onScenarios, panelOpen, onTogglePanel }: { onScenarios: () => void; panelOpen: boolean; onTogglePanel: () => void }) {
   const s = useApp((x) => x);
   const edit = s.mode === 'edit';
   return (
@@ -69,6 +78,9 @@ export function TopBar({ onScenarios }: { onScenarios: () => void }) {
         <SaveStatus />
         {edit && <UndoRedo />}
         {edit && <button className="on" onClick={onScenarios} title="Get a read-only link to a scenario">Share</button>}
+        <button className={`drawerbtn ${panelOpen ? 'on' : ''}`} aria-pressed={panelOpen} aria-label={panelOpen ? 'Hide the side panel' : 'Show the side panel'} title={panelOpen ? 'Hide the side panel' : 'Show the side panel'} onClick={onTogglePanel}>
+          <span className="drawericon" aria-hidden="true" />
+        </button>
       </div>
     </header>
   );

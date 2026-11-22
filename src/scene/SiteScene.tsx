@@ -11,6 +11,7 @@ import { formatFeetInches } from '../engine/units';
 import type { ContextObjectCfg, Pt, StructureCfg } from '../engine/types';
 import { useApp } from '../store/store';
 import { PlantLayer } from './Plants';
+import { CropLayer } from './Crops';
 import { LifeLayer } from './Life';
 import { HardscapeLayer, useSnapper } from './Hardscape';
 import { ConflictRings, SuggestionLayer } from './Suggestions';
@@ -363,13 +364,17 @@ function Cameras() {
   const cx = site.lot.width / 2;
   const cy = site.lot.depth / 2;
   if (cfg.kind === 'plan') {
-    // Frustum in feet, fit so the whole lot (plus margin) is visible at any aspect ratio.
-    const aspect = size.width / Math.max(1, size.height);
+    // Fit the whole lot (plus a 35 ft margin) into the part of the yard the time controls leave free, and center it
+    // there, so it is centered between the top edge and the controls at any window shape.
+    const dock = document.querySelector('.simdock')?.getBoundingClientRect().height ?? 0;
+    const covered = dock > 0 ? dock + 10 : 0;
+    const visibleH = Math.max(1, size.height - covered);
     const needH = site.lot.depth + 70;
-    const cyView = cy - 24; // shift the lot up so the bottom control bar does not cover it
     const needW = site.lot.width + 40;
-    const halfH = Math.max(needH, needW / aspect) / 2;
-    const halfW = halfH * aspect;
+    const pxPerFt = Math.min(visibleH / needH, size.width / needW);
+    const halfH = size.height / (2 * pxPerFt);
+    const halfW = size.width / (2 * pxPerFt);
+    const cyView = cy - covered / 2 / pxPerFt; // the free area's center sits above the stage's by half the covered strip
     return (
       <>
         {/* Straight down, offset 0.5 ft toward the street so the rear of the lot is screen-up without a custom up vector. */}
@@ -431,6 +436,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
         {layers.sunHours && sunResult && <SunOverlay result={sunResult} />}
         {layers.dimensions && <Dimensions />}
         <HardscapeLayer />
+        <CropLayer />
         <PlantLayer />
         {layers.life && <LifeLayer />}
         <ConflictRings />

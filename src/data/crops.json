@@ -1,0 +1,261 @@
+{
+ "_note": "General estimates for coastal Southern California (sunset zone 24, USDA 10b); unverified. Months are calendar months; a cool-season crop is sown in November and pulled by April, a warm-season crop sown in May and pulled by October.",
+ "crops": [
+  {
+   "id": "lettuce",
+   "name": "Lettuce",
+   "kind": "vegetable",
+   "season": "cool",
+   "form": "rosette",
+   "heightFt": 0.6,
+   "widthFt": 1.0,
+   "spacingFt": 1.0,
+   "sowMonth": 11,
+   "harvestStart": 1,
+   "endMonth": 3,
+   "leafColor": "#7fb069",
+   "note": "Cut-and-come-again leaf lettuce"
+  },
+  {
+   "id": "spinach",
+   "name": "Spinach",
+   "kind": "vegetable",
+   "season": "cool",
+   "form": "rosette",
+   "heightFt": 0.6,
+   "widthFt": 0.8,
+   "spacingFt": 0.7,
+   "sowMonth": 11,
+   "harvestStart": 1,
+   "endMonth": 3,
+   "leafColor": "#3f7d3a"
+  },
+  {
+   "id": "kale",
+   "name": "Kale",
+   "kind": "vegetable",
+   "season": "cool",
+   "form": "bush",
+   "heightFt": 2.0,
+   "widthFt": 2.0,
+   "spacingFt": 1.75,
+   "sowMonth": 11,
+   "harvestStart": 1,
+   "endMonth": 4,
+   "leafColor": "#4a6f5a"
+  },
+  {
+   "id": "broccoli",
+   "name": "Broccoli",
+   "kind": "vegetable",
+   "season": "cool",
+   "form": "bush",
+   "heightFt": 2.2,
+   "widthFt": 2.2,
+   "spacingFt": 1.75,
+   "sowMonth": 11,
+   "harvestStart": 2,
+   "endMonth": 3,
+   "leafColor": "#58845f",
+   "produce": {
+    "color": "#6fa05a",
+    "sizeFt": 0.45,
+    "count": 1
+   }
+  },
+  {
+   "id": "carrot",
+   "name": "Carrots",
+   "kind": "vegetable",
+   "season": "cool",
+   "form": "rosette",
+   "heightFt": 0.9,
+   "widthFt": 0.4,
+   "spacingFt": 0.4,
+   "sowMonth": 11,
+   "harvestStart": 2,
+   "endMonth": 4,
+   "leafColor": "#5f9a4a"
+  },
+  {
+   "id": "peas",
+   "name": "Snap peas",
+   "kind": "vegetable",
+   "season": "cool",
+   "form": "vine",
+   "heightFt": 4.0,
+   "widthFt": 1.0,
+   "spacingFt": 0.5,
+   "sowMonth": 11,
+   "harvestStart": 2,
+   "endMonth": 4,
+   "leafColor": "#6aa84f",
+   "produce": {
+    "color": "#8bc34a",
+    "sizeFt": 0.2,
+    "count": 10
+   }
+  },
+  {
+   "id": "tomato",
+   "name": "Tomatoes",
+   "kind": "vegetable",
+   "season": "warm",
+   "form": "vine",
+   "heightFt": 5.0,
+   "widthFt": 2.5,
+   "spacingFt": 2.5,
+   "sowMonth": 5,
+   "harvestStart": 7,
+   "endMonth": 10,
+   "leafColor": "#4f8a3c",
+   "produce": {
+    "color": "#d63a2c",
+    "sizeFt": 0.25,
+    "count": 14
+   }
+  },
+  {
+   "id": "pepper",
+   "name": "Peppers",
+   "kind": "vegetable",
+   "season": "warm",
+   "form": "bush",
+   "heightFt": 2.5,
+   "widthFt": 2.0,
+   "spacingFt": 1.5,
+   "sowMonth": 5,
+   "harvestStart": 7,
+   "endMonth": 10,
+   "leafColor": "#4c8a45",
+   "produce": {
+    "color": "#e0452f",
+    "sizeFt": 0.2,
+    "count": 8
+   }
+  },
+  {
+   "id": "eggplant",
+   "name": "Eggplant",
+   "kind": "vegetable",
+   "season": "warm",
+   "form": "bush",
+   "heightFt": 3.0,
+   "widthFt": 2.5,
+   "spacingFt": 2.0,
+   "sowMonth": 5,
+   "harvestStart": 7,
+   "endMonth": 10,
+   "leafColor": "#527a4a",
+   "produce": {
+    "color": "#5b2a63",
+    "sizeFt": 0.35,
+    "count": 4
+   }
+  },
+  {
+   "id": "zucchini",
+   "name": "Zucchini",
+   "kind": "vegetable",
+   "season": "warm",
+   "form": "mound",
+   "heightFt": 2.0,
+   "widthFt": 4.0,
+   "spacingFt": 3.0,
+   "sowMonth": 5,
+   "harvestStart": 6,
+   "endMonth": 9,
+   "leafColor": "#4f7f3a",
+   "produce": {
+    "color": "#5f8f3a",
+    "sizeFt": 0.45,
+    "count": 4
+   }
+  },
+  {
+   "id": "cucumber",
+   "name": "Cucumbers",
+   "kind": "vegetable",
+   "season": "warm",
+   "form": "vine",
+   "heightFt": 5.0,
+   "widthFt": 2.0,
+   "spacingFt": 1.5,
+   "sowMonth": 5,
+   "harvestStart": 7,
+   "endMonth": 10,
+   "leafColor": "#4d8f3d",
+   "produce": {
+    "color": "#6fa84a",
+    "sizeFt": 0.4,
+    "count": 6
+   }
+  },
+  {
+   "id": "beans",
+   "name": "Green beans",
+   "kind": "vegetable",
+   "season": "warm",
+   "form": "upright",
+   "heightFt": 2.0,
+   "widthFt": 1.2,
+   "spacingFt": 0.7,
+   "sowMonth": 5,
+   "harvestStart": 7,
+   "endMonth": 9,
+   "leafColor": "#5da04a",
+   "produce": {
+    "color": "#7bbf4a",
+    "sizeFt": 0.2,
+    "count": 9
+   }
+  },
+  {
+   "id": "basil",
+   "name": "Basil",
+   "kind": "herb",
+   "season": "warm",
+   "form": "bush",
+   "heightFt": 1.5,
+   "widthFt": 1.5,
+   "spacingFt": 1.0,
+   "sowMonth": 5,
+   "harvestStart": 6,
+   "endMonth": 10,
+   "leafColor": "#5aa04a"
+  },
+  {
+   "id": "strawberry",
+   "name": "Strawberries",
+   "kind": "fruit",
+   "season": "any",
+   "form": "mound",
+   "heightFt": 0.8,
+   "widthFt": 1.5,
+   "spacingFt": 1.5,
+   "sowMonth": 2,
+   "harvestStart": 4,
+   "endMonth": 12,
+   "leafColor": "#4f8a45",
+   "produce": {
+    "color": "#d4263a",
+    "sizeFt": 0.15,
+    "count": 10
+   },
+   "perennial": true,
+   "dormantMonths": [
+    12,
+    1
+   ],
+   "regrowMonths": [
+    2
+   ],
+   "fruitMonths": [
+    4,
+    5,
+    6
+   ],
+   "note": "Perennial: cut back in winter, regrows in spring"
+  }
+ ]
+}

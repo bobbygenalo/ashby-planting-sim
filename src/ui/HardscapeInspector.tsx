@@ -1,4 +1,7 @@
 import { useMemo } from 'react';
+import { CROPS } from '../data/cropLibrary';
+import { activeCrop, planOf, seasonOf } from '../engine/crops';
+import { doyToMonthDay } from '../engine/time';
 import { elementMetrics, hardscapeWarnings } from '../engine/hardscape';
 import { formatFeetInches } from '../engine/units';
 import { useApp } from '../store/store';
@@ -89,6 +92,36 @@ export function HardscapeInspector() {
           <label>{sel.type === 'path' ? 'Width (ft)' : 'Thickness (ft)'}{num(sel.width, (n) => s.updateElement(sel.id, { width: Math.max(0.1, n) }), 0.25, !edit || sel.existing)}</label>
         )}
       </div>
+      {sel.type === 'raisedBed' && (() => {
+        const beds = s.hardscape.filter((e) => e.type === 'raisedBed' && !e.removed);
+        const plan = planOf(sel, CROPS, Math.max(0, beds.findIndex((b) => b.id === sel.id)));
+        const month = doyToMonthDay(s.doy)[0];
+        const now = activeCrop(plan, CROPS, month, s.engine.crops);
+        const set = (season: 'cool' | 'warm', id: string) => s.updateElement(sel.id, { crops: { ...plan, [season]: id } });
+        const opts = (season: 'cool' | 'warm') => CROPS.filter((c) => c.season === season || c.season === 'any');
+        const label = { growing: 'growing', harvest: 'harvest', spent: 'spent, about to be pulled', dormant: 'cut back for winter', bare: '' };
+        return (
+          <>
+            <h4>What grows here</h4>
+            <div className="grid2">
+              <label>Cool season (Nov to Apr)
+                <select disabled={!edit} value={plan.cool} onChange={(e) => set('cool', e.target.value)}>
+                  {opts('cool').map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </label>
+              <label>Warm season (May to Oct)
+                <select disabled={!edit} value={plan.warm} onChange={(e) => set('warm', e.target.value)}>
+                  {opts('warm').map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </label>
+            </div>
+            <p className="muted small">
+              {now ? <>In {seasonOf(month, s.engine.crops)} season now: <b>{now.crop.name}</b>, {label[now.stage.phase]}.</> : 'Nothing standing this month: the bed is bare between crops.'}{' '}
+              Each crop is sown at the start of its season, harvested, pulled and replaced; months are general estimates for coastal Southern California. Move the sun date to watch the beds turn over.
+            </p>
+          </>
+        );
+      })()}
       {!sel.existing && edit && (
         <div className="row wrap">
           <span className="muted small">Nudge {formatFeetInches(s.snap)}</span>

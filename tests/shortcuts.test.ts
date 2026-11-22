@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import siteRaw from '../src/data/site.json';
-import { viewForKey } from '../src/ui/shortcuts';
+import { isPlayPauseKey, viewForKey } from '../src/ui/shortcuts';
 
 const views = (siteRaw as { views: { id: string; label: string }[] }).views;
 const press = (key: string, extra: Partial<{ metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }> = {}) =>
@@ -25,5 +25,19 @@ describe('view shortcuts', () => {
     expect(press('1', { altKey: true })).toBeNull();
     expect(press('1', { shiftKey: true })).toBeNull();
     expect(viewForKey([], { key: '1', metaKey: false, ctrlKey: false, altKey: false })).toBeNull();
+  });
+});
+
+describe('play and pause shortcut', () => {
+  const k = (key: string, extra: Partial<{ metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; repeat: boolean }> = {}) =>
+    isPlayPauseKey({ key, metaKey: false, ctrlKey: false, altKey: false, shiftKey: false, ...extra });
+  it('is the space bar alone', () => {
+    expect(k(' ')).toBe(true);
+    expect(k('Spacebar')).toBe(true);
+    expect(k('a')).toBe(false);
+    expect(k('Enter')).toBe(false);
+  });
+  it('ignores combinations and key repeat', () => {
+    for (const x of ['metaKey', 'ctrlKey', 'altKey', 'shiftKey', 'repeat'] as const) expect(k(' ', { [x]: true })).toBe(false);
   });
 });

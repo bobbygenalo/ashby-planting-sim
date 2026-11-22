@@ -169,7 +169,6 @@ export interface ConceptTheme {
   gravel: [number, number];
   mulch: [number, number];
   raisedBeds: [number, number];
-  paths: [number, number];
   /** Chance of a deck. */
   deck: number;
 }
@@ -179,7 +178,26 @@ export interface ConceptCfg {
   lotMarginFt: number;
   structureMarginFt: number;
   patio: { zone: string; width: [number, number]; depth: [number, number]; candidates: number; attempts: number };
-  path: { width: number; length: [number, number]; attempts: number; materials: string[]; max: number };
+  path: {
+    width: number;
+    materials: string[];
+    /** Most paths in a concept. */
+    max: number;
+    gridFt: number;
+    /** Walking on an existing path costs this share of open ground, so routes join up instead of running side by side. */
+    reuse: number;
+    /** Room kept between the path's edge and everything else. */
+    clearFt: number;
+    /** Plants block the route out to this far from the trunk (their mature radius, up to this cap) plus the path's half width. */
+    plantMaxRadiusFt: number;
+    /** A path to a fruit tree stops this far from the trunk. */
+    fruitStandFt: number;
+    maxFruitHubs: number;
+    /** Plants keep this far from a path's edge. */
+    plantEdgeFt: number;
+    /** Plants stay this far from a door so its path can arrive. */
+    doorKeepClearFt: number;
+  };
   beds: { zones: Record<string, [number, number]>; length: [number, number]; depth: [number, number]; attempts: number; edgeBias: number; gapFt: number };
   areas: { lawn: ConceptAreaCfg; deck: ConceptAreaCfg; gravel: ConceptAreaCfg; mulch: ConceptAreaCfg; raisedBed: ConceptAreaCfg };
   themes: ConceptTheme[];
@@ -189,6 +207,8 @@ export interface ConceptCfg {
     count: [number, number];
     maxTrees: number;
     overlapAllowance: number;
+    /** Species drawn in turn for one plant when none finds a spot that suits it. */
+    speciesTries: number;
     attempts: number;
     bedBias: number;
     zones: string[];
@@ -303,6 +323,7 @@ export interface BranchCfg {
 }
 
 export interface EngineConfig {
+  crops: CropCfg;
   branches: BranchCfg;
   life: LifeCfg;
   fruit: FruitCfg;
@@ -336,7 +357,7 @@ export interface EngineConfig {
     /** How far a blooming plant's foliage color moves toward its bloom color (0-1). */
     bloomTintFraction: number;
   };
-  timeline: { maxYears: number; presets: number[] };
+  timeline: { maxYears: number; presets: number[]; /** Days the calendar moves for each month of growth while growth plays. */ daysPerStep: number };
   conflicts: {
     overlapToleranceFt: number;
     understoryHeightRatio: number;
@@ -357,6 +378,8 @@ export interface EngineConfig {
   hardscape: {
     permeableThreshold: number;
     sampleCellFt: number;
+    /** Types that older plans may still contain but that can no longer be drawn or generated. */
+    notDrawable?: HardscapeType[];
     snapToleranceFt: number;
     rootZoneFactor: number;
     drawOrder: HardscapeType[];
@@ -466,6 +489,8 @@ export interface HardscapeElement {
   removed?: boolean;
   /** New work must not cover this (the driveway). */
   keepClear?: boolean;
+  /** Raised beds: the crops grown there. Without it the bed gets a default rotation from its id. */
+  crops?: CropPlan;
 }
 
 export type Irrigation = 'drip' | 'spray' | 'hand' | 'none';
@@ -523,4 +548,48 @@ export interface SoilConfig {
   mulch: { depthIn: number; ringDiameterFt: number; source: string };
   rootableSoil: { cuFtPerSfCanopy: number; depthFt: number; searchRadiusFactor: number; source: string; confidence: Confidence };
   raisedBed: { freeboardIn: number; source: string };
+}
+
+export interface Crop {
+  id: string;
+  name: string;
+  kind: 'vegetable' | 'fruit' | 'herb';
+  /** Which half of the year the crop is grown in; strawberries stand all year. */
+  season: 'cool' | 'warm' | 'any';
+  form: 'rosette' | 'bush' | 'upright' | 'vine' | 'mound';
+  heightFt: number;
+  widthFt: number;
+  spacingFt: number;
+  /** Calendar months (1-12): sown or planted, first harvest, last month standing. */
+  sowMonth: number;
+  harvestStart: number;
+  endMonth: number;
+  leafColor: string;
+  produce?: { color: string; sizeFt: number; count: number };
+  perennial?: boolean;
+  dormantMonths?: number[];
+  regrowMonths?: number[];
+  fruitMonths?: number[];
+  note?: string;
+}
+
+export interface CropCfg {
+  seasons: { cool: number[]; warm: number[] };
+  seedlingFraction: number;
+  dormantFraction: number;
+  regrowFraction: number;
+  spentFraction: number;
+  spentColor: string;
+  spentBlend: number;
+  insetFt: number;
+  maxPlants: number;
+  produceDisplayScale: number;
+  produceMinFt: number;
+  soilDepthFt: number;
+}
+
+/** The crop grown in a raised bed in each half of the year, by crop id. */
+export interface CropPlan {
+  cool: string;
+  warm: string;
 }

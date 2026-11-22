@@ -2,6 +2,7 @@ import { distanceToPolygon, pointInPolygon } from './geometry';
 import { footprint } from './hardscape';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, Pt, SiteConfig, Species, StructureCfg } from './types';
 import type { ScenarioData } from './scenario';
+import { lightSuits, roomRatio, shadesRaisedBed, type Neighbor, type SunMap } from './placement';
 
 /** A small seeded random number generator, so a shuffle can be repeated from its seed. */
 export function mulberry32(seed: number): () => number {
@@ -36,6 +37,8 @@ export interface ShuffleContext {
   species: Species[];
   materials: Material[];
   engine: EngineConfig;
+  /** Growing-season sun hours. When given, swaps and moves keep every plant in light it does well in. */
+  sunMap?: SunMap;
 }
 
 export interface ShuffleChanges {
@@ -119,15 +122,29 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
   const { width, depth } = ctx.site.lot;
 
   let instances: PlantInstance[] = data.instances.map((i) => ({ ...i }));
+  const allowance = ctx.engine.concept.plants.overlapAllowance;
+  const raisedBeds = hardscape.filter((el) => el.type === 'raisedBed' && !el.removed).map((el) => footprint(el, ctx.engine.hardscape));
+  const neighbors = (except: number): Neighbor[] =>
+    instances.flatMap((o, k) => {
+      const osp = speciesById.get(o.speciesId);
+      return k !== except && osp ? [{ position: o.position, species: osp }] : [];
+    });
+  // A plant stays where it suits: enough light, room to grow beside its neighbors, no tree canopy over a raised bed.
+  // A spot that was already poor is not made worse.
+  const suits = (sp: Species, p: Pt, index: number) =>
+    lightSuits(sp, p, ctx.sunMap, ctx.engine) && roomRatio(sp, p, neighbors(index), allowance) >= 1 && !shadesRaisedBed(sp, p, raisedBeds);
   if (opts.species) {
-    instances = instances.map((inst) => {
+    instances = instances.map((inst, index) => {
       if (inst.existing) return inst;
       const sp = speciesById.get(inst.speciesId);
       if (!sp) return inst;
-      const alts = lookAlikes(sp, pool, cfg.sizeRatioBand);
+      const wasFine = suits(sp, inst.position, index);
+      const alts = lookAlikes(sp, pool, cfg.sizeRatioBand).filter((o) => !wasFine || suits(o, inst.position, index));
       if (alts.length === 0) return inst;
       changes.species++;
-      return { ...inst, speciesId: pick(rng, alts).id };
+      const next = { ...inst, speciesId: pick(rng, alts).id };
+      instances[index] = next;
+      return next;
     });
   }
   if (opts.positions) {
@@ -137,6 +154,7 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
       const nearest = (p: Pt) => Math.min(...ctx.structures.map((s) => distanceToPolygon(p[0], p[1], s.footprint)));
       // A plant keeps its roots as far from buildings as the species wants, or no closer than it already was.
       const clearance = Math.min(sp?.roots.minFoundationFt ?? 0, ctx.structures.length ? nearest(inst.position) : 0);
+      const wasFine = sp ? suits(sp, inst.position, index) : true;
       for (let attempt = 0; attempt < cfg.moveAttempts; attempt++) {
         const angle = rng() * Math.PI * 2;
         const r = Math.sqrt(rng()) * cfg.plantMoveRadiusFt;
@@ -145,8 +163,11 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
         if (ctx.structures.some((s) => pointInPolygon(p[0], p[1], s.footprint) || distanceToPolygon(p[0], p[1], s.footprint) < clearance - 1e-9)) continue;
         if (hardCover.some((poly) => pointInPolygon(p[0], p[1], poly))) continue;
         if (instances.some((o, k) => k !== index && Math.hypot(o.position[0] - p[0], o.position[1] - p[1]) < cfg.minPlantGapFt)) continue;
+        if (sp && wasFine && !suits(sp, p, index)) continue;
         changes.moved++;
-        return { ...inst, position: [Number(p[0].toFixed(2)), Number(p[1].toFixed(2))] as Pt };
+        const moved = { ...inst, position: [Number(p[0].toFixed(2)), Number(p[1].toFixed(2))] as Pt };
+        instances[index] = moved;
+        return moved;
       }
       return inst;
     });

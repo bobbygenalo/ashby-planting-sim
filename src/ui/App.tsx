@@ -12,7 +12,7 @@ import { CanvasToolbar } from './CanvasToolbar';
 import { SimDock } from './SimDock';
 import { SelectionCard } from './SelectionCard';
 import { ShuffleBar } from './ShuffleControl';
-import { viewForKey } from './shortcuts';
+import { isPlayPauseKey, viewForKey } from './shortcuts';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
 import { startCloudSync } from '../store/cloudSync';
@@ -98,6 +98,14 @@ function useShortcuts() {
         st.setView(view);
         return;
       }
+      // Space plays and pauses growth (and with it the seasons), unless a dialog is open.
+      if (isPlayPauseKey(e) && !document.querySelector('.dialog')) {
+        e.preventDefault();
+        // A button that has focus would also be pressed by the space bar, so let go of it first.
+        if (el && el.tagName === 'BUTTON') el.blur();
+        st.setTimelinePlaying(!st.timelinePlaying);
+        return;
+      }
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();
@@ -140,6 +148,16 @@ function Planner() {
   const conflictCount = useApp((s) => s.conflicts.filter((c) => c.instanceIds.length > 0 && c.severity === 'error').length);
   const [tab, setTab] = useState<Tab>('plants');
   const [scenariosOpen, setScenariosOpen] = useState(false);
+  // The right panel is a drawer: its state is remembered in this browser.
+  const [panelOpen, setPanelOpen] = useState(() => {
+    try { return localStorage.getItem('ashby-planner/panel-open') !== '0'; } catch { return true; }
+  });
+  const togglePanel = () => {
+    setPanelOpen((open) => {
+      try { localStorage.setItem('ashby-planner/panel-open', open ? '0' : '1'); } catch { /* private window: nothing to remember */ }
+      return !open;
+    });
+  };
   const group = groupOf(tab);
   const go = (next: Tab) => {
     if (next !== 'hardscape') appStore.getState().commitDrawing();
@@ -148,13 +166,14 @@ function Planner() {
   return (
     <>
     {shared && <div className="viewer-banner">Shared plan: {shared.name}. You are viewing a read-only copy; only the owner can change it.</div>}
-    <div className="app">
-      <TopBar onScenarios={() => setScenariosOpen(true)} />
+    <div className={`app ${panelOpen ? '' : 'panel-closed'}`}>
+      <TopBar onScenarios={() => setScenariosOpen(true)} panelOpen={panelOpen} onTogglePanel={togglePanel} />
       <main className="stage">
         <SiteScene sunResult={sun.result} />
         <CanvasToolbar />
         <ShuffleBar />
         <SimDock />
+        <SelectionCard growing={sun.growing} />
       </main>
       <aside className="right">
         <nav className="rightnav" aria-label="Planner sections">
@@ -183,7 +202,6 @@ function Planner() {
             {tab === 'sun' && <SunPanel sun={sun} />}
             {tab === 'outputs' && <OutputsPanel />}
           </div>
-          <SelectionCard growing={sun.growing} />
         </div>
       </aside>
     </div>

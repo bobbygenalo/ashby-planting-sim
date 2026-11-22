@@ -5,6 +5,7 @@ import type { Conflict } from '../engine/conflicts';
 import { polygonArea, polylineLength } from '../engine/geometry';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
+import { buildSunMap, type SunMap } from '../engine/placement';
 import { generateConcept, type ConceptCounts, type ConceptOptions } from '../engine/concept';
 import { mulberry32, shuffleScenario, type ShuffleChanges, type ShuffleOptions } from '../engine/shuffle';
 import {
@@ -45,6 +46,8 @@ export interface Layers {
   bloom: boolean;
   /** Show fruit on fruiting plants when it is in season. */
   fruit: boolean;
+  /** Show vegetables and fruit growing in raised beds. */
+  crops: boolean;
   /** Show people, dogs and bees moving about the yard. */
   life: boolean;
   /** Placement heatmap and the top spots. */
@@ -243,6 +246,14 @@ let idCounter = 0;
 /** Ids stay unique across sessions: a restored workspace can hold ids a fresh counter would hand out again. */
 const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${(idCounter++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
+let sunMapCache: { key: string; map: SunMap } | null = null;
+/** The growing-season sun map for shuffles and concepts. Computed once per site and ADU setting, since it takes a moment. */
+function sunMapFor(site: SiteConfig, aduEnabled: boolean): SunMap {
+  const key = `${site.name}|${site.latitude}|${site.structures.length}|${aduEnabled}`;
+  if (sunMapCache?.key !== key) sunMapCache = { key, map: buildSunMap(site, aduEnabled, engine) };
+  return sunMapCache.map;
+}
+
 export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
   const initial = emptyScenarioData(site);
   const firstScenarioId = uid('s');
@@ -335,7 +346,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, fruit: true, life: true, suggestions: true, conflicts: true },
+      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, fruit: true, crops: true, life: true, suggestions: true, conflicts: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,
@@ -559,7 +570,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         const seed = how.seed ?? Math.floor(Math.random() * 1_000_000_000);
         const result = shuffleScenario(
           currentData(),
-          { site: get().site, structures: activeStructures(get().site, { aduEnabled: get().aduEnabled }), species: get().library.species, materials: get().materials, engine },
+          { site: get().site, structures: activeStructures(get().site, { aduEnabled: get().aduEnabled }), species: get().library.species, materials: get().materials, engine, sunMap: opts.species || opts.positions ? sunMapFor(get().site, get().aduEnabled) : undefined },
           opts,
           mulberry32(seed),
         );
@@ -580,6 +591,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
           {
             site: get().site, structures: activeStructures(get().site, { aduEnabled: get().aduEnabled }), species: get().library.species,
             materials: get().materials, engine, palette: get().palette,
+            sunMap: opts.plants ? sunMapFor(get().site, get().aduEnabled) : undefined,
           },
           opts,
           mulberry32(seed),

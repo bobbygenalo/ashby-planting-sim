@@ -4,7 +4,9 @@ import engineRaw from '../data/engine.json';
 import type { Conflict } from '../engine/conflicts';
 import { polygonArea, polylineLength } from '../engine/geometry';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
-import { loadSite } from '../engine/site';
+import { activeStructures, loadSite } from '../engine/site';
+import { generateConcept, type ConceptOptions } from '../engine/concept';
+import { mulberry32, shuffleScenario, type ShuffleChanges, type ShuffleOptions } from '../engine/shuffle';
 import {
   validateScenarioData, buildShareSnapshot, clone, emptyScenarioData, parseScenarioFile, serializeScenarioFile,
   type ScenarioData, type ScenarioMeta, type ShareRecord, type ShareSnapshot, type SiteOverrides, type ValidationContext, type Workspace,
@@ -41,10 +43,29 @@ export interface Layers {
   context: boolean;
   /** Tint blooming plants with their bloom color (POL-7). */
   bloom: boolean;
+  /** Show fruit on fruiting plants when it is in season. */
+  fruit: boolean;
   /** Placement heatmap and the top spots. */
   suggestions: boolean;
   /** Red rings on plants that have a conflict. */
   conflicts: boolean;
+}
+
+export interface ConceptSummary {
+  seed: number;
+  counts: { patio: number; path: number; beds: number; plants: number; species: number };
+  notes: string[];
+  /** The new scenario, or null when nothing could be built. */
+  scenarioId: string | null;
+}
+
+export interface ShuffleSummary {
+  seed: number;
+  changes: ShuffleChanges;
+  /** The new scenario when the shuffle was made in a copy. */
+  scenarioId: string | null;
+  /** The view settings the shuffle jumped to, when time was shuffled. */
+  time: { timelineMonth: number; doy: number; minutes: number } | null;
 }
 
 export interface AppState {
@@ -73,6 +94,9 @@ export interface AppState {
   setView: (v: string) => void;
   setSunPeriod: (p: string) => void;
   setMeasureActive: (a: boolean) => void;
+  /** Whether the shuffle bar is showing over the yard (view state, not part of a scenario). */
+  shuffleOpen: boolean;
+  setShuffleOpen: (open: boolean) => void;
   addMeasurePoint: (p: Pt) => void;
   clearMeasure: () => void;
   setSnap: (s: number) => void;
@@ -155,6 +179,17 @@ export interface AppState {
   setSaveStatus: (s: AppState['saveStatus']) => void;
 
   createScenario: (name?: string, fromId?: string) => string | null;
+  /**
+   * Explore a variation of the open scenario: new plants and hardscape get swapped, nudged or recolored, and time can
+   * jump. With `copy` the result becomes a new scenario and the original is untouched; otherwise it changes in
+   * place and Undo brings the old one back. The same seed gives the same result.
+   */
+  shuffle: (opts: ShuffleOptions, how: { copy: boolean; seed?: number }) => ShuffleSummary | null;
+  /**
+   * Build a whole new planting and hardscape concept in a new scenario, from nothing: nothing is copied from the
+   * open scenario except its starred palette, which plants are drawn from when `starredOnly` is set.
+   */
+  generateConcept: (opts: ConceptOptions, how?: { seed?: number }) => ConceptSummary | null;
   renameScenario: (id: string, name: string) => void;
   deleteScenario: (id: string) => boolean;
   switchScenario: (id: string) => void;
@@ -293,13 +328,15 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, suggestions: true, conflicts: true },
+      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, fruit: true, suggestions: true, conflicts: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,
       view: 'orbit',
       sunPeriod: 'day',
       measureActive: false,
+      shuffleOpen: false,
+      setShuffleOpen: (open) => set({ shuffleOpen: open }),
       measurePoints: [],
       snap: engine.scene.snapDefaultFt,
 
@@ -507,6 +544,42 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
           return addScenario(name?.trim() || `${meta.name} copy`, clone(src));
         }
         return addScenario(name?.trim() || `Scenario ${get().scenarios.length + 1}`, emptyScenarioData(get().site));
+      },
+      shuffle: (opts, how) => {
+        if (get().mode !== 'edit') return null;
+        const seed = how.seed ?? Math.floor(Math.random() * 1_000_000_000);
+        const result = shuffleScenario(
+          currentData(),
+          { site: get().site, structures: activeStructures(get().site, { aduEnabled: get().aduEnabled }), species: get().library.species, materials: get().materials, engine },
+          opts,
+          mulberry32(seed),
+        );
+        let scenarioId: string | null = null;
+        if (how.copy) {
+          const n = get().scenarios.filter((s) => s.name.startsWith('Shuffle')).length + 1;
+          scenarioId = addScenario(`Shuffle ${n}`, result.data);
+        } else {
+          scenario({ instances: result.data.instances, hardscape: result.data.hardscape });
+        }
+        if (result.time) set({ timelineMonth: result.time.timelineMonth, doy: result.time.doy, minutes: result.time.minutes });
+        return { seed, changes: result.changes, scenarioId, time: result.time };
+      },
+      generateConcept: (opts, how = {}) => {
+        if (get().mode !== 'edit') return null;
+        const seed = how.seed ?? Math.floor(Math.random() * 1_000_000_000);
+        const result = generateConcept(
+          {
+            site: get().site, structures: activeStructures(get().site, { aduEnabled: get().aduEnabled }), species: get().library.species,
+            materials: get().materials, engine, palette: get().palette,
+          },
+          opts,
+          mulberry32(seed),
+        );
+        const made = result.counts.patio + result.counts.path + result.counts.beds + result.counts.plants;
+        if (made === 0) return { seed, counts: result.counts, notes: result.notes, scenarioId: null };
+        const n = get().scenarios.filter((s) => s.name.startsWith('Concept')).length + 1;
+        const scenarioId = addScenario(`Concept ${n}`, { ...result.data, aduEnabled: get().aduEnabled });
+        return { seed, counts: result.counts, notes: result.notes, scenarioId };
       },
       renameScenario: (id, name) => {
         if (get().mode !== 'edit' || !name.trim()) return;

@@ -1,6 +1,7 @@
 import { saveNow } from '../store/persistence';
 import { useCloudState } from '../store/cloudSync';
 import { useApp } from '../store/store';
+import { ShuffleControl } from './ShuffleControl';
 
 function UndoRedo() {
   const edit = useApp((s) => s.mode === 'edit');
@@ -60,6 +61,7 @@ export function TopBar({ onScenarios }: { onScenarios: () => void }) {
           </label>
           <button onClick={() => s.createScenario()} title="Start another scenario">+ New</button>
           <button onClick={onScenarios}>Manage…</button>
+          <ShuffleControl />
           <button className="on" onClick={onScenarios} title="Get a read-only link to a scenario">Share</button>
         </div>
       ) : (

@@ -1,115 +1,102 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useThree, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PlacedPlant } from '../engine/growth';
+import { fruitPositions, fruitState, seedFromId } from '../engine/fruit';
 import { isBlooming, isLeafOff, placedPlants } from '../engine/growth';
 import { doyToMonthDay } from '../engine/time';
 import { useApp } from '../store/store';
+import { MIN_FORM_SIZE, partGeometry, plantParts } from './forms';
 
-function Form({ p, month }: { p: PlacedPlant; month: number }) {
+// Spheres and domes are shared unit shapes that each plant scales; the rest are built per plant and thrown away with it.
+const UNIT_ELLIPSOID = partGeometry({ shape: 'ellipsoid', material: 'foliage', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], args: [] });
+const UNIT_DOME = partGeometry({ shape: 'dome', material: 'foliage', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], args: [] });
+
+function FormBody({ p, month }: { p: PlacedPlant; month: number }) {
   const trunkFrac = useApp((s) => s.engine.growth.trunkClearanceFraction[p.species.type] ?? 0);
   const tintFrac = useApp((s) => s.engine.growth.bloomTintFraction);
   const showBloom = useApp((s) => s.layers.bloom);
   const leafOff = isLeafOff(p.species, month);
   const blooming = showBloom && isBlooming(p.species, month) && !leafOff;
   const { species: s, size } = p;
-  const h = Math.max(size.height, 0.05);
-  const r = Math.max(size.width / 2, 0.05);
-  const base = h * trunkFrac;
-  const canopyH = h - base;
   const color = useMemo(() => {
     const c = new THREE.Color(s.foliageColor);
     return blooming ? c.lerp(new THREE.Color(s.bloomColor), tintFrac) : c;
   }, [s.foliageColor, s.bloomColor, blooming, tintFrac]);
-  // Leafless deciduous plants are drawn as a faint ghost of the canopy (GR-4).
-  const mat = <meshStandardMaterial color={color} roughness={1} transparent={leafOff} opacity={leafOff ? 0.22 : 1} depthWrite={!leafOff} />;
-  const trunk =
-    base > 0.4 ? (
-      <mesh position={[0, 0, base / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[Math.min(0.35, r * 0.1) + 0.05, Math.min(0.5, r * 0.14) + 0.08, base, 8]} />
-        <meshStandardMaterial color="#6b4f3a" />
-      </mesh>
-    ) : null;
+  const parts = useMemo(
+    () => plantParts(s.habit, size.width / 2, size.height, trunkFrac, seedFromId(p.inst.id)),
+    [s.habit, size.width, size.height, trunkFrac, p.inst.id],
+  );
+  const geometries = useMemo(
+    () => parts.map((part) => (part.shape === 'ellipsoid' ? UNIT_ELLIPSOID : part.shape === 'dome' ? UNIT_DOME : partGeometry(part))),
+    [parts],
+  );
+  useEffect(
+    () => () => {
+      geometries.forEach((g) => {
+        if (g !== UNIT_ELLIPSOID && g !== UNIT_DOME) g.dispose();
+      });
+    },
+    [geometries],
+  );
+  return (
+    <group>
+      {parts.map((part, i) => (
+        <mesh key={i} geometry={geometries[i]} position={part.position} rotation={part.rotation} scale={part.scale} castShadow={s.habit !== 'mat' || part.material === 'trunk'} receiveShadow={s.habit === 'mat'}>
+          {part.material === 'trunk' ? (
+            <meshStandardMaterial color="#6b4f3a" />
+          ) : (
+            // Leafless deciduous plants are drawn as a faint ghost of the canopy (GR-4).
+            <meshStandardMaterial color={color} roughness={1} transparent={leafOff} opacity={leafOff ? 0.22 : 1} depthWrite={!leafOff} />
+          )}
+        </mesh>
+      ))}
+    </group>
+  );
+}
 
-  switch (s.habit) {
-    case 'columnar':
-      return (
-        <group>
-          {trunk}
-          <mesh position={[0, 0, base + canopyH / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.55, r, canopyH, 16]} />
-            {mat}
-          </mesh>
-        </group>
-      );
-    case 'vase':
-      return (
-        <group>
-          {trunk}
-          <mesh position={[0, 0, base + canopyH / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[r, r * 0.3, canopyH, 18]} />
-            {mat}
-          </mesh>
-        </group>
-      );
-    case 'spreading':
-    case 'weeping':
-      return (
-        <group>
-          {trunk}
-          <mesh position={[0, 0, base]} scale={[r, r, canopyH]} castShadow>
-            <sphereGeometry args={[1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            {mat}
-          </mesh>
-        </group>
-      );
-    case 'clump': {
-      const blades = 9;
-      return (
-        <group>
-          {Array.from({ length: blades }, (_, i) => {
-            const a = (i / blades) * Math.PI * 2;
-            const d = r * 0.55;
-            return (
-              <mesh
-                key={i}
-                position={[Math.cos(a) * d, Math.sin(a) * d, h / 2]}
-                rotation={[Math.PI / 2 + Math.sin(a) * 0.35, 0, -Math.cos(a) * 0.35]}
-                castShadow
-              >
-                <coneGeometry args={[Math.max(r * 0.28, 0.05), h, 6]} />
-                {mat}
-              </mesh>
-            );
-          })}
-        </group>
-      );
-    }
-    case 'mat':
-      return (
-        <mesh position={[0, 0, Math.max(h, 0.15) / 2]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-          <cylinderGeometry args={[r, r, Math.max(h, 0.15), 24]} />
-          {mat}
-        </mesh>
-      );
-    case 'vine':
-      return (
-        <mesh position={[0, 0, h / 2]} castShadow>
-          <boxGeometry args={[r * 2, Math.max(0.5, r * 0.25), h]} />
-          {mat}
-        </mesh>
-      );
-    default:
-      return (
-        <group>
-          {trunk}
-          <mesh position={[0, 0, base + canopyH / 2]} scale={[r, r, canopyH / 2]} castShadow>
-            <sphereGeometry args={[1, 20, 14]} />
-            {mat}
-          </mesh>
-        </group>
-      );
-  }
+/** Fruit as small spheres on the canopy surface, when the plant is big enough and the fruit is in season. */
+function FruitCluster({ p, month }: { p: PlacedPlant; month: number }) {
+  const cfg = useApp((s) => s.engine.fruit);
+  const trunkFrac = useApp((s) => s.engine.growth.trunkClearanceFraction[p.species.type] ?? 0);
+  const show = useApp((s) => s.layers.fruit);
+  const state = useMemo(() => (show ? fruitState(p.species, p.size, month, cfg) : null), [show, p.species, p.size, month, cfg]);
+  const h = Math.max(p.size.height, MIN_FORM_SIZE);
+  const base = h * trunkFrac;
+  const spots = useMemo(
+    () => (state ? fruitPositions(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, state.count, seedFromId(p.inst.id), cfg) : []),
+    [state, p.species.habit, p.size.width, base, h, p.inst.id, cfg],
+  );
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = mesh.current;
+    if (!m || !state) return;
+    const dummy = new THREE.Object3D();
+    spots.forEach(([x, y, z], i) => {
+      dummy.position.set(x, y, z);
+      dummy.scale.set(state.diameterFt / 2, state.diameterFt / 2, (state.diameterFt / 2) * state.aspect);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    });
+    m.count = spots.length;
+    m.instanceMatrix.needsUpdate = true;
+  }, [spots, state]);
+  if (!state || spots.length === 0) return null;
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, spots.length]} key={`${spots.length}-${state.phase}`} frustumCulled={false}>
+      <sphereGeometry args={[1, 10, 8]} />
+      <meshStandardMaterial color={state.color} roughness={0.55} />
+    </instancedMesh>
+  );
+}
+
+export function Form({ p, month }: { p: PlacedPlant; month: number }) {
+  return (
+    <group>
+      <FormBody p={p} month={month} />
+      <FruitCluster p={p} month={month} />
+    </group>
+  );
 }
 
 function Ring({ x, y, radius, color, opacity = 0.9 }: { x: number; y: number; radius: number; color: string; opacity?: number }) {

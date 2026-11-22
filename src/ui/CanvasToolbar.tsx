@@ -9,6 +9,7 @@ const LAYERS = [
   ['easements', 'Easement'],
   ['context', 'Trees, fences, pole'],
   ['bloom', 'Bloom color on plants'],
+  ['fruit', 'Fruit on trees'],
   ['conflicts', 'Conflict rings'],
   ['suggestions', 'Placement heatmap'],
 ] as const;

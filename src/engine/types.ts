@@ -122,7 +122,81 @@ export interface SeasonCfg {
   to: [number, number];
 }
 
+export interface ShuffleCfg {
+  plantMoveRadiusFt: number;
+  moveAttempts: number;
+  minPlantGapFt: number;
+  /** A swapped-in species may be this fraction of the original's mature size, low and high. */
+  sizeRatioBand: [number, number];
+  /** Cover with less permeability than this counts as hard surface that plants are not nudged onto. */
+  hardCoverMaxPermeability: number;
+  timeYearsFrom: number[];
+  sunMinutesFrom: number;
+  sunMinutesTo: number;
+  sunMinutesStep: number;
+  colorsByCategory: Record<string, string[]>;
+}
+
+export interface ConceptCfg {
+  gridFt: number;
+  lotMarginFt: number;
+  structureMarginFt: number;
+  patio: { zone: string; width: [number, number]; depth: [number, number]; candidates: number; attempts: number };
+  path: { width: number; length: [number, number]; attempts: number };
+  beds: { zones: Record<string, [number, number]>; length: [number, number]; depth: [number, number]; attempts: number; edgeBias: number; gapFt: number };
+  plants: {
+    count: [number, number];
+    maxTrees: number;
+    overlapAllowance: number;
+    attempts: number;
+    bedBias: number;
+    zones: string[];
+    treeContainer: string;
+    container: string;
+    /** How many water-use steps from the chosen category a concept may stray. */
+    waterSpread: number;
+    pollinatorWeights: Record<string, number>;
+  };
+  minPoolSize: number;
+}
+
+export interface FruitCfg {
+  /** Fruit is drawn this many times its real size so it reads from across the yard. */
+  displayScale: number;
+  /** Unripe fruit is drawn at this share of ripe size. */
+  unripeScale: number;
+  /** Even tiny fruit (olives) is drawn at least this wide so it can be seen. */
+  minDisplayDiameterFt: number;
+  /** A plant starts to fruit once it reaches this share of its mature size. */
+  minSizeFraction: number;
+  /** Share of the full fruit count shown when fruiting first starts. */
+  startCountFraction: number;
+  /** How far out on the canopy surface the fruit sits (1 = on the surface). */
+  insetFraction: number;
+  /** Height range on the canopy, as shares of canopy height, where fruit hangs. */
+  zFractionRange: [number, number];
+  maxCount: number;
+}
+
+export interface SpeciesFruit {
+  shape: 'sphere' | 'oval';
+  /** Vertical stretch of an oval fruit. */
+  aspect?: number;
+  /** Real diameter in feet. */
+  diameterFt: number;
+  ripeColor: string;
+  unripeColor?: string;
+  ripeMonths: number[];
+  unripeMonths?: number[];
+  /** Fruit shown on a full-size plant. */
+  count: number;
+  source?: string;
+}
+
 export interface EngineConfig {
+  fruit: FruitCfg;
+  shuffle: ShuffleCfg;
+  concept: ConceptCfg;
   version: string;
   referenceYear: number;
   sun: {
@@ -212,6 +286,8 @@ export interface Species {
   maintenance: 'low' | 'moderate' | 'high';
   notes?: string;
   /** Source and confidence per group of fields. Falls back to the library default. */
+  /** Fruit drawn on the plant when in season (edible fruiting species). */
+  fruit?: SpeciesFruit;
   roots: { behavior: 'shallow' | 'moderate' | 'sensitive' | 'aggressive'; minFoundationFt: number; minPavingFt: number };
   soil: { drainageNeed: 'fast' | 'moderate' | 'tolerant'; textures: string[]; phMin: number; phMax: number };
   /** The owner's data sheet (2026-11-21): how well this row is verified and what is left to check. */

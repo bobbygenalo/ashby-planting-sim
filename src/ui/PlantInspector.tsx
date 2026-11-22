@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
+import { fruitState, monthRange, sizeFraction } from '../engine/fruit';
 import { placedPlants, sunFit } from '../engine/growth';
+import { doyToMonthDay } from '../engine/time';
 import type { SunHoursResult } from '../engine/sunhours';
 import { formatFeetInches } from '../engine/units';
 import type { ContainerId, Species } from '../engine/types';
@@ -45,6 +47,16 @@ export function PlantInspector({ growing }: { growing: SunHoursResult | null }) 
   const hours = sunAt(growing, inst.position[0], inst.position[1]);
   const fit = hours === null ? null : sunFit(sp, hours, s.engine.growth);
   const age = (s.timelineMonth - inst.plantedMonth) / 12;
+  // What the yard shows right now: depends on the sun date's month and how grown the plant is at this point in the timeline.
+  let fruitNow = '';
+  if (sp.fruit) {
+    const calMonth = doyToMonthDay(s.doy)[0];
+    const fs = placed ? fruitState(sp, placed.size, calMonth, s.engine.fruit) : null;
+    if (!placed) fruitNow = 'not yet planted';
+    else if (sizeFraction(sp, placed.size) < s.engine.fruit.minSizeFraction) fruitNow = `no fruit yet: starts at about ${Math.round(s.engine.fruit.minSizeFraction * 100)}% of mature size`;
+    else if (!fs) fruitNow = 'out of season on this date';
+    else fruitNow = `showing ${fs.count} ${fs.phase === 'ripe' ? 'ripe' : 'unripe'} fruit on this date`;
+  }
   const warnings: string[] = [];
   if (sp.invasive) warnings.push('Flagged invasive in the library.');
   if (fit === 'too-shaded') warnings.push(`Only ${hours!.toFixed(1)} h of growing-season sun here; ${sp.common} wants ${sp.sun} sun.`);
@@ -83,6 +95,15 @@ export function PlantInspector({ growing }: { growing: SunHoursResult | null }) 
           <tr><td>Water</td><td>WUCOLS {sp.wucols}, plant factor {pf}{row && <>; about <b>{Math.round(row.annualGal).toLocaleString()} gal/yr</b> now{row.multiplier > 1 ? ` (establishing, x${row.multiplier})` : ''}</>}</td></tr>
           {hzName && <tr><td>Zone</td><td>{hzName}</td></tr>}
           <tr><td>Blooms</td><td>{monthsLabel(sp.bloomMonths)}</td></tr>
+          {sp.fruit && (
+            <tr>
+              <td>Fruit</td>
+              <td>
+                ripe {monthRange(sp.fruit.ripeMonths)}
+                <br /><small className="muted">{fruitNow}</small>
+              </td>
+            </tr>
+          )}
           <tr><td>Hosts</td><td>{sp.pollinator.larvalHost.length ? sp.pollinator.larvalHost.join('; ') : 'no larval host recorded'}</td></tr>
           <tr><td>Data</td><td><span className={`pill conf-${prov.confidence}`}>{prov.confidence} confidence</span></td></tr>
         </tbody>

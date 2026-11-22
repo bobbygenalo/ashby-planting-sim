@@ -1829,6 +1829,26 @@
         "behavior": "moderate",
         "minFoundationFt": 8,
         "minPavingFt": 4
+      },
+      "fruit": {
+        "shape": "oval",
+        "aspect": 1.4,
+        "diameterFt": 0.14,
+        "ripeColor": "#86ad49",
+        "unripeColor": "#628a3c",
+        "ripeMonths": [
+          10,
+          11,
+          12
+        ],
+        "unripeMonths": [
+          6,
+          7,
+          8,
+          9
+        ],
+        "count": 26,
+        "source": "General estimate for display; ripening months vary with variety and year."
       }
     },
     {
@@ -1877,6 +1897,30 @@
         "behavior": "moderate",
         "minFoundationFt": 8,
         "minPavingFt": 4
+      },
+      "fruit": {
+        "shape": "oval",
+        "aspect": 1.35,
+        "diameterFt": 0.2,
+        "ripeColor": "#f2c42c",
+        "unripeColor": "#8fa83a",
+        "ripeMonths": [
+          11,
+          12,
+          1,
+          2,
+          3
+        ],
+        "unripeMonths": [
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "count": 22,
+        "source": "General estimate for display; ripening months vary with variety and year."
       }
     },
     {
@@ -2833,6 +2877,25 @@
         "confidence": "Partly verified",
         "verified": "Species size, low root damage, moderate water, 5 ft minimum grow space (SelecTree; Watsonville tree list)",
         "toVerify": "Chill need; pollination; bloom months; pH"
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.3,
+        "ripeColor": "#e8731a",
+        "unripeColor": "#a2b44a",
+        "ripeMonths": [
+          10,
+          11,
+          12
+        ],
+        "unripeMonths": [
+          6,
+          7,
+          8,
+          9
+        ],
+        "count": 30,
+        "source": "General estimate for display; ripening months vary with variety and year."
       }
     },
     {
@@ -2891,6 +2954,24 @@
         "confidence": "Partly verified",
         "verified": "Chill hours (Dave Wilson Nursery: 500; UC Master Gardeners San Luis Obispo: 600)",
         "toVerify": "Size by rootstock; WUCOLS rating; triploid pollen sterility; root data"
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.3,
+        "ripeColor": "#c4bb4b",
+        "unripeColor": "#86a84c",
+        "ripeMonths": [
+          10,
+          11
+        ],
+        "unripeMonths": [
+          6,
+          7,
+          8,
+          9
+        ],
+        "count": 28,
+        "source": "General estimate for display; ripening months vary with variety and year."
       }
     },
     {
@@ -2949,6 +3030,23 @@
         "confidence": "Partly verified",
         "verified": "Chill hours and pollenizer need (Dave Wilson Nursery; UC Santa Cruz County list)",
         "toVerify": "Size by rootstock; WUCOLS rating; root data"
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.25,
+        "ripeColor": "#d9505f",
+        "unripeColor": "#8aa84c",
+        "ripeMonths": [
+          8,
+          9
+        ],
+        "unripeMonths": [
+          5,
+          6,
+          7
+        ],
+        "count": 30,
+        "source": "General estimate for display; ripening months vary with variety and year."
       }
     },
     {
@@ -3006,6 +3104,27 @@
         "confidence": "Partly verified",
         "verified": "Species root damage (moderate), allergy, bee visits (SelecTree); invasive status (Cal-IPC)",
         "toVerify": "Cultivar size; WUCOLS rating; self-fertility"
+      },
+      "fruit": {
+        "shape": "oval",
+        "aspect": 1.3,
+        "diameterFt": 0.07,
+        "ripeColor": "#5a3668",
+        "unripeColor": "#a8c850",
+        "ripeMonths": [
+          11,
+          12,
+          1
+        ],
+        "unripeMonths": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "count": 70,
+        "source": "General estimate for display; ripening months vary with variety and year."
       }
     },
     {
@@ -3063,6 +3182,27 @@
         "confidence": "Partly verified",
         "verified": "Species size 25-30 ft, root damage (moderate), allergy (SelecTree); invasive status (Cal-IPC)",
         "toVerify": "Cultivar size; WUCOLS rating; self-fertility"
+      },
+      "fruit": {
+        "shape": "oval",
+        "aspect": 1.3,
+        "diameterFt": 0.08,
+        "ripeColor": "#5a3668",
+        "unripeColor": "#a8c850",
+        "ripeMonths": [
+          11,
+          12,
+          1
+        ],
+        "unripeMonths": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "count": 70,
+        "source": "General estimate for display; ripening months vary with variety and year."
       }
     },
     {

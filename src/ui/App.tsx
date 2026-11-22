@@ -11,6 +11,7 @@ import { TopBar } from './TopBar';
 import { CanvasToolbar } from './CanvasToolbar';
 import { SimDock } from './SimDock';
 import { SelectionCard } from './SelectionCard';
+import { ShuffleBar } from './ShuffleControl';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
 import { startCloudSync } from '../store/cloudSync';
@@ -144,6 +145,7 @@ function Planner() {
       <main className="stage">
         <SiteScene sunResult={sun.result} />
         <CanvasToolbar />
+        <ShuffleBar />
         <SimDock />
       </main>
       <aside className="right">

@@ -623,6 +623,8 @@ export interface EngineConfig {
   pricing: PricingCfg;
   holiday: HolidayCfg;
   vehicle: VehicleCfg;
+  /** Background colors by sun height: bright day, the glow around sunset, and night. */
+  sky: { day: string; dusk: string; night: string; fullDayElevationDeg: number; duskElevationDeg: number; fullNightElevationDeg: number };
   litter: LitterCfg;
   /** The growth-stages view: the ages shown and the two camera heights (angled, side-on). */
   growthStages: { years: number[]; anglePitch: number; sidePitch: number; /** The most plants shown side by side, the one opened included. */ maxPlants: number };

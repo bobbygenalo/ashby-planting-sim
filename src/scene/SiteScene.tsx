@@ -1,3 +1,4 @@
+import { skyColor } from '../engine/sky';
 import { useMemo } from 'react';
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { elementAt } from '../engine/hardscape';
@@ -143,6 +144,17 @@ function SunOverlay({ result }: { result: SunHoursResult }) {
       <meshBasicMaterial map={texture} transparent depthWrite={false} />
     </mesh>
   );
+}
+
+/** The background follows the sun: bright by day, a warm glow at sunset, dark at night. */
+function Sky() {
+  const site = useApp((s) => s.site);
+  const engine = useApp((s) => s.engine);
+  const doy = useApp((s) => s.doy);
+  const minutes = useApp((s) => s.minutes);
+  const [month, day] = doyToMonthDay(doy);
+  const sun = solarPosition(localToUtc(site.timeZone, engine.referenceYear, month, day, 0, minutes), site.latitude, site.longitude, engine.sun.refraction);
+  return <color attach="background" args={[skyColor(sun.elevationDeg, engine.sky)]} />;
 }
 
 function Sun({ target }: { target: THREE.Object3D }) {
@@ -444,7 +456,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
 
   return (
     <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true }}>
-      <color attach="background" args={['#dfe7ee']} />
+      <Sky />
       <Cameras />
       <Sun target={target} />
       {/* Site coordinates: x across the lot, y toward the rear, z up. Rotating -90 deg about X maps them to three.js (x, z, -y). */}

@@ -1659,5 +1659,13 @@
     "tailFromStreetFt": 2,
     "color": "#f2f2ee",
     "marginFt": 1.5
+  },
+  "sky": {
+    "day": "#dfe7ee",
+    "dusk": "#f0a878",
+    "night": "#070b16",
+    "fullDayElevationDeg": 8,
+    "duskElevationDeg": -1,
+    "fullNightElevationDeg": -12
   }
 }

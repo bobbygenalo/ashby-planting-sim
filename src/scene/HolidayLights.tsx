@@ -7,6 +7,7 @@ import { solarPosition } from '../engine/solar';
 import { activeStructures } from '../engine/site';
 import { doyToMonthDay, localToUtc } from '../engine/time';
 import { useApp } from '../store/store';
+import { paintBulbs } from './holidayPaint';
 
 /**
  * Christmas lights on the front rooflines of the street-facing house and the ADU, from the day after Thanksgiving to the
@@ -34,29 +35,12 @@ export function HolidayLights() {
   const glowMesh = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  // Colors: bright when lit, dull when not. Placement never changes with the hour.
+  // Place and color the bulbs. This must run when the meshes first exist, not only when the lights go on or off: they are
+  // created fresh each time the date moves into the season, and a bulb painted too early would be left white.
   useLayoutEffect(() => {
     const m = bulbMesh.current, g = glowMesh.current;
-    if (!m || !g) return;
-    const c = new THREE.Color();
-    bulbs.forEach((b, i) => {
-      dummy.position.set(b.pos[0], b.pos[1], b.pos[2]);
-      dummy.scale.setScalar(1);
-      dummy.updateMatrix();
-      m.setMatrixAt(i, dummy.matrix);
-      g.setMatrixAt(i, dummy.matrix);
-      c.set(cfg.colors[b.color]);
-      if (!on) c.multiplyScalar(cfg.offDim);
-      m.setColorAt(i, c);
-      c.set(cfg.colors[b.color]);
-      g.setColorAt(i, c);
-    });
-    m.count = g.count = bulbs.length;
-    m.instanceMatrix.needsUpdate = g.instanceMatrix.needsUpdate = true;
-    if (m.instanceColor) m.instanceColor.needsUpdate = true;
-    if (g.instanceColor) g.instanceColor.needsUpdate = true;
-    g.visible = on;
-  }, [bulbs, on, cfg, dummy]);
+    if (m && g) paintBulbs(m, g, bulbs, cfg.colors, on, cfg.offDim);
+  }, [bulbs, on, cfg, season]);
 
   // A slow twinkle while they are lit.
   const last = useRef(0);

@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import siteRaw from '../src/data/site.json';
 import engineRaw from '../src/data/engine.json';
@@ -6,6 +7,7 @@ import { solarPosition } from '../src/engine/solar';
 import { activeStructures, loadSite } from '../src/engine/site';
 import { doyToMonthDay, localToUtc, monthDayToDoy } from '../src/engine/time';
 import type { EngineConfig } from '../src/engine/types';
+import { paintBulbs } from '../src/scene/holidayPaint';
 
 const site = loadSite(siteRaw);
 const engine = engineRaw as unknown as EngineConfig;
@@ -100,12 +102,38 @@ describe('the lights on the roofline', () => {
     const porch = roofLightLines(part('house-porch'), cfg);
     expect(porch.length).toBe(3); // the eave and two side edges
     const adu = roofLightLines(part('adu-great'), cfg);
-    expect(adu).toHaveLength(1);
+    expect(adu).toHaveLength(3); // the sloping front edge and a string down each side
     const [w, e] = adu[0];
     expect(w[0]).toBeLessThan(e[0]);
     expect(e[2]).toBeGreaterThan(w[2] + 2); // the shed roof rises to the east
     const bed = roofLightLines(part('adu-bedroom'), cfg);
     expect(bed[0][1][2]).toBeGreaterThan(bed[0][0][2]);
+  });
+
+  it('come down the vertical sides of the ADU awnings, from the roof edge to the ground, at the outer front corners', () => {
+    for (const id of ['adu-great', 'adu-bedroom']) {
+      const s = part(id);
+      const [edge, ...sides] = roofLightLines(s, cfg);
+      expect(sides).toHaveLength(2);
+      const b = { minX: Math.min(...s.roofFootprint!.map((p) => p[0])), maxX: Math.max(...s.roofFootprint!.map((p) => p[0])) };
+      expect(sides.map((l) => l[0][0]).sort((a, c) => a - c)).toEqual([b.minX, b.maxX]);
+      for (const l of sides) {
+        expect(l).toHaveLength(2);
+        const [top, foot] = l;
+        expect(top[0]).toBe(foot[0]);
+        expect(top[1]).toBe(foot[1]); // straight down: a vertical line
+        expect(foot[2]).toBeGreaterThan(0);
+        expect(foot[2]).toBeLessThan(0.5); // down to the ground
+        // it starts where the roof's front edge ends
+        const end = l[0][0] === b.minX ? edge[0] : edge[1];
+        expect(top).toEqual(end);
+        expect(top[2]).toBeGreaterThan(s.eaveHeight);
+      }
+      // the east side is the taller one, since the roof climbs to the east
+      expect(sides[1][0][2]).toBeGreaterThan(sides[0][0][2] + 1);
+    }
+    // the house keeps just its roofline: no strings down its walls
+    for (const id of ['house-front', 'house-porch']) for (const l of roofLightLines(part(id), cfg)) expect(l.some((p) => p[2] < 5)).toBe(false);
   });
 
   it('are on the buildings the config names, and nowhere on the back of the house or the garage', () => {
@@ -133,5 +161,57 @@ describe('the lights on the roofline', () => {
     for (let i = 1; i < bent.length; i++) expect(Math.hypot(bent[i].pos[0] - bent[i - 1].pos[0], bent[i].pos[1] - bent[i - 1].pos[1])).toBeLessThanOrEqual(1.0001);
     const sample = stringBulbs(roofLightLines(part('house-front'), cfg), cfg.bulbSpacingFt, cfg.colors.length);
     expect(sample.length).toBeGreaterThan(20);
+  });
+});
+
+describe('painting the bulbs', () => {
+  const lines = structures.filter((s) => cfg.lightedParts.includes(s.id)).flatMap((s) => roofLightLines(s, cfg));
+  const list = stringBulbs(lines, cfg.bulbSpacingFt, cfg.colors.length);
+  const make = () => ({
+    bulbs: new THREE.InstancedMesh(new THREE.SphereGeometry(0.1, 4, 3), new THREE.MeshBasicMaterial(), list.length),
+    glow: new THREE.InstancedMesh(new THREE.SphereGeometry(0.4, 4, 3), new THREE.MeshBasicMaterial(), list.length),
+  });
+  const colorAt = (m: THREE.InstancedMesh, i: number) => { const c = new THREE.Color(); m.getColorAt(i, c); return c; };
+
+  it('gives every bulb its own color, many different ones, lit or not, never left white', () => {
+    for (const lit of [true, false]) {
+      const { bulbs, glow } = make();
+      paintBulbs(bulbs, glow, list, cfg.colors, lit, cfg.offDim);
+      expect(bulbs.count).toBe(list.length);
+      const seen = new Set<string>();
+      list.forEach((b, i) => {
+        const want = new THREE.Color(cfg.colors[b.color]);
+        if (!lit) want.multiplyScalar(cfg.offDim);
+        const got = colorAt(bulbs, i);
+        expect(got.r).toBeCloseTo(want.r, 5);
+        expect(got.g).toBeCloseTo(want.g, 5);
+        expect(got.b).toBeCloseTo(want.b, 5);
+        seen.add(got.getHexString());
+      });
+      expect(seen.size).toBeGreaterThanOrEqual(5); // multicolor, not one color
+      expect(glow.visible).toBe(lit);
+    }
+  });
+
+  it('puts each bulb where the string is, and lights up the glow in the same colors', () => {
+    const { bulbs, glow } = make();
+    paintBulbs(bulbs, glow, list, cfg.colors, true, cfg.offDim);
+    const m = new THREE.Matrix4();
+    list.forEach((b, i) => {
+      bulbs.getMatrixAt(i, m);
+      const p = new THREE.Vector3().setFromMatrixPosition(m);
+      expect(p.x).toBeCloseTo(b.pos[0], 5);
+      expect(p.y).toBeCloseTo(b.pos[1], 5);
+      expect(p.z).toBeCloseTo(b.pos[2], 5);
+      expect(colorAt(glow, i).getHexString()).toBe(new THREE.Color(cfg.colors[b.color]).getHexString());
+    });
+  });
+
+  it('repaints cleanly onto fresh meshes, as happens each time the date moves into the season', () => {
+    const first = make();
+    paintBulbs(first.bulbs, first.glow, list, cfg.colors, true, cfg.offDim);
+    const fresh = make();
+    paintBulbs(fresh.bulbs, fresh.glow, list, cfg.colors, true, cfg.offDim);
+    list.forEach((_, i) => expect(colorAt(fresh.bulbs, i).getHexString()).toBe(colorAt(first.bulbs, i).getHexString()));
   });
 });

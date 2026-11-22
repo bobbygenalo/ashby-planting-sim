@@ -22,10 +22,13 @@ export function lightsAreOn(sunElevationDeg: number, minutes: number, cfg: Holid
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+/** Where the string ends at the foot of a wall, just off the ground. */
+const GROUND_LIFT = 0.15;
 
 /**
  * The roofline of one structure's street-facing front as lines of 3D points, in site feet: a gable's two rakes and its
- * eave, a shed roof's front eave and its side edges, or the sloping front edge of the ADU's shed roofs. They hang a
+ * eave, a shed roof's front eave and its side edges, or the sloping front edge of the ADU's shed roofs and down the
+ * side walls that hold up their awnings. They hang a
  * little out from the edge toward the street (-Y) and a little above it, so the lights sit on the edge, not in it.
  */
 export function roofLightLines(s: StructureCfg, cfg: Pick<HolidayCfg, 'outwardFt' | 'liftFt'>): Pt3[][] {
@@ -56,6 +59,9 @@ export function roofLightLines(s: StructureCfg, cfg: Pick<HolidayCfg, 'outwardFt
         return s.eaveHeight + (s.ridgeHeight - s.eaveHeight) * (low === 'east' ? 1 - t : t);
       };
       out.push([[b.minX, y0, z(b.minX) + up], [b.maxX, y0, z(b.maxX) + up]]);
+      // A roof that reaches out over the front as an awning stands on side walls that run to the ground: the string also
+      // comes down the outer front edge of each, from the roof to the ground.
+      if (s.roofThickness !== undefined) for (const x of [b.minX, b.maxX]) out.push([[x, y0, z(x) + up], [x, y0, GROUND_LIFT]]);
       return out;
     }
   }

@@ -6,11 +6,36 @@ import { fruitPositions, fruitState, seedFromId } from '../engine/fruit';
 import { isBlooming, isLeafOff, placedPlants } from '../engine/growth';
 import { doyToMonthDay } from '../engine/time';
 import { useApp } from '../store/store';
+import { branchSkeleton, type Skeleton } from '../engine/branches';
+import { branchGeometry } from './branchGeometry';
 import { MIN_FORM_SIZE, partGeometry, plantParts } from './forms';
 
 // Spheres and domes are shared unit shapes that each plant scales; the rest are built per plant and thrown away with it.
 const UNIT_ELLIPSOID = partGeometry({ shape: 'ellipsoid', material: 'foliage', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], args: [] });
 const UNIT_DOME = partGeometry({ shape: 'dome', material: 'foliage', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], args: [] });
+
+/** The bare branches of a leafless plant, shared by the branch drawing and the fruit that hangs from them. */
+function useSkeleton(p: PlacedPlant, enabled: boolean): Skeleton | null {
+  const cfg = useApp((s) => s.engine.branches);
+  const trunkFrac = useApp((s) => s.engine.growth.trunkClearanceFraction[p.species.type] ?? 0);
+  const h = Math.max(p.size.height, MIN_FORM_SIZE);
+  const base = h * trunkFrac;
+  return useMemo(
+    () => (enabled ? branchSkeleton(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, seedFromId(p.inst.id), cfg) : null),
+    [enabled, p.species.habit, p.size.width, base, h, p.inst.id, cfg],
+  );
+}
+
+function Branches({ skeleton }: { skeleton: Skeleton }) {
+  const geometry = useMemo(() => branchGeometry(skeleton), [skeleton]);
+  useEffect(() => () => geometry?.dispose(), [geometry]);
+  if (!geometry) return null;
+  return (
+    <mesh geometry={geometry} castShadow>
+      <meshStandardMaterial color="#5e4632" roughness={1} />
+    </mesh>
+  );
+}
 
 function FormBody({ p, month }: { p: PlacedPlant; month: number }) {
   const trunkFrac = useApp((s) => s.engine.growth.trunkClearanceFraction[p.species.type] ?? 0);
@@ -39,33 +64,48 @@ function FormBody({ p, month }: { p: PlacedPlant; month: number }) {
     },
     [geometries],
   );
+  const skeleton = useSkeleton(p, leafOff);
   return (
     <group>
-      {parts.map((part, i) => (
+      {skeleton && <Branches skeleton={skeleton} />}
+      {parts.map((part, i) => (part.material !== 'trunk' && leafOff ? null : (
         <mesh key={i} geometry={geometries[i]} position={part.position} rotation={part.rotation} scale={part.scale} castShadow={s.habit !== 'mat' || part.material === 'trunk'} receiveShadow={s.habit === 'mat'}>
           {part.material === 'trunk' ? (
             <meshStandardMaterial color="#6b4f3a" />
           ) : (
-            // Leafless deciduous plants are drawn as a faint ghost of the canopy (GR-4).
-            <meshStandardMaterial color={color} roughness={1} transparent={leafOff} opacity={leafOff ? 0.22 : 1} depthWrite={!leafOff} />
+            <meshStandardMaterial color={color} roughness={1} />
           )}
         </mesh>
-      ))}
+      )))}
     </group>
   );
 }
 
 /** Fruit as small spheres on the canopy surface, when the plant is big enough and the fruit is in season. */
+/** Bare trees hold their fruit on the twigs: one piece hangs just below each tip, then the rest double up on the tips. */
+function hangingSpots(sk: Skeleton, count: number, diameter: number, seed: number): [number, number, number][] {
+  if (sk.tips.length === 0) return [];
+  const out: [number, number, number][] = [];
+  for (let i = 0; i < Math.min(count, sk.tips.length * 2); i++) {
+    const t = sk.tips[(i + seed) % sk.tips.length];
+    const lap = Math.floor(i / sk.tips.length);
+    out.push([t[0] + lap * diameter * 0.6, t[1] - lap * diameter * 0.4, t[2] - diameter * (0.5 + lap * 1.1)]);
+  }
+  return out;
+}
+
 function FruitCluster({ p, month }: { p: PlacedPlant; month: number }) {
   const cfg = useApp((s) => s.engine.fruit);
   const trunkFrac = useApp((s) => s.engine.growth.trunkClearanceFraction[p.species.type] ?? 0);
   const show = useApp((s) => s.layers.fruit);
+  const leafOff = isLeafOff(p.species, month);
   const state = useMemo(() => (show ? fruitState(p.species, p.size, month, cfg) : null), [show, p.species, p.size, month, cfg]);
   const h = Math.max(p.size.height, MIN_FORM_SIZE);
   const base = h * trunkFrac;
+  const skeleton = useSkeleton(p, leafOff);
   const spots = useMemo(
-    () => (state ? fruitPositions(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, state.count, seedFromId(p.inst.id), cfg) : []),
-    [state, p.species.habit, p.size.width, base, h, p.inst.id, cfg],
+    () => (state && leafOff ? (skeleton ? hangingSpots(skeleton, state.count, state.diameterFt, seedFromId(p.inst.id)) : []) : state ? fruitPositions(p.species.habit, Math.max(p.size.width / 2, MIN_FORM_SIZE / 2), base, h - base, state.count, seedFromId(p.inst.id), cfg) : []),
+    [state, leafOff, skeleton, p.species.habit, p.size.width, base, h, p.inst.id, cfg],
   );
   const mesh = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {

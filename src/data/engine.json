@@ -888,5 +888,27 @@
       "displayFt": 0.36
     },
     "maxStepS": 0.1
+  },
+  "branches": {
+    "limbs": [
+      4,
+      6
+    ],
+    "levels": 3,
+    "children": [
+      2,
+      3
+    ],
+    "lengthRatio": 0.68,
+    "firstLengthFrac": 0.38,
+    "elevationDeg": [
+      40,
+      75
+    ],
+    "childSpreadDeg": 38,
+    "radiusFrac": 0.012,
+    "taper": 0.62,
+    "minRadiusFt": 0.012,
+    "inset": 0.92
   }
 }

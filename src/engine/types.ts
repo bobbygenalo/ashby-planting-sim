@@ -282,7 +282,28 @@ export interface LifeCfg {
   maxStepS: number;
 }
 
+export interface BranchCfg {
+  /** Main limbs from the top of the trunk, as [least, most]. */
+  limbs: [number, number];
+  /** Levels of branching: limbs, then branches, then twigs. */
+  levels: number;
+  children: [number, number];
+  /** Each level is this long relative to the one before. */
+  lengthRatio: number;
+  /** The first limbs are this share of the canopy height long. */
+  firstLengthFrac: number;
+  elevationDeg: [number, number];
+  childSpreadDeg: number;
+  /** Radius at the base of a limb, as a share of canopy height. */
+  radiusFrac: number;
+  taper: number;
+  minRadiusFt: number;
+  /** Twigs stay inside this share of the canopy outline. */
+  inset: number;
+}
+
 export interface EngineConfig {
+  branches: BranchCfg;
   life: LifeCfg;
   fruit: FruitCfg;
   shuffle: ShuffleCfg;

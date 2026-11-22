@@ -2974,7 +2974,6 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        11,
         12,
         1,
         2
@@ -3050,7 +3049,6 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        11,
         12,
         1,
         2

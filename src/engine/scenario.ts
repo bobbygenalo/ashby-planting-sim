@@ -47,7 +47,7 @@ export interface ShareRecord {
   revokeKey: string;
   createdAt: string;
   updatedAt: string;
-  hideAddress: boolean;
+  blurLocation: boolean;
   revoked: boolean;
 }
 
@@ -62,6 +62,29 @@ export interface Workspace {
 }
 
 export const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
+/** Share records saved by an older version used another name for the location option. */
+export function normalizeShare(r: ShareRecord & { hideAddress?: boolean }): ShareRecord {
+  const { hideAddress, ...rest } = r;
+  return { ...rest, blurLocation: r.blurLocation ?? hideAddress ?? false };
+}
+
+/**
+ * Existing hardscape (the driveway) is a fact about the yard, so it always comes from the site file. A scenario keeps
+ * only what the owner did with it: whether this scenario removes it, and any color. Without this, a scenario saved
+ * before the site file was corrected would keep drawing the old shape. Elements the owner added are left alone.
+ */
+export function syncExistingHardscape(hardscape: HardscapeElement[], site: SiteConfig): HardscapeElement[] {
+  const saved = new Map(hardscape.map((e) => [e.id, e]));
+  const fromSite = site.hardscape
+    .filter((e) => e.existing)
+    .map((e): HardscapeElement => {
+      const mine = saved.get(e.id);
+      return { ...clone(e), ...(mine?.removed ? { removed: true } : {}), ...(mine?.color ? { color: mine.color } : {}) };
+    });
+  const siteIds = new Set(fromSite.map((e) => e.id));
+  return [...fromSite, ...hardscape.filter((e) => !siteIds.has(e.id))];
+}
 
 /** A fresh scenario: the owner's default palette, no plants, and the lot's existing hardscape. */
 export function emptyScenarioData(site: SiteConfig): ScenarioData {
@@ -317,8 +340,8 @@ export interface ShareSnapshot {
   format: typeof SHARE_FORMAT;
   createdAt: string;
   name: string;
-  hideAddress: boolean;
-  /** The site the plan was made for. Redacted when the owner hides the address. */
+  blurLocation: boolean;
+  /** The site the plan was made for. Its name is removed and its location blurred when the owner blurs the location. */
   site: SiteConfig;
   scenario: ScenarioData;
   customSpecies: Species[];
@@ -328,15 +351,14 @@ export interface ShareSnapshot {
 }
 
 /**
- * Strip what identifies the lot (SH-3). With the address hidden the name and address are removed and the
- * coordinates are rounded to a tenth of a degree, which keeps the sun accurate to well under a degree
- * but no longer points at one street. The lot's shape is kept: it is the plan.
+ * Blur what identifies the lot (SH-3). With the location blurred the name is removed and the coordinates are rounded
+ * to a tenth of a degree, which keeps the sun accurate to well under a degree but no longer points at one street.
+ * The lot's shape is kept: it is the plan.
  */
-export function redactSite(site: SiteConfig, hideAddress: boolean): SiteConfig {
+export function redactSite(site: SiteConfig, blurLocation: boolean): SiteConfig {
   const s = clone(site);
-  if (!hideAddress) return s;
+  if (!blurLocation) return s;
   s.name = 'Shared lot';
-  s.address = '';
   s.latitude = Math.round(s.latitude * 10) / 10;
   s.longitude = Math.round(s.longitude * 10) / 10;
   return s;
@@ -348,7 +370,7 @@ export function buildShareSnapshot(args: {
   data: ScenarioData;
   customSpecies: Species[];
   siteOverrides: SiteOverrides;
-  hideAddress: boolean;
+  blurLocation: boolean;
   view: { timelineMonth: number; doy: number };
   now?: Date;
 }): ShareSnapshot {
@@ -357,8 +379,8 @@ export function buildShareSnapshot(args: {
     format: SHARE_FORMAT,
     createdAt: (args.now ?? new Date()).toISOString(),
     name: args.name,
-    hideAddress: args.hideAddress,
-    site: redactSite(args.site, args.hideAddress),
+    blurLocation: args.blurLocation,
+    site: redactSite(args.site, args.blurLocation),
     scenario: clone(args.data),
     customSpecies: clone(args.customSpecies.filter((s) => used.has(s.id))),
     siteOverrides: clone(args.siteOverrides),
@@ -388,7 +410,7 @@ export function parseShareSnapshot(raw: unknown, ctx: ValidationContext): Parsed
     warnings: check.warnings,
     snapshot: {
       format: SHARE_FORMAT, createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : '', name: raw.name as string,
-      hideAddress: raw.hideAddress === true, site: site as SiteConfig, scenario: check.data, customSpecies: custom.species,
+      blurLocation: raw.blurLocation === true || raw.hideAddress === true, site: site as SiteConfig, scenario: check.data, customSpecies: custom.species,
       siteOverrides: validateOverrides(raw.siteOverrides, { ...ctx, zoneIds: new Set((site as SiteConfig).zones.map((z) => z.id)) }), view,
     },
   };

@@ -98,14 +98,18 @@ export function ShuffleBar() {
     result = parts.length > 0 ? parts.join(' · ') : 'Nothing could change (existing items stay put)';
   } else if (last?.kind === 'concept') {
     const c = last.summary.counts;
-    const parts = [c.patio && '1 patio', c.path && '1 path', c.beds && plural(c.beds, 'bed'), c.plants && `${plural(c.plants, 'plant')} of ${plural(c.species, 'kind')}`].filter(Boolean);
-    result = [parts.length > 0 ? parts.join(' · ') : 'Nothing could be built', ...last.summary.notes].join(' · ');
+    const parts = [
+      c.patio && '1 patio', c.deck && '1 deck', c.lawn && '1 lawn', c.gravel && `${c.gravel} gravel`, c.mulch && `${c.mulch} mulch`,
+      c.path && plural(c.path, 'path'), c.beds && plural(c.beds, 'bed'), c.raisedBeds && `${c.raisedBeds} raised`,
+      c.plants && `${plural(c.plants, 'plant')} of ${plural(c.species, 'kind')}`,
+    ].filter(Boolean);
+    result = [last.summary.theme, parts.length > 0 ? parts.join(' · ') : 'Nothing could be built', ...last.summary.notes].filter(Boolean).join(': ').replace(/: ([^:]*) · /, ': $1 · ');
   }
 
   const description =
     mode === 'vary'
       ? `Tweaks the new plants and hardscape in "${activeName}". Existing items never change.${starredVary ? ' Plants swap only for your starred ones.' : ''}`
-      : `Builds a brand-new plan in a new scenario, ignoring what is placed in "${activeName}". ${concept.plants ? (concept.starredOnly ? `Plants come only from your ${stars} starred.` : 'Plants come from the whole library.') : ''}`;
+      : `Builds a brand-new plan in a new scenario, ignoring what is placed in "${activeName}". Each one picks a theme and mixes a patio, deck, lawn, gravel, mulch, beds, raised beds and paths, each in its own color. ${concept.plants ? (concept.starredOnly ? `Plants come only from your ${stars} starred.` : 'Plants come from the whole library.') : ''}`;
 
   return (
     <div className="shufflebar" role="group" aria-label="Shuffle">

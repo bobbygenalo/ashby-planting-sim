@@ -411,7 +411,14 @@
         12,
         24
       ],
-      "attempts": 80
+      "attempts": 80,
+      "materials": [
+        "decomposed-granite",
+        "gravel",
+        "flagstone-dry",
+        "pavers-sand"
+      ],
+      "max": 3
     },
     "beds": {
       "zones": {
@@ -458,7 +465,203 @@
         "low": 1
       }
     },
-    "minPoolSize": 3
+    "minPoolSize": 3,
+    "areas": {
+      "lawn": {
+        "width": [
+          10,
+          22
+        ],
+        "depth": [
+          9,
+          18
+        ],
+        "zones": [
+          "back_yard",
+          "front_yard"
+        ],
+        "attempts": 300
+      },
+      "deck": {
+        "width": [
+          10,
+          14
+        ],
+        "depth": [
+          8,
+          12
+        ],
+        "zones": [
+          "back_yard"
+        ],
+        "attempts": 300,
+        "materials": [
+          "wood-deck",
+          "composite-deck"
+        ]
+      },
+      "gravel": {
+        "width": [
+          6,
+          14
+        ],
+        "depth": [
+          6,
+          12
+        ],
+        "zones": [
+          "back_yard",
+          "front_yard"
+        ],
+        "attempts": 300
+      },
+      "mulch": {
+        "width": [
+          6,
+          12
+        ],
+        "depth": [
+          5,
+          10
+        ],
+        "zones": [
+          "back_yard",
+          "front_yard"
+        ],
+        "attempts": 300
+      },
+      "raisedBed": {
+        "width": [
+          3,
+          4
+        ],
+        "depth": [
+          6,
+          12
+        ],
+        "zones": [
+          "back_yard",
+          "front_yard"
+        ],
+        "attempts": 300
+      }
+    },
+    "themes": [
+      {
+        "id": "lawn-and-beds",
+        "label": "Lawn and beds",
+        "lawn": [
+          1,
+          1
+        ],
+        "gravel": [
+          0,
+          0
+        ],
+        "mulch": [
+          0,
+          1
+        ],
+        "raisedBeds": [
+          0,
+          1
+        ],
+        "deck": 0,
+        "paths": [
+          1,
+          2
+        ]
+      },
+      {
+        "id": "dry-garden",
+        "label": "Dry garden",
+        "lawn": [
+          0,
+          0
+        ],
+        "gravel": [
+          1,
+          2
+        ],
+        "mulch": [
+          1,
+          1
+        ],
+        "raisedBeds": [
+          0,
+          0
+        ],
+        "deck": 0,
+        "paths": [
+          1,
+          2
+        ]
+      },
+      {
+        "id": "kitchen-garden",
+        "label": "Kitchen garden",
+        "lawn": [
+          0,
+          0
+        ],
+        "gravel": [
+          0,
+          1
+        ],
+        "mulch": [
+          0,
+          1
+        ],
+        "raisedBeds": [
+          2,
+          4
+        ],
+        "deck": 0.5,
+        "paths": [
+          2,
+          3
+        ]
+      },
+      {
+        "id": "courtyard",
+        "label": "Courtyard",
+        "lawn": [
+          0,
+          1
+        ],
+        "gravel": [
+          0,
+          1
+        ],
+        "mulch": [
+          1,
+          1
+        ],
+        "raisedBeds": [
+          0,
+          2
+        ],
+        "deck": 0.6,
+        "paths": [
+          1,
+          2
+        ]
+      }
+    ],
+    "colors": {
+      "concrete": "#c2c0bb",
+      "pavers-sand": "#d98c7a",
+      "flagstone-mortar": "#5f7391",
+      "flagstone-dry": "#a994ba",
+      "decomposed-granite": "#e6c97a",
+      "gravel": "#93b5b3",
+      "soil-bed": "#8b5e3c",
+      "mulch": "#3f2d22",
+      "lawn": "#79b45f",
+      "wood-deck": "#e0a040",
+      "composite-deck": "#85807a",
+      "raised-bed-wood": "#b0582a"
+    }
   },
   "fruit": {
     "displayScale": 3,
@@ -472,5 +675,90 @@
     ],
     "maxCount": 80,
     "minDisplayDiameterFt": 0.4
+  },
+  "life": {
+    "cellFt": 1,
+    "margins": {
+      "plantFt": 0.75,
+      "structureFt": 1.2,
+      "lotFt": 1.5,
+      "hiveFt": 4.5,
+      "nearBlockedFt": 1,
+      "nearBlockedExtraCost": 0.6
+    },
+    "costs": {
+      "open": 1.0,
+      "path": 0.4,
+      "hard": 0.8,
+      "lawn": 1.0,
+      "gravel": 1.4,
+      "mulch": 2.0,
+      "bed": 6.0
+    },
+    "people": {
+      "max": 4,
+      "speedFt": [
+        2.6,
+        3.6
+      ],
+      "pauseS": [
+        1.5,
+        4.5
+      ],
+      "pathBias": 0.55,
+      "minTripFt": 8,
+      "heightFt": 5.6,
+      "turnRate": 6
+    },
+    "dogs": {
+      "max": 2,
+      "speedFt": [
+        3.5,
+        6.5
+      ],
+      "pauseS": [
+        0.8,
+        3
+      ],
+      "followFt": [
+        3,
+        9
+      ],
+      "replanS": 1.6,
+      "heightFt": 1.7,
+      "turnRate": 9
+    },
+    "bees": {
+      "count": 26,
+      "speedFt": [
+        9,
+        14
+      ],
+      "forageS": [
+        2.5,
+        5.5
+      ],
+      "restS": [
+        0.5,
+        3
+      ],
+      "rangeFt": 70,
+      "wanderFt": 18,
+      "altitudeFt": [
+        2.5,
+        7
+      ],
+      "wobbleFt": 0.8,
+      "hive": {
+        "boxes": 4,
+        "minFromPathFt": 8,
+        "minFromStructureFt": 5,
+        "minFromPlantFt": 3,
+        "attempts": 400,
+        "rearBias": 10
+      },
+      "displayFt": 0.25
+    },
+    "maxStepS": 0.1
   }
 }

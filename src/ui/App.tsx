@@ -187,7 +187,7 @@ function Planner() {
 
 const SHARE_MESSAGES: Record<Exclude<LoadOutcome['status'], 'ready'>, { title: string; body: string }> = {
   revoked: { title: 'This link has been turned off', body: 'The owner has stopped sharing this plan. Ask them for a new link if you still need to see it.' },
-  'not-found': { title: 'This link does not work', body: 'It may have been copied incompletely. Check the address, or ask the owner to send it again.' },
+  'not-found': { title: 'This link does not work', body: 'It may have been copied incompletely. Check the link, or ask the owner to send it again.' },
   invalid: { title: 'This plan cannot be opened', body: 'The shared plan is damaged or was made by a newer version of this app.' },
   network: { title: 'Could not reach the sharing service', body: 'Check your connection and try again.' },
   error: { title: 'Something went wrong', body: 'Try again in a moment.' },

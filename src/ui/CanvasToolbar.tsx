@@ -10,6 +10,7 @@ const LAYERS = [
   ['context', 'Trees, fences, pole'],
   ['bloom', 'Bloom color on plants'],
   ['fruit', 'Fruit on trees'],
+  ['life', 'People, dogs and bees'],
   ['conflicts', 'Conflict rings'],
   ['suggestions', 'Placement heatmap'],
 ] as const;
@@ -45,6 +46,21 @@ export function CanvasToolbar() {
                 {label}
               </label>
             ))}
+            {s.layers.life && (
+              <div className="lifebox">
+                <label>People
+                  <select value={s.lifeSettings.people} onChange={(e) => s.setLifeSettings({ people: Number(e.target.value) })} aria-label="People">
+                    {Array.from({ length: s.engine.life.people.max + 1 }, (_, n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+                <label>Dogs
+                  <select value={s.lifeSettings.dogs} onChange={(e) => s.setLifeSettings({ dogs: Number(e.target.value) })} aria-label="Dogs">
+                    {Array.from({ length: s.engine.life.dogs.max + 1 }, (_, n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+                <label className="check"><input type="checkbox" checked={s.lifeSettings.bees} onChange={(e) => s.setLifeSettings({ bees: e.target.checked })} />Hive and bees</label>
+              </div>
+            )}
             <label className="check">
               <input type="checkbox" checked={s.aduEnabled} disabled={!edit} onChange={(e) => s.setAduEnabled(e.target.checked)} />
               Model the ADU{!edit && ' (locked)'}

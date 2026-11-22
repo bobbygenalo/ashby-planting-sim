@@ -49,7 +49,6 @@ export function TopBar({ onScenarios }: { onScenarios: () => void }) {
     <header className="topbar">
       <div className="brand">
         <b>{s.site.name}</b>
-        <span className="muted">{s.site.address}</span>
       </div>
       {edit ? (
         <div className="scenariobar">
@@ -62,7 +61,6 @@ export function TopBar({ onScenarios }: { onScenarios: () => void }) {
           <button onClick={() => s.createScenario()} title="Start another scenario">+ New</button>
           <button onClick={onScenarios}>Manage…</button>
           <ShuffleControl />
-          <button className="on" onClick={onScenarios} title="Get a read-only link to a scenario">Share</button>
         </div>
       ) : (
         <div className="scenariobar"><span className="badge view">View only</span></div>
@@ -70,6 +68,7 @@ export function TopBar({ onScenarios }: { onScenarios: () => void }) {
       <div className="topright">
         <SaveStatus />
         {edit && <UndoRedo />}
+        {edit && <button className="on" onClick={onScenarios} title="Get a read-only link to a scenario">Share</button>}
       </div>
     </header>
   );

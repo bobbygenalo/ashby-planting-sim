@@ -273,3 +273,6 @@ button.icon { padding: 3px 8px; min-width: 28px; line-height: 1.2; }
 .shuffleresult { color: var(--ink); max-width: none; white-space: normal; }
 .shufflebar .segmented.small { flex: 0 0 auto; }
 .shufflebar .segmented.small button { flex: 0 0 auto; white-space: nowrap; }
+.lifebox { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin: 0 0 6px 24px; font-size: 12px; color: var(--muted); }
+.lifebox label { display: inline-flex; align-items: center; gap: 4px; }
+.lifebox select { padding: 1px 4px; font-size: 12px; }

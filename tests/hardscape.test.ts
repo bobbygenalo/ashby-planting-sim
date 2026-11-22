@@ -121,7 +121,9 @@ describe('permeable vs impervious (HS-5)', () => {
     const drive = site.hardscape[0];
     const keep = rows([drive]).find((r) => r.id === 'lot')!;
     const gone = rows([{ ...drive, removed: true }]).find((r) => r.id === 'lot')!;
-    expect(keep.imperviousSf - gone.imperviousSf).toBeCloseTo(8 * 82.5, -1);
+    // The driveway from the garage plan: a narrow run, a taper, and a 16 ft apron.
+    expect(Math.abs((keep.imperviousSf - gone.imperviousSf) / polygonArea(drive.points) - 1)).toBeLessThan(0.02); // sampled on a grid
+    expect(polygonArea(drive.points)).toBeGreaterThan(700);
     // A patio sits above gravel in the draw order, so where they overlap the area counts as impervious.
     const empty = back(rows([]));
     const overlap = back(rows([el({ points: rect(30, 70, 10, 10) }), el({ type: 'gravel', materialId: 'gravel', points: rect(30, 70, 10, 10) })]));

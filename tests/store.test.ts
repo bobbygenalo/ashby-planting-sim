@@ -369,7 +369,7 @@ describe('scenarios (SC-1, SC-2)', () => {
     a.getState().createScenario('Second');
     plant(a, 'salvia-leucantha', [20, 100]);
     a.getState().setSoilProfile('back_yard', { texture: 'clay' });
-    a.getState().addShare({ scenarioId: first, token: 'T'.repeat(22), revokeKey: 'k', createdAt: 'c', updatedAt: 'u', hideAddress: true, revoked: false });
+    a.getState().addShare({ scenarioId: first, token: 'T'.repeat(22), revokeKey: 'k', createdAt: 'c', updatedAt: 'u', blurLocation: true, revoked: false });
     const ws = JSON.parse(JSON.stringify(a.getState().toWorkspace()));
 
     const b = makeAppStore('edit');

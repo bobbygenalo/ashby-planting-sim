@@ -86,7 +86,7 @@ export function ScenariosPanel() {
   const [draft, setDraft] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'bad'; text: string } | null>(null);
-  const [hideAddress, setHideAddress] = useState(false);
+  const [blurLocation, setBlurLocation] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -111,7 +111,7 @@ export function ScenariosPanel() {
       setMessage({ kind: 'bad', text: ready.message });
       return;
     }
-    const r = await publishShare(appStore, client, scenarioId, hideAddress);
+    const r = await publishShare(appStore, client, scenarioId, blurLocation);
     setBusy(null);
     setMessage(r.ok ? { kind: 'ok', text: `Link created for "${nameOf(scenarioId)}". Anyone with it can view that plan, and nobody can change it.` } : { kind: 'bad', text: r.error.message });
   };
@@ -159,7 +159,7 @@ export function ScenariosPanel() {
       <li key={r.token} className={`linkrow ${r.revoked ? 'off' : ''}`}>
         <div className="row wrap">
           <span className={`pill ${r.revoked ? 'warn' : 'native'}`}>{r.revoked ? 'turned off' : 'live'}</span>
-          {r.hideAddress && <span className="pill">address hidden</span>}
+          {r.blurLocation && <span className="pill">location blurred</span>}
           <span className="muted small">{s.scenarios.some((x) => x.id === r.scenarioId) ? '' : `for ${nameOf(r.scenarioId)} · `}shown {when(r.updatedAt)}</span>
         </div>
         {!r.revoked && (
@@ -246,10 +246,10 @@ export function ScenariosPanel() {
         <p className="muted small">Share links are not available on this site yet. Use Export above to send a scenario as a file.</p>
       ) : (<>
       <p className="small">Every scenario above has its own link. Family and professionals open a link with no login. They can orbit, scrub time and seasons, switch layers, and inspect plants, but cannot change anything.</p>
-      <label className="check"><input type="checkbox" checked={hideAddress} onChange={(e) => setHideAddress(e.target.checked)} />Hide the street address on new links</label>
-      <p className="muted small">{hideAddress
-        ? 'New links carry no name or address, and their location is rounded to about 7 miles. The lot layout stays, since that is the plan.'
-        : 'New links show the lot name and address.'}</p>
+      <label className="check"><input type="checkbox" checked={blurLocation} onChange={(e) => setBlurLocation(e.target.checked)} />Blur the location on new links</label>
+      <p className="muted small">{blurLocation
+        ? 'New links carry no name, and the location the sun is worked out for is rounded to about 7 miles. The lot layout stays, since that is the plan.'
+        : 'New links carry the name and the location the sun is worked out for.'}</p>
       {orphanLinks.length > 0 && (
         <details>
           <summary>Links for deleted scenarios ({orphanLinks.length})</summary>

@@ -84,7 +84,7 @@ describe('placement scoring (GR-7)', () => {
   it('penalizes a cell too close to a building at maturity and explains which one', () => {
     const species = sp('cercis-occidentalis');
     const r = suggestPlacements(input(species.id, 'back_yard'));
-    const near = r.cells.find((c) => Math.abs(c.x - 10) < 0.51 && Math.abs(c.y - 79.5) < 0.51)!; // ~3 ft from the garage
+    const near = r.cells.find((c) => Math.abs(c.x - 24) < 0.51 && Math.abs(c.y - 90) < 0.51)!; // ~3 ft from the garage's east wall
     const open = r.cells.find((c) => Math.abs(c.x - 38) < 0.51 && Math.abs(c.y - 100) < 0.51)!; // far from every building and line
     expect(near.terms.clearance).toBeLessThan(0.5);
     expect(open.terms.clearance).toBe(1);

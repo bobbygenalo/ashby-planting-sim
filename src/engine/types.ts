@@ -95,7 +95,6 @@ export interface PrintedDimCfg {
 export interface SiteConfig {
   schema: string;
   name: string;
-  address: string;
   latitude: number;
   longitude: number;
   timeZone: string;
@@ -137,13 +136,39 @@ export interface ShuffleCfg {
   colorsByCategory: Record<string, string[]>;
 }
 
+export interface ConceptAreaCfg {
+  width: [number, number];
+  depth: [number, number];
+  zones: string[];
+  attempts: number;
+  /** Materials to choose from; the element type's own material when absent. */
+  materials?: string[];
+}
+
+export interface ConceptTheme {
+  id: string;
+  label: string;
+  /** How many of each area a concept with this theme tries to place, as [least, most]. */
+  lawn: [number, number];
+  gravel: [number, number];
+  mulch: [number, number];
+  raisedBeds: [number, number];
+  paths: [number, number];
+  /** Chance of a deck. */
+  deck: number;
+}
+
 export interface ConceptCfg {
   gridFt: number;
   lotMarginFt: number;
   structureMarginFt: number;
   patio: { zone: string; width: [number, number]; depth: [number, number]; candidates: number; attempts: number };
-  path: { width: number; length: [number, number]; attempts: number };
+  path: { width: number; length: [number, number]; attempts: number; materials: string[]; max: number };
   beds: { zones: Record<string, [number, number]>; length: [number, number]; depth: [number, number]; attempts: number; edgeBias: number; gapFt: number };
+  areas: { lawn: ConceptAreaCfg; deck: ConceptAreaCfg; gravel: ConceptAreaCfg; mulch: ConceptAreaCfg; raisedBed: ConceptAreaCfg };
+  themes: ConceptTheme[];
+  /** One display color per material, chosen to be told apart on the plan. */
+  colors: Record<string, string>;
   plants: {
     count: [number, number];
     maxTrees: number;
@@ -193,7 +218,32 @@ export interface SpeciesFruit {
   source?: string;
 }
 
+export interface LifeCfg {
+  cellFt: number;
+  margins: { plantFt: number; structureFt: number; lotFt: number; hiveFt: number; nearBlockedFt: number; nearBlockedExtraCost: number };
+  /** What it costs to walk one foot over each kind of ground; paths are cheapest, so people drift toward them. */
+  costs: { open: number; path: number; hard: number; lawn: number; gravel: number; mulch: number; bed: number };
+  people: { max: number; speedFt: [number, number]; pauseS: [number, number]; pathBias: number; minTripFt: number; heightFt: number; turnRate: number };
+  dogs: { max: number; speedFt: [number, number]; pauseS: [number, number]; followFt: [number, number]; replanS: number; heightFt: number; turnRate: number };
+  bees: {
+    count: number;
+    speedFt: [number, number];
+    forageS: [number, number];
+    restS: [number, number];
+    rangeFt: number;
+    wanderFt: number;
+    altitudeFt: [number, number];
+    wobbleFt: number;
+    /** Drawn width of a bee in feet (a real bee is a third of this, too small to see). */
+    displayFt: number;
+    hive: { boxes: number; minFromPathFt: number; minFromStructureFt: number; minFromPlantFt: number; attempts: number; /** Score added for a spot at the very back of the lot, so a hive tends to sit toward the rear. */ rearBias: number };
+  };
+  /** Longest simulated step, so a slow frame never lets anyone jump through an obstacle. */
+  maxStepS: number;
+}
+
 export interface EngineConfig {
+  life: LifeCfg;
   fruit: FruitCfg;
   shuffle: ShuffleCfg;
   concept: ConceptCfg;

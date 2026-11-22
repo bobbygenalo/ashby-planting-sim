@@ -88,7 +88,7 @@ describe('concept generator', () => {
           expect(pointInPolygon(inst.position[0], inst.position[1], s.footprint)).toBe(false);
           expect(distanceToPolygon(inst.position[0], inst.position[1], s.footprint)).toBeGreaterThanOrEqual(sp.roots.minFoundationFt - 1e-6);
         }
-        for (const e of fresh.filter((x) => x.type !== 'bed')) expect(pointInPolygon(inst.position[0], inst.position[1], footprint(e, engine.hardscape))).toBe(false);
+        for (const e of fresh.filter((x) => ['patio', 'deck', 'path', 'lawn'].includes(x.type))) expect(pointInPolygon(inst.position[0], inst.position[1], footprint(e, engine.hardscape))).toBe(false);
         for (const e of site.easements) expect(pointInPolygon(inst.position[0], inst.position[1], e.polygon)).toBe(false);
       }
       for (let i = 0; i < r.data.instances.length; i++) for (let j = i + 1; j < r.data.instances.length; j++) {
@@ -175,7 +175,7 @@ describe('new concept in the store', () => {
     const r = g().generateConcept(BOTH, { seed: 8 })!;
     expect(r.scenarioId).toBeTruthy();
     expect(g().activeScenarioId).toBe(r.scenarioId);
-    expect(g().scenarios.find((x) => x.id === r.scenarioId)!.name).toBe('Concept 1');
+    expect(g().scenarios.find((x) => x.id === r.scenarioId)!.name).toBe(`Concept 1: ${r.theme}`);
     expect(g().palette).toEqual(palette);
     expect(g().instances.some((i) => i.id === 'a' || (i.speciesId === 'salvia-leucantha' && i.position[0] === 36 && i.position[1] === 105))).toBe(false);
     expect(g().instances.length).toBe(r.counts.plants);
@@ -194,5 +194,146 @@ describe('new concept in the store', () => {
     expect(r.notes.length).toBeGreaterThan(0);
     expect(g().scenarios.length).toBe(n);
     expect(makeAppStore('view').getState().generateConcept(BOTH)).toBeNull();
+  });
+});
+
+describe('concept hardscape variety', () => {
+  const colorDistance = (a: string, b: string) => {
+    const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const [x, y] = [rgb(a), rgb(b)];
+    return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+  };
+  const run = (seed: number) => generateConcept(ctx, { hardscape: true, plants: true, starredOnly: true }, mulberry32(seed));
+  const fresh = (seed: number) => run(seed).data.hardscape.filter((e) => !e.existing);
+
+  it('picks a theme and reaches every kind of element across themes', () => {
+    const themes = new Set<string>();
+    const types = new Set<string>();
+    const materials = new Set<string>();
+    for (let seed = 1; seed <= 60; seed++) {
+      const r = run(seed);
+      themes.add(r.theme);
+      for (const e of r.data.hardscape.filter((x) => !x.existing)) {
+        types.add(e.type);
+        materials.add(e.materialId);
+      }
+    }
+    expect([...themes].sort()).toEqual(engine.concept.themes.map((t) => t.label).sort());
+    for (const t of ['patio', 'deck', 'path', 'bed', 'lawn', 'gravel', 'raisedBed']) expect(types.has(t), `${t} never appears`).toBe(true);
+    for (const m of ['mulch', 'gravel', 'lawn', 'raised-bed-wood', 'wood-deck', 'soil-bed']) expect(materials.has(m), `${m} never appears`).toBe(true);
+  });
+
+  it('follows the theme: no lawn in a dry garden, raised beds in a kitchen garden, gravel and mulch where the theme asks', () => {
+    let dry = 0, kitchen = 0, lawn = 0;
+    for (let seed = 1; seed <= 80; seed++) {
+      const r = run(seed);
+      const theme = engine.concept.themes.find((t) => t.label === r.theme)!;
+      expect(r.counts.lawn).toBeLessThanOrEqual(theme.lawn[1]);
+      expect(r.counts.gravel).toBeLessThanOrEqual(theme.gravel[1]);
+      expect(r.counts.mulch).toBeLessThanOrEqual(theme.mulch[1]);
+      expect(r.counts.raisedBeds).toBeLessThanOrEqual(theme.raisedBeds[1]);
+      expect(r.counts.path).toBeLessThanOrEqual(Math.min(engine.concept.path.max, theme.paths[1]));
+      if (theme.id === 'dry-garden') {
+        dry++;
+        expect(r.counts.lawn).toBe(0);
+        expect(r.counts.raisedBeds).toBe(0);
+        expect(r.counts.gravel + r.counts.mulch).toBeGreaterThan(0);
+      }
+      if (theme.id === 'kitchen-garden') {
+        kitchen++;
+        expect(r.counts.lawn).toBe(0);
+      }
+      if (theme.id === 'lawn-and-beds' && r.counts.lawn > 0) lawn++;
+    }
+    expect(dry).toBeGreaterThan(5);
+    expect(kitchen).toBeGreaterThan(5);
+    expect(lawn).toBeGreaterThan(5);
+  });
+
+  it('keeps every area clear of buildings, easements, trees and each other, inside its yard', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const els = fresh(seed).map((e) => ({ e, poly: footprint(e, engine.hardscape) }));
+      for (const { e, poly } of els) {
+        for (const s of structures) expect(polygonsIntersect(poly, s.footprint), `${e.name} meets a building`).toBe(false);
+        for (const z of site.easements) expect(polygonsIntersect(poly, z.polygon), `${e.name} is in the easement`).toBe(false);
+        for (const old of owner.hardscape) expect(polygonsIntersect(poly, footprint(old, engine.hardscape)), `${e.name} is on the driveway`).toBe(false);
+        for (const [x, y] of poly) {
+          expect(x).toBeGreaterThanOrEqual(0);
+          expect(x).toBeLessThanOrEqual(site.lot.width);
+          expect(y).toBeGreaterThanOrEqual(0);
+          expect(y).toBeLessThanOrEqual(site.lot.depth);
+        }
+      }
+      // areas never overlap each other; a path starts on the edge of what it leaves, so paths are checked against the rest only
+      const areas = els.filter((x) => x.e.type !== 'path');
+      for (let i = 0; i < areas.length; i++) for (let j = i + 1; j < areas.length; j++) {
+        expect(polygonsIntersect(areas[i].poly, areas[j].poly), `${areas[i].e.name} overlaps ${areas[j].e.name}`).toBe(false);
+      }
+    }
+  });
+
+  it('gives every element a name and a color from its material, and a deck or path a real choice of material', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const e of fresh(seed)) {
+        expect(e.name, `element ${e.id}`).toBeTruthy();
+        expect(e.color).toBe(engine.concept.colors[e.materialId]);
+        expect(mats.some((m) => m.id === e.materialId)).toBe(true);
+        if (e.type === 'path') expect(engine.concept.path.materials).toContain(e.materialId);
+        if (e.type === 'deck') expect(engine.concept.areas.deck.materials).toContain(e.materialId);
+        if (e.type === 'raisedBed') expect(e.height).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('uses a different material for each path where it can', () => {
+    let multi = 0;
+    for (let seed = 1; seed <= 80; seed++) {
+      const paths = fresh(seed).filter((e) => e.type === 'path');
+      if (paths.length < 2) continue;
+      multi++;
+      expect(new Set(paths.map((p) => p.materialId)).size).toBe(paths.length);
+    }
+    expect(multi).toBeGreaterThan(10);
+  });
+
+  it('colors each material so a plan reads like a legend: no two materials look alike', () => {
+    const entries = Object.entries(engine.concept.colors);
+    expect(entries.length).toBeGreaterThanOrEqual(12);
+    for (const [id] of entries) expect(mats.some((m) => m.id === id), `${id} is not a material`).toBe(true);
+    for (let i = 0; i < entries.length; i++) for (let j = i + 1; j < entries.length; j++) {
+      expect(colorDistance(entries[i][1], entries[j][1]), `${entries[i][0]} and ${entries[j][0]} look alike`).toBeGreaterThan(35);
+    }
+  });
+
+  it('puts mulch in its own material and area, not in the planting bed', () => {
+    const mulch = mats.find((m) => m.id === 'mulch')!;
+    expect(mulch.permeability).toBe(1);
+    expect(mulch.category).toBe('loose');
+    let found = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const e of fresh(seed).filter((x) => x.materialId === 'mulch')) {
+        expect(e.type).toBe('gravel'); // the "gravel or mulch" area type
+        expect(e.name).toBe('Mulch zone');
+        found++;
+      }
+    }
+    expect(found).toBeGreaterThan(10);
+  });
+
+  it('plants in beds, raised beds, mulch and gravel, but never on a lawn, patio, deck or path', () => {
+    let inSoft = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const r = run(seed);
+      const els = r.data.hardscape.filter((e) => !e.existing).map((e) => ({ e, poly: footprint(e, engine.hardscape) }));
+      for (const inst of r.data.instances) {
+        for (const { e, poly } of els) {
+          const inside = pointInPolygon(inst.position[0], inst.position[1], poly);
+          if (['lawn', 'patio', 'deck', 'path'].includes(e.type)) expect(inside, `a plant is on the ${e.name}`).toBe(false);
+          else if (inside) inShared();
+        }
+      }
+    }
+    function inShared() { inSoft++; }
+    expect(inSoft).toBeGreaterThan(50);
   });
 });

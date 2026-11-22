@@ -51,7 +51,7 @@ describe('autosave and restore (SC-2)', () => {
   it('saves a workspace that carries the share links, so they can still be turned off after a reload', () => {
     const storage = memory();
     const s = makeAppStore('edit');
-    s.getState().addShare({ scenarioId: s.getState().activeScenarioId, token: 'K'.repeat(22), revokeKey: 'secret-key', createdAt: 'c', updatedAt: 'u', hideAddress: false, revoked: false });
+    s.getState().addShare({ scenarioId: s.getState().activeScenarioId, token: 'K'.repeat(22), revokeKey: 'secret-key', createdAt: 'c', updatedAt: 'u', blurLocation: false, revoked: false });
     saveWorkspace(storage, s.getState().toWorkspace());
     const t = makeAppStore('edit');
     t.getState().hydrateWorkspace(loadWorkspace(storage)!);

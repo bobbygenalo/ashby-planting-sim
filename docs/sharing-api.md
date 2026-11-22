@@ -21,4 +21,4 @@ The dev server implements it as files (`server/shareStore.ts`, `.share-data/`). 
 
 ## Privacy
 
-A snapshot contains the lot layout (the site), the scenario, any custom species it uses, soil entries, and the starting timeline date. It contains no name, email, or account. With "hide address" on, the snapshot's site has no name or address and its coordinates are rounded to 0.1 degree. The page that serves the app is a separate matter: a build that includes the owner's site file still contains it. Deploy a build without that file if the address must stay out of the public bundle.
+A snapshot contains the lot layout (the site), the scenario, any custom species it uses, soil entries, and the starting timeline date. It contains no email or account. With "blur the location" on, the snapshot's site has no name and its coordinates are rounded to 0.1 degree. The page that serves the app is a separate matter: a build that includes the site file still contains the lot's layout and approximate location.

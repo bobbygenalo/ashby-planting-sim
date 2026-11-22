@@ -5,10 +5,10 @@ import type { Conflict } from '../engine/conflicts';
 import { polygonArea, polylineLength } from '../engine/geometry';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
-import { generateConcept, type ConceptOptions } from '../engine/concept';
+import { generateConcept, type ConceptCounts, type ConceptOptions } from '../engine/concept';
 import { mulberry32, shuffleScenario, type ShuffleChanges, type ShuffleOptions } from '../engine/shuffle';
 import {
-  validateScenarioData, buildShareSnapshot, clone, emptyScenarioData, parseScenarioFile, serializeScenarioFile,
+  validateScenarioData, buildShareSnapshot, clone, emptyScenarioData, parseScenarioFile, serializeScenarioFile, syncExistingHardscape, normalizeShare,
   type ScenarioData, type ScenarioMeta, type ShareRecord, type ShareSnapshot, type SiteOverrides, type ValidationContext, type Workspace,
 } from '../engine/scenario';
 import { doyToMonthDay, monthDayToDoy } from '../engine/time';
@@ -45,6 +45,8 @@ export interface Layers {
   bloom: boolean;
   /** Show fruit on fruiting plants when it is in season. */
   fruit: boolean;
+  /** Show people, dogs and bees moving about the yard. */
+  life: boolean;
   /** Placement heatmap and the top spots. */
   suggestions: boolean;
   /** Red rings on plants that have a conflict. */
@@ -53,7 +55,9 @@ export interface Layers {
 
 export interface ConceptSummary {
   seed: number;
-  counts: { patio: number; path: number; beds: number; plants: number; species: number };
+  counts: ConceptCounts;
+  /** What the concept is built around, for example "Dry garden". */
+  theme: string;
   notes: string[];
   /** The new scenario, or null when nothing could be built. */
   scenarioId: string | null;
@@ -94,6 +98,9 @@ export interface AppState {
   setView: (v: string) => void;
   setSunPeriod: (p: string) => void;
   setMeasureActive: (a: boolean) => void;
+  /** How many people and dogs walk the yard, and whether the hive and bees are shown, when the life layer is on. */
+  lifeSettings: { people: number; dogs: number; bees: boolean };
+  setLifeSettings: (patch: Partial<{ people: number; dogs: number; bees: boolean }>) => void;
   /** Whether the shuffle bar is showing over the yard (view state, not part of a scenario). */
   shuffleOpen: boolean;
   setShuffleOpen: (open: boolean) => void;
@@ -174,7 +181,7 @@ export interface AppState {
   saved: Record<string, ScenarioData>;
   shares: ShareRecord[];
   /** Set when viewing someone's shared plan: its name and when it was published. */
-  shared: { name: string; hideAddress: boolean; createdAt: string } | null;
+  shared: { name: string; blurLocation: boolean; createdAt: string } | null;
   saveStatus: { state: 'idle' | 'saved' | 'error'; at: string | null; message: string | null };
   setSaveStatus: (s: AppState['saveStatus']) => void;
 
@@ -198,7 +205,7 @@ export interface AppState {
   toWorkspace: () => Workspace;
   hydrateWorkspace: (ws: Workspace) => void;
   /** Owner: the snapshot to publish for a scenario. */
-  buildSnapshot: (id: string, hideAddress: boolean) => ShareSnapshot | null;
+  buildSnapshot: (id: string, blurLocation: boolean) => ShareSnapshot | null;
   addShare: (r: ShareRecord) => void;
   patchShare: (token: string, patch: Partial<ShareRecord>) => void;
   /** Viewer: show a shared plan. Switches the app to view mode. */
@@ -283,7 +290,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     // Replace the working fields with a scenario's data and clear everything tied to the old one.
     const applyData = (d: ScenarioData) =>
       set({
-        ...clone(d), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
+        ...clone(d), hardscape: syncExistingHardscape(clone(d.hardscape), get().site), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
         hsDrag: null, dragId: null, measureActive: false, measurePoints: [], suggestion: null, suggestFocus: null,
       });
     const customSpeciesList = () => get().library.species.filter((s) => !baseSpeciesIds.has(s.id));
@@ -328,7 +335,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, fruit: true, suggestions: true, conflicts: true },
+      layers: { sunHours: true, dimensions: false, setbacks: true, easements: true, context: true, bloom: true, fruit: true, life: false, suggestions: true, conflicts: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,
@@ -336,6 +343,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       sunPeriod: 'day',
       measureActive: false,
       shuffleOpen: false,
+      lifeSettings: { people: 3, dogs: 2, bees: true },
+      setLifeSettings: (patch) => set({ lifeSettings: { ...get().lifeSettings, ...patch } }),
       setShuffleOpen: (open) => set({ shuffleOpen: open }),
       measurePoints: [],
       snap: engine.scene.snapDefaultFt,
@@ -575,11 +584,12 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
           opts,
           mulberry32(seed),
         );
-        const made = result.counts.patio + result.counts.path + result.counts.beds + result.counts.plants;
-        if (made === 0) return { seed, counts: result.counts, notes: result.notes, scenarioId: null };
+        const c = result.counts;
+        const made = c.patio + c.deck + c.path + c.beds + c.raisedBeds + c.lawn + c.gravel + c.mulch + c.plants;
+        if (made === 0) return { seed, counts: result.counts, theme: result.theme, notes: result.notes, scenarioId: null };
         const n = get().scenarios.filter((s) => s.name.startsWith('Concept')).length + 1;
-        const scenarioId = addScenario(`Concept ${n}`, { ...result.data, aduEnabled: get().aduEnabled });
-        return { seed, counts: result.counts, notes: result.notes, scenarioId };
+        const scenarioId = addScenario(result.theme ? `Concept ${n}: ${result.theme}` : `Concept ${n}`, { ...result.data, aduEnabled: get().aduEnabled });
+        return { seed, counts: result.counts, theme: result.theme, notes: result.notes, scenarioId };
       },
       renameScenario: (id, name) => {
         if (get().mode !== 'edit' || !name.trim()) return;
@@ -611,6 +621,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         if (!parsed.ok) return parsed;
         const remap = mergeCustomSpecies(parsed.customSpecies);
         const data = clone(parsed.data);
+        data.hardscape = syncExistingHardscape(data.hardscape, get().site);
         if (remap.size) {
           data.instances = data.instances.map((i) => (remap.has(i.speciesId) ? { ...i, speciesId: remap.get(i.speciesId)! } : i));
           data.palette = Object.fromEntries(Object.entries(data.palette).map(([k, v]) => [remap.get(k) ?? k, v]));
@@ -654,17 +665,17 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         const soilProfiles = { ...get().soilProfiles, ...(ws.siteOverrides?.soilProfiles ?? {}) };
         set({
           scenarios: good.map((g) => g.meta), activeScenarioId: active.meta.id,
-          saved: Object.fromEntries(good.filter((g) => g !== active).map((g) => [g.meta.id, g.data])),
-          shares: Array.isArray(ws.shares) ? ws.shares : [], soilProfiles, playZones: { ...(ws.siteOverrides?.playZones ?? {}) },
+          saved: Object.fromEntries(good.filter((g) => g !== active).map((g) => [g.meta.id, { ...g.data, hardscape: syncExistingHardscape(g.data.hardscape, get().site) }])),
+          shares: Array.isArray(ws.shares) ? ws.shares.map(normalizeShare) : [], soilProfiles, playZones: { ...(ws.siteOverrides?.playZones ?? {}) },
         });
         applyData(active.data);
       },
-      buildSnapshot: (id, hideAddress) => {
+      buildSnapshot: (id, blurLocation) => {
         const data = dataFor(id);
         const meta = get().scenarios.find((s) => s.id === id);
         if (!data || !meta) return null;
         return buildShareSnapshot({
-          name: meta.name, site: get().site, data, customSpecies: customSpeciesList(), siteOverrides: siteOverrides(), hideAddress,
+          name: meta.name, site: get().site, data, customSpecies: customSpeciesList(), siteOverrides: siteOverrides(), blurLocation,
           view: { timelineMonth: get().timelineMonth, doy: get().doy },
         });
       },
@@ -690,7 +701,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
           activeScenarioId: 'shared',
           saved: {},
           shares: [],
-          shared: { name: snap.name, hideAddress: snap.hideAddress, createdAt: snap.createdAt },
+          shared: { name: snap.name, blurLocation: snap.blurLocation, createdAt: snap.createdAt },
         });
         applyData(snap.scenario);
       },

@@ -12,6 +12,7 @@ import {
 } from '../src/engine/scenario';
 import type { EngineConfig, Material, PlantInstance, Species, SpeciesLibrary, WaterConfig } from '../src/engine/types';
 import { makeCustomSpecies } from '../src/engine/library';
+import { makeAppStore } from '../src/store/store';
 
 const engine = engineRaw as unknown as EngineConfig;
 const water = waterRaw as unknown as WaterConfig;
@@ -157,18 +158,18 @@ describe('autosave storage (SC-2)', () => {
   });
 });
 
-describe('hiding the address (SH-3, NF-6)', () => {
+describe('blurring the location (SH-3, NF-6)', () => {
   const data = withPlants([inst('salvia-clevelandii', 30, 90)]);
-  const snapshot = (hide: boolean) => buildShareSnapshot({ name: 'Option A', site, data, customSpecies: [], siteOverrides: overrides, hideAddress: hide, view: { timelineMonth: 12, doy: 172 }, now: new Date('2026-12-01T10:00:00Z') });
+  const snapshot = (hide: boolean) => buildShareSnapshot({ name: 'Option A', site, data, customSpecies: [], siteOverrides: overrides, blurLocation: hide, view: { timelineMonth: 12, doy: 172 }, now: new Date('2026-12-01T10:00:00Z') });
 
-  it('keeps the address when asked and removes name and address when hidden', () => {
+  it('keeps the site name when asked and removes the name and blurs the coordinates when blurred', () => {
     expect(JSON.stringify(snapshot(false))).toContain('Ashby');
     const hidden = JSON.stringify(snapshot(true));
     expect(hidden).not.toContain('Ashby');
-    expect(hidden).not.toContain('10641');
     expect(snapshot(true).site.name).toBe('Shared lot');
-    expect(snapshot(true).site.address).toBe('');
-    expect(snapshot(true).hideAddress).toBe(true);
+    expect(snapshot(false).site.latitude).toBe(site.latitude);
+    expect(snapshot(true).site.latitude).not.toBe(site.latitude);
+    expect(snapshot(true).blurLocation).toBe(true);
   });
 
   it('rounds coordinates to 0.1 degree, which leaves the sun accurate to a fraction of a degree', () => {
@@ -189,21 +190,22 @@ describe('hiding the address (SH-3, NF-6)', () => {
     const red = redactSite(site, true);
     expect(red.lot).toEqual(site.lot);
     expect(red.structures).toEqual(site.structures);
-    expect(site.name).toBe('10641 Ashby Ave');
+    expect(site.name).toBe('Ashby Planting Sim');
     expect(redactSite(site, false)).toEqual(site);
     expect(redactSite(site, false)).not.toBe(site);
   });
 
-  it('contains no personal details beyond the lot and, unless hidden, the address', () => {
+  it('contains no personal details beyond the lot, and no street address at all', () => {
+    expect(JSON.stringify(site)).not.toMatch(/"address"|\b\d{3,5} [A-Z][a-z]+ (Ave|Avenue|St|Street|Blvd|Rd|Road|Dr|Drive|Ln|Lane)\b/);
     const text = JSON.stringify(snapshot(true));
     expect(text).not.toMatch(/@[a-z0-9-]+\.[a-z]{2,}/i); // no email addresses
-    expect(Object.keys(snapshot(true)).sort()).toEqual(['createdAt', 'customSpecies', 'format', 'hideAddress', 'name', 'scenario', 'site', 'siteOverrides', 'view']);
+    expect(Object.keys(snapshot(true)).sort()).toEqual(['blurLocation', 'createdAt', 'customSpecies', 'format', 'name', 'scenario', 'site', 'siteOverrides', 'view']);
   });
 
   it('only includes custom species the plan uses', () => {
     const made = makeCustomSpecies({ common: 'Mine', type: 'shrub', origin: 'other', evergreen: true, matureHeight: 4, matureWidth: 4, yearsToMaturity: 3, habit: 'round', sun: 'full', wucols: 'low', bloomMonths: [], bloomColor: '#fff', pollinatorValue: 'low', groups: [], invasive: false, toxic: false }, []);
     if (!made.ok) throw new Error('bad');
-    const s = buildShareSnapshot({ name: 'X', site, data, customSpecies: [made.species], siteOverrides: overrides, hideAddress: true, view: { timelineMonth: 0, doy: 100 } });
+    const s = buildShareSnapshot({ name: 'X', site, data, customSpecies: [made.species], siteOverrides: overrides, blurLocation: true, view: { timelineMonth: 0, doy: 100 } });
     expect(s.customSpecies).toEqual([]);
   });
 
@@ -269,5 +271,78 @@ describe('comparing scenarios (SC-3)', () => {
     expect(byId.highValueShare.a).toBe(100); // shown as a percent
     expect(byId.highValueShare.b).toBe(0);
     expect(compareMetrics(scenarioMetrics(plain, mctx), scenarioMetrics(plain, mctx)).every((r) => r.delta === 0)).toBe(true);
+  });
+});
+
+describe('existing hardscape always comes from the site file', () => {
+  const OLD: [number, number][] = [[0, 0], [8, 0], [8, 82.5], [0, 82.5]];
+  const staleWorkspace = () => {
+    const s = makeAppStore('edit');
+    s.getState().startDrawing('patio');
+    [[30, 60], [40, 60], [40, 70], [30, 70]].forEach((p) => s.getState().addDrawPoint(p as [number, number]));
+    s.getState().finishDrawing();
+    const ws = s.getState().toWorkspace();
+    const data = ws.data[ws.activeId];
+    data.hardscape = data.hardscape.map((e) => (e.id === 'driveway' ? { ...e, points: OLD, removed: true, color: '#336699' } : e));
+    return ws;
+  };
+
+  it('replaces a scenario saved with the old driveway shape, keeping what the owner did with it', () => {
+    const next = makeAppStore('edit');
+    next.getState().hydrateWorkspace(staleWorkspace());
+    const drive = next.getState().hardscape.find((e) => e.id === 'driveway')!;
+    expect(drive.points).toEqual(site.hardscape.find((e) => e.id === 'driveway')!.points);
+    expect(drive.points).not.toEqual(OLD);
+    expect(drive.removed).toBe(true); // this scenario still removes it
+    expect(drive.color).toBe('#336699');
+    expect(next.getState().hardscape.filter((e) => !e.existing)).toHaveLength(1); // the owner's own patio is untouched
+  });
+
+  it('does the same for the other scenarios in the workspace, as soon as they load', () => {
+    const ws = staleWorkspace();
+    const second = JSON.parse(JSON.stringify(ws.data[ws.activeId]));
+    ws.scenarios = [...ws.scenarios, { id: 'other', name: 'Other', createdAt: 'x', modifiedAt: 'x' }];
+    ws.data = { ...ws.data, other: second };
+    const next = makeAppStore('edit');
+    next.getState().hydrateWorkspace(ws);
+    expect(next.getState().saved.other.hardscape.find((e) => e.id === 'driveway')!.points).not.toEqual(OLD);
+    next.getState().switchScenario('other');
+    expect(next.getState().hardscape.find((e) => e.id === 'driveway')!.points).not.toEqual(OLD);
+  });
+
+  it('also applies to a scenario file exported before the site was corrected', () => {
+    const s = makeAppStore('edit');
+    const ws = staleWorkspace();
+    const exported = serializeScenarioFile({ name: 'Old', data: ws.data[ws.activeId], customSpecies: [], siteOverrides: { soilProfiles: {}, playZones: {} } });
+    const r = s.getState().importScenarioFile(exported);
+    expect(r.ok).toBe(true);
+    expect(s.getState().hardscape.find((e) => e.id === 'driveway')!.points).not.toEqual(OLD);
+  });
+});
+
+describe('share records saved by an older version', () => {
+  it('keep their location setting under the new name', () => {
+    const s = makeAppStore('edit');
+    const ws = s.getState().toWorkspace();
+    ws.shares = [
+      { scenarioId: ws.activeId, token: 'T'.repeat(22), revokeKey: 'k', createdAt: 'c', updatedAt: 'u', hideAddress: true, revoked: false } as never,
+      { scenarioId: ws.activeId, token: 'U'.repeat(22), revokeKey: 'k', createdAt: 'c', updatedAt: 'u', blurLocation: false, revoked: false } as never,
+    ];
+    const next = makeAppStore('edit');
+    next.getState().hydrateWorkspace(ws);
+    const [a, b] = next.getState().shares;
+    expect(a.blurLocation).toBe(true);
+    expect('hideAddress' in a).toBe(false);
+    expect(b.blurLocation).toBe(false);
+  });
+
+  it('a viewer still accepts a snapshot an older version published', () => {
+    const snap = JSON.parse(JSON.stringify(buildShareSnapshot({ name: 'Old', site, data: emptyScenarioData(site), customSpecies: [], siteOverrides: { soilProfiles: {}, playZones: {} }, blurLocation: true, view: { timelineMonth: 0, doy: 100 } })));
+    snap.hideAddress = true;
+    delete snap.blurLocation;
+    const ctx = { speciesIds: new Set(lib.species.map((x) => x.id)), containers: new Set(Object.keys(engine.growth.containers)), hardscapeTypes: new Set(Object.keys(engine.hardscape.types)), materialIds: new Set(mats.map((m) => m.id)), zoneIds: new Set(site.zones.map((z) => z.id)) };
+    const r = parseShareSnapshot(snap, ctx);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.snapshot.blurLocation).toBe(true);
   });
 });

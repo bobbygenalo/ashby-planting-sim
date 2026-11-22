@@ -11,6 +11,7 @@ import { formatFeetInches } from '../engine/units';
 import type { ContextObjectCfg, Pt, StructureCfg } from '../engine/types';
 import { useApp } from '../store/store';
 import { PlantLayer } from './Plants';
+import { LifeLayer } from './Life';
 import { HardscapeLayer, useSnapper } from './Hardscape';
 import { ConflictRings, SuggestionLayer } from './Suggestions';
 
@@ -431,6 +432,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
         {layers.dimensions && <Dimensions />}
         <HardscapeLayer />
         <PlantLayer />
+        {layers.life && <LifeLayer />}
         <ConflictRings />
         <SuggestionLayer />
         <Compass />

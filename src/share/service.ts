@@ -9,15 +9,15 @@ type Store = StoreApi<AppState>;
 export type Outcome<T> = { ok: true; value: T } | { ok: false; error: ShareError };
 
 /** Publish the scenario as a new read-only link and remember its owner key in this browser (SH-1, SH-2). */
-export async function publishShare(store: Store, client: Client, scenarioId: string, hideAddress: boolean): Promise<Outcome<ShareRecord>> {
+export async function publishShare(store: Store, client: Client, scenarioId: string, blurLocation: boolean): Promise<Outcome<ShareRecord>> {
   const s = store.getState();
   if (s.mode !== 'edit') return { ok: false, error: { kind: 'forbidden', message: 'Only the owner can share a plan.' } };
-  const snapshot = s.buildSnapshot(scenarioId, hideAddress);
+  const snapshot = s.buildSnapshot(scenarioId, blurLocation);
   if (!snapshot) return { ok: false, error: { kind: 'invalid', message: 'That scenario no longer exists.' } };
   const made = await client.create(snapshot);
   if (!made.ok) return made;
   const now = new Date().toISOString();
-  const record: ShareRecord = { scenarioId, token: made.value.token, revokeKey: made.value.revokeKey, createdAt: now, updatedAt: now, hideAddress, revoked: false };
+  const record: ShareRecord = { scenarioId, token: made.value.token, revokeKey: made.value.revokeKey, createdAt: now, updatedAt: now, blurLocation, revoked: false };
   store.getState().addShare(record);
   return { ok: true, value: record };
 }
@@ -26,7 +26,7 @@ export async function publishShare(store: Store, client: Client, scenarioId: str
 export async function republishShare(store: Store, client: Client, token: string): Promise<Outcome<ShareRecord>> {
   const rec = store.getState().shares.find((r) => r.token === token);
   if (!rec || rec.revoked) return { ok: false, error: { kind: 'revoked', message: 'This link has been turned off.' } };
-  const snapshot = store.getState().buildSnapshot(rec.scenarioId, rec.hideAddress);
+  const snapshot = store.getState().buildSnapshot(rec.scenarioId, rec.blurLocation);
   if (!snapshot) return { ok: false, error: { kind: 'invalid', message: 'That scenario no longer exists.' } };
   const r = await client.update(token, rec.revokeKey, snapshot);
   if (!r.ok) {

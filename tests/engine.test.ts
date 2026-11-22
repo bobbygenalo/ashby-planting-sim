@@ -27,7 +27,7 @@ describe('units', () => {
 describe('M1: printed plan dimensions', () => {
   it('every printed dimension measures within 1 inch', () => {
     const checks = checkPrintedDimensions(site, 1);
-    expect(checks.length).toBe(10);
+    expect(checks.length).toBe(12);
     for (const c of checks) expect(c.ok, `${c.label}: off by ${c.deltaInches.toFixed(2)} in`).toBe(true);
   });
 
@@ -476,5 +476,60 @@ describe('the house from the owner\'s roof plan and four elevations', () => {
       return sum;
     };
     expect(total(bare)).toBeGreaterThan(total(tall) + 20); // the measured roof leaves more of the yard in winter sun
+  });
+});
+
+describe('the garage from the owner\'s garage plan', () => {
+  const garage = site.structures.find((s) => s.id === 'garage')!;
+  const xs = (poly: [number, number][]) => poly.map((q) => q[0]);
+  const ys = (poly: [number, number][]) => poly.map((q) => q[1]);
+  const span = (v: number[]) => Math.max(...v) - Math.min(...v);
+
+  it('has walls 18\'-2" by 20\'-1" with the west wall 2\'-11" from the lot line', () => {
+    expect(Math.min(...xs(garage.footprint))).toBeCloseTo(2 + 11 / 12, 3);
+    expect(span(xs(garage.footprint))).toBeCloseTo(18 + 2 / 12, 3);
+    expect(span(ys(garage.footprint))).toBeCloseTo(20 + 1 / 12, 3);
+  });
+
+  it('has a gable roof 22\'-1" front to back with a 1 ft overhang all round, ridge 12\'-8" running front to back', () => {
+    const roof = garage.roofFootprint!;
+    expect(span(ys(roof))).toBeCloseTo(22 + 1 / 12, 3);
+    expect(span(xs(roof))).toBeCloseTo(20 + 2 / 12, 3);
+    expect(Math.min(...xs(garage.footprint)) - Math.min(...xs(roof))).toBeCloseTo(1, 3);
+    expect(Math.max(...ys(roof)) - Math.max(...ys(garage.footprint))).toBeCloseTo(1, 3);
+    expect(garage.ridgeHeight).toBeCloseTo(12 + 8 / 12, 3);
+    const pts = roofPoints(garage);
+    const ridge = pts.filter((p) => p[2] === garage.ridgeHeight);
+    expect(ridge).toHaveLength(2);
+    expect(ridge[0][0]).toBeCloseTo(ridge[1][0], 6); // the ridge runs along Y
+    expect(ridge[0][0]).toBeCloseTo((Math.min(...xs(roof)) + Math.max(...xs(roof))) / 2, 3); // at the middle
+  });
+
+  it('still sits 19\'-10 3/4" from the ADU, so the printed distance holds', () => {
+    expect(checkPrintedDimensions(site, 1).find((c) => c.id === 'garage-adu')!.ok).toBe(true);
+    expect(checkPrintedDimensions(site, 1).find((c) => c.id === 'garage-roof-depth')!.ok).toBe(true);
+    expect(checkPrintedDimensions(site, 1).find((c) => c.id === 'garage-setback')!.ok).toBe(true);
+  });
+
+  it('has the driveway apron the plan shows: 16 ft wide for 10 ft, tapering to 26 ft from the garage front', () => {
+    const drive = site.hardscape.find((h) => h.id === 'driveway')!;
+    const front = Math.min(...ys(garage.footprint));
+    const widthAt = (y: number) => {
+      // widest horizontal run of the driveway outline at height y
+      const hits: number[] = [];
+      const pts = drive.points;
+      for (let i = 0; i < pts.length; i++) {
+        const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % pts.length];
+        if ((y1 - y) * (y2 - y) < 0) hits.push(x1 + ((x2 - x1) * (y - y1)) / (y2 - y1));
+      }
+      return Math.max(...hits) - Math.min(...hits);
+    };
+    expect(widthAt(front - 5)).toBeCloseTo(16, 3);
+    expect(widthAt(front - 9.9)).toBeCloseTo(16, 1);
+    expect(widthAt(front - 26 - 1)).toBeLessThan(9); // narrow again past the taper
+    expect(widthAt(front - 18)).toBeGreaterThan(widthAt(front - 26));
+    expect(widthAt(front - 18)).toBeLessThan(widthAt(front - 10.2));
+    expect(Math.min(...xs(drive.points))).toBeCloseTo(1.25, 6); // starts 1'-3" in from the lot line
+    expect(Math.max(...ys(drive.points))).toBeCloseTo(front, 6); // ends at the garage front wall
   });
 });

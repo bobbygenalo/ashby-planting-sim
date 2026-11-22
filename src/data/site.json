@@ -1,7 +1,6 @@
 {
   "schema": "ashby-site/1",
-  "name": "10641 Ashby Ave",
-  "address": "10641 Ashby Ave, Los Angeles, CA",
+  "name": "Ashby Planting Sim",
   "latitude": 34.04,
   "longitude": -118.43,
   "timeZone": "America/Los_Angeles",
@@ -316,28 +315,46 @@
       "name": "Garage (E) 2 car",
       "footprint": [
         [
-          0,
-          82.5
+          2.9167,
+          83.3854
         ],
         [
-          20,
-          82.5
+          21.0833,
+          83.3854
         ],
         [
-          20,
+          21.0833,
           103.46875
         ],
         [
-          0,
+          2.9167,
           103.46875
         ]
       ],
-      "eaveHeight": 9,
-      "ridgeHeight": 11,
+      "eaveHeight": 9.3,
+      "ridgeHeight": 12.6667,
       "roofForm": "gable",
       "status": "existing",
       "toggleable": false,
-      "note": "Rear face derived from printed garage-to-ADU distance (19'-10 3/4\"). Front face scaled. Height is a placeholder."
+      "note": "From the owner's garage plan: walls 18'-2\" by 20'-1\" with the west wall 2'-11\" from the west lot line, and a gable roof 20'-2\" by 22'-1\" (1'-0\" overhang) with the ridge running front to back. Ridge 12'-8\" is printed; the eave height (9.3 ft, a 4:12 roof) is assumed. The rear wall is placed from the printed 19'-10 3/4\" to the ADU, assuming that distance is wall to wall (about 1 ft of uncertainty).",
+      "roofFootprint": [
+        [
+          1.9167,
+          82.3854
+        ],
+        [
+          22.0833,
+          82.3854
+        ],
+        [
+          22.0833,
+          104.4688
+        ],
+        [
+          1.9167,
+          104.4688
+        ]
+      ]
     },
     {
       "id": "adu-bedroom",
@@ -601,20 +618,28 @@
       "name": "Driveway (E)",
       "points": [
         [
-          0,
+          1.25,
           0
         ],
         [
-          8,
+          8.75,
           0
         ],
         [
-          8,
-          82.5
+          8.75,
+          57.3854
         ],
         [
-          0,
-          82.5
+          17.25,
+          73.3854
+        ],
+        [
+          17.25,
+          83.3854
+        ],
+        [
+          1.25,
+          83.3854
         ]
       ],
       "materialId": "concrete",
@@ -622,7 +647,8 @@
       "depthIn": 4,
       "width": 0,
       "existing": true,
-      "keepClear": true
+      "keepClear": true,
+      "note": "From the owner's garage plan: a 16'-0\" apron for 10'-0\" in front of the garage, then a taper out to 26'-0\" from the garage front wall, starting about 1'-3\" in from the west lot line. The narrow part (about 7.5 ft wide) is estimated from the taper's slope."
     }
   ],
   "contextObjects": [
@@ -1066,6 +1092,27 @@
         "to": "adu",
         "axis": "y"
       }
+    },
+    {
+      "id": "garage-roof-depth",
+      "label": "Garage roof, front to back",
+      "value": "22'-1\"",
+      "measure": {
+        "type": "extent",
+        "structure": "garage",
+        "axis": "y",
+        "roof": true
+      }
+    },
+    {
+      "id": "garage-setback",
+      "label": "Garage wall to west lot line",
+      "value": "2'-11\"",
+      "measure": {
+        "type": "edgeToLot",
+        "structure": "garage",
+        "edge": "minX"
+      }
     }
   ],
   "assumptions": [
@@ -1106,7 +1153,7 @@
     },
     {
       "id": "footprints",
-      "text": "The garage footprint is scaled from one photo (about 2 ft). Printed dimensions override scaled ones where both exist. The ADU footprint is from its floor plan and the house's side and rear walls from its roof plan.",
+      "text": "The ADU footprint is from its floor plan, the house's side and rear walls from its roof plan, and the garage from its own plan (walls 18'-2\" by 20'-1\", west wall 2'-11\" from the lot line). The garage's rear wall comes from the printed 19'-10 3/4\" to the ADU and assumes that distance is wall to wall.",
       "estimate": true
     },
     {
@@ -1116,7 +1163,7 @@
     },
     {
       "id": "heights",
-      "text": "Garage height and the 6 ft fences are placeholders (garage 9/11 ft). House and ADU heights come from the plans. Terrain is modeled flat; the house's natural grade rises about half a foot from front to back.",
+      "text": "The 6 ft fences and the garage eave height (9.3 ft, a 4:12 roof) are placeholders; the garage ridge, 12'-8\", is printed. House and ADU heights come from the plans. Terrain is modeled flat; the house's natural grade rises about half a foot from front to back.",
       "estimate": true
     }
   ]

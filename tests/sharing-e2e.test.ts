@@ -134,7 +134,7 @@ describe('M7 acceptance: a second viewer can view and simulate but cannot change
     g().undo();
     g().redo();
     g().hydrateWorkspace(owner.getState().toWorkspace());
-    g().addShare({ scenarioId: 'x', token: 't', revokeKey: 'k', createdAt: '', updatedAt: '', hideAddress: false, revoked: false });
+    g().addShare({ scenarioId: 'x', token: 't', revokeKey: 'k', createdAt: '', updatedAt: '', blurLocation: false, revoked: false });
     const after = JSON.stringify({ i: g().instances, p: g().palette, h: g().hardscape, z: g().hydrozones, s: g().soilProfiles, pl: g().playZones, sc: g().scenarios, rain: g().useRain, adu: g().aduEnabled, lib: g().library.species.length });
     expect(after).toBe(before);
     expect(g().shares).toEqual([]);
@@ -163,7 +163,7 @@ describe('M7 acceptance: a second viewer can view and simulate but cannot change
 });
 
 describe('sharing details', () => {
-  it('updating a link shows the viewer the new plan at the same address', async () => {
+  it('updating a link shows the viewer the new plan at the same link', async () => {
     const owner = ownerStore();
     const shared = await publishShare(owner, client, owner.getState().activeScenarioId, false);
     if (!shared.ok) throw new Error('publish failed');
@@ -193,19 +193,18 @@ describe('sharing details', () => {
     expect(b).not.toBe(a);
   });
 
-  it('hides the address in what the viewer receives, and the sun still works', async () => {
+  it('blurs the location in what the viewer receives, and the sun still works', async () => {
     const owner = ownerStore();
     const shared = await publishShare(owner, client, owner.getState().activeScenarioId, true);
     if (!shared.ok) throw new Error('publish failed');
-    expect(shared.value.hideAddress).toBe(true);
+    expect(shared.value.blurLocation).toBe(true);
     const viewer = makeAppStore('view');
     await loadSharedPlan(viewer, client, shared.value.token);
     expect(viewer.getState().site.name).toBe('Shared lot');
-    expect(viewer.getState().site.address).toBe('');
-    expect(viewer.getState().shared?.hideAddress).toBe(true);
+    expect(viewer.getState().shared?.blurLocation).toBe(true);
     expect(JSON.stringify(viewer.getState().site)).not.toContain('Ashby');
     expect(viewer.getState().site.lot).toEqual(owner.getState().site.lot);
-    expect(owner.getState().site.name).toBe('10641 Ashby Ave'); // the owner's own copy is untouched
+    expect(owner.getState().site.name).toBe('Ashby Planting Sim'); // the owner's own copy is untouched
   });
 
   it('keeps the owner key in the owner\'s workspace and out of the shared plan', async () => {
@@ -238,7 +237,7 @@ describe('sharing details', () => {
 
   it('treats a link the server has forgotten as already off when revoking', async () => {
     const owner = ownerStore();
-    owner.getState().addShare({ scenarioId: owner.getState().activeScenarioId, token: 'BBBBBBBBBBBBBBBBBBBBBB', revokeKey: 'k', createdAt: '', updatedAt: '', hideAddress: false, revoked: false });
+    owner.getState().addShare({ scenarioId: owner.getState().activeScenarioId, token: 'BBBBBBBBBBBBBBBBBBBBBB', revokeKey: 'k', createdAt: '', updatedAt: '', blurLocation: false, revoked: false });
     expect((await revokeShare(owner, client, 'BBBBBBBBBBBBBBBBBBBBBB')).ok).toBe(true);
     expect(owner.getState().shares.at(-1)?.revoked).toBe(true);
   });

@@ -65,7 +65,6 @@ export function PlanSheet() {
         <header className="sheet-head">
           <div>
             <h1>{s.site.name}</h1>
-            {s.site.address && <p>{s.site.address}</p>}
             <p><b>Plan: {scenarioName}</b> · plants shown at year {fmt(year, 1)}</p>
           </div>
           <div className="sheet-meta">

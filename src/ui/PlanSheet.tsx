@@ -1,11 +1,12 @@
 import { useEffect, useMemo } from 'react';
 import { bbox } from '../engine/geometry';
-import { footprint, takeoff } from '../engine/hardscape';
+import { elementColor, footprint, takeoff } from '../engine/hardscape';
 import { feetToInches, northAngleDeg, planKey, planKeySize, scaleBarFeet, SHEET_SCALE_FT_PER_IN } from '../engine/plansheet';
 import { plantSchedule } from '../engine/schedule';
 import { hardscapeCosts, money, money2, priceLabel } from '../engine/pricing';
 import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
+import type { HardscapeElement } from '../engine/types';
 import { usePlaced } from '../store/derived';
 import { useApp } from '../store/store';
 
@@ -48,7 +49,7 @@ export function PlanSheet() {
     });
   }, [structures]);
   const existing = plants.filter((p) => p.inst.existing);
-  const matColor = (id: string) => s.materials.find((m) => m.id === id)?.color ?? '#bbb';
+  const colorOf = (e: HardscapeElement) => elementColor(e, s.materials, s.engine.hardscape);
   const toVerify = s.site.assumptions.filter((a) => a.estimate);
   const trees = s.site.contextObjects.filter((o) => o.kind === 'tree' && o.position);
 
@@ -108,7 +109,7 @@ export function PlanSheet() {
               const b = bbox(poly);
               return (
                 <g key={e.id}>
-                  <polygon points={poly.map(([x, y]) => `${x},${Y(y)}`).join(' ')} fill={e.color ?? matColor(e.materialId)} fillOpacity={e.existing ? 0.45 : 0.7} stroke="#444" strokeWidth={0.2} strokeDasharray={e.existing ? '1 0.8' : undefined} />
+                  <polygon points={poly.map(([x, y]) => `${x},${Y(y)}`).join(' ')} fill={colorOf(e)} fillOpacity={e.existing ? 0.45 : 0.7} stroke="#444" strokeWidth={0.2} strokeDasharray={e.existing ? '1 0.8' : undefined} />
                   {(() => {
                     const label = e.name ?? s.engine.hardscape.types[e.type].label;
                     const w = b.maxX - b.minX, h = b.maxY - b.minY;

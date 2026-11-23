@@ -3,7 +3,7 @@ import siteRaw from '../data/site.json';
 import engineRaw from '../data/engine.json';
 import type { Conflict } from '../engine/conflicts';
 import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engine/geometry';
-import { drivewayBlocks } from '../engine/hardscape';
+import { drivewayBlocks, dropMappedColors } from '../engine/hardscape';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
 import { buildSunMap, type SunMap } from '../engine/placement';
@@ -330,7 +330,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     // Replace the working fields with a scenario's data and clear everything tied to the old one.
     const applyData = (d: ScenarioData) =>
       set({
-        ...clone(d), hive: d.hive ?? null, prices: d.prices ?? emptyPrices(), hiveSelected: false, hiveDragging: false, hardscape: syncExistingHardscape(clone(d.hardscape), get().site), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
+        ...clone(d), hive: d.hive ?? null, prices: d.prices ?? emptyPrices(), hiveSelected: false, hiveDragging: false, hardscape: dropMappedColors(syncExistingHardscape(clone(d.hardscape), get().site), engine.hardscape), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
         hsDrag: null, dragId: null, measureActive: false, measurePoints: [], suggestion: null, suggestFocus: null,
       });
     const customSpeciesList = () => get().library.species.filter((s) => !baseSpeciesIds.has(s.id));
@@ -581,7 +581,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       setElementMaterial: (id, materialId) => {
         const m = get().materials.find((x) => x.id === materialId);
         if (!m) return;
-        scenario({ hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, materialId, depthIn: m.defaultDepthIn } : e)) });
+        // A new material brings its own color: an override belonged to the old material's look, so it is dropped.
+        scenario({ hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, materialId, depthIn: m.defaultDepthIn, color: undefined } : e)) });
       },
       moveElementBy: (id, dx, dy) =>
         mutate({ hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, points: e.points.map(([x, y]): Pt => [x + dx, y + dy]) } : e)) }),
@@ -693,7 +694,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         if (!parsed.ok) return parsed;
         const remap = mergeCustomSpecies(parsed.customSpecies);
         const data = clone(parsed.data);
-        data.hardscape = syncExistingHardscape(data.hardscape, get().site);
+        data.hardscape = dropMappedColors(syncExistingHardscape(data.hardscape, get().site), engine.hardscape);
         if (remap.size) {
           data.instances = data.instances.map((i) => (remap.has(i.speciesId) ? { ...i, speciesId: remap.get(i.speciesId)! } : i));
           data.palette = Object.fromEntries(Object.entries(data.palette).map(([k, v]) => [remap.get(k) ?? k, v]));
@@ -737,7 +738,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         const soilProfiles = { ...get().soilProfiles, ...(ws.siteOverrides?.soilProfiles ?? {}) };
         set({
           scenarios: good.map((g) => g.meta), activeScenarioId: active.meta.id,
-          saved: Object.fromEntries(good.filter((g) => g !== active).map((g) => [g.meta.id, { ...g.data, hardscape: syncExistingHardscape(g.data.hardscape, get().site) }])),
+          saved: Object.fromEntries(good.filter((g) => g !== active).map((g) => [g.meta.id, { ...g.data, hardscape: dropMappedColors(syncExistingHardscape(g.data.hardscape, get().site), engine.hardscape) }])),
           shares: Array.isArray(ws.shares) ? ws.shares.map(normalizeShare) : [], soilProfiles, playZones: { ...(ws.siteOverrides?.playZones ?? {}) },
         });
         applyData(active.data);

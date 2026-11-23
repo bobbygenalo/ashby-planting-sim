@@ -292,3 +292,25 @@ export function drivewayBlocks(p: Pt, elements: HardscapeElement[], cfg: HsCfg):
   }
   return false;
 }
+
+/**
+ * The color an element shows: its own `color` when the owner set one (an override), otherwise the color mapped to its
+ * material (`hardscape.materialColors`), otherwise the material's own color. Changing an element's material therefore
+ * changes its color too, unless it carries an override.
+ */
+export function elementColor(el: Pick<HardscapeElement, 'color' | 'materialId'>, materials: Pick<Material, 'id' | 'color'>[], cfg: Pick<EngineConfig['hardscape'], 'materialColors'>): string {
+  return el.color ?? cfg.materialColors[el.materialId] ?? materials.find((m) => m.id === el.materialId)?.color ?? '#aaaaaa';
+}
+
+/**
+ * Older plans stamped every generated element with its material's palette color, which then looked like an override and
+ * stuck when the material changed. A color that is just the mapped one is not an override: drop it, and keep the rest.
+ */
+export function dropMappedColors(elements: HardscapeElement[], cfg: Pick<EngineConfig['hardscape'], 'materialColors'>): HardscapeElement[] {
+  return elements.map((e) => {
+    if (!e.color || cfg.materialColors[e.materialId]?.toLowerCase() !== e.color.toLowerCase()) return e;
+    const { color: _drop, ...rest } = e;
+    void _drop;
+    return rest;
+  });
+}

@@ -349,6 +349,20 @@
       "postRiseFt": 0.25,
       "capFt": 0.12,
       "capOverhangFt": 0.06
+    },
+    "materialColors": {
+      "concrete": "#c2c0bb",
+      "pavers-sand": "#d98c7a",
+      "flagstone-mortar": "#5f7391",
+      "flagstone-dry": "#a994ba",
+      "decomposed-granite": "#e6c97a",
+      "gravel": "#93b5b3",
+      "soil-bed": "#8b5e3c",
+      "mulch": "#3f2d22",
+      "lawn": "#79b45f",
+      "wood-deck": "#e0a040",
+      "composite-deck": "#85807a",
+      "raised-bed-wood": "#b0582a"
     }
   },
   "conflicts": {
@@ -727,20 +741,6 @@
         "grill": 0.7
       }
     ],
-    "colors": {
-      "concrete": "#c2c0bb",
-      "pavers-sand": "#d98c7a",
-      "flagstone-mortar": "#5f7391",
-      "flagstone-dry": "#a994ba",
-      "decomposed-granite": "#e6c97a",
-      "gravel": "#93b5b3",
-      "soil-bed": "#8b5e3c",
-      "mulch": "#3f2d22",
-      "lawn": "#79b45f",
-      "wood-deck": "#e0a040",
-      "composite-deck": "#85807a",
-      "raised-bed-wood": "#b0582a"
-    },
     "furniture": {
       "attempts": 240,
       "gapFt": 1.5,

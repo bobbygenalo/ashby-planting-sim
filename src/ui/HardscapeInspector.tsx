@@ -3,7 +3,7 @@ import { CROPS } from '../data/cropLibrary';
 import { activeCrop, planOf, seasonOf } from '../engine/crops';
 import { doyToMonthDay } from '../engine/time';
 import { isRectangle } from '../engine/geometry';
-import { elementMetrics, hardscapeWarnings } from '../engine/hardscape';
+import { elementColor, elementMetrics, hardscapeWarnings } from '../engine/hardscape';
 import { elementPrice, money, priceLabel } from '../engine/pricing';
 import { formatFeetInches } from '../engine/units';
 import { useApp } from '../store/store';
@@ -89,8 +89,9 @@ export function HardscapeInspector() {
         </label>}
         <label>Color
           <span className="row">
-            <input type="color" disabled={!edit} value={sel.color ?? matById.get(sel.materialId)?.color ?? '#aaaaaa'} onChange={(e) => s.updateElement(sel.id, { color: e.target.value }, { silent: false })} />
-            <button disabled={!edit || !sel.color} onClick={() => s.updateElement(sel.id, { color: undefined })}>Use material color</button>
+            <input type="color" disabled={!edit} value={elementColor(sel, s.materials, cfg)} onChange={(e) => s.updateElement(sel.id, { color: e.target.value }, { silent: false })} />
+            <button disabled={!edit || !sel.color} title="Go back to the color mapped to this material" onClick={() => s.updateElement(sel.id, { color: undefined })}>Use material color</button>
+            <span className="muted">{sel.color ? 'custom' : 'material default'}</span>
           </span>
         </label>
         {!cfg.types[sel.type].furniture && <label>Surface depth (in){num(sel.depthIn, (n) => s.updateElement(sel.id, { depthIn: n }), 0.5, !edit || sel.existing)}</label>}

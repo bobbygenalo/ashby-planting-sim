@@ -239,8 +239,6 @@ export interface ConceptCfg {
   beds: { zones: Record<string, [number, number]>; length: [number, number]; depth: [number, number]; attempts: number; edgeBias: number; gapFt: number };
   areas: { lawn: ConceptAreaCfg; deck: ConceptAreaCfg; gravel: ConceptAreaCfg; mulch: ConceptAreaCfg; raisedBed: ConceptAreaCfg };
   themes: ConceptTheme[];
-  /** One display color per material, chosen to be told apart on the plan. */
-  colors: Record<string, string>;
   plants: {
     count: [number, number];
     /** The most plants in a concept, drifts and companions included. */
@@ -828,6 +826,8 @@ export interface EngineConfig {
     drivewayBufferFt: number;
     /** How a raised bed is built: stacked boards on corner posts under a cap rail, all in feet. */
     raisedBedFrame: RaisedBedFrameCfg;
+    /** The color every element of a material shows, chosen so materials can be told apart on the plan. An element's own `color` overrides it; a material missing here uses its own `color` in the materials list. */
+    materialColors: Record<string, string>;
     /** How far flat surfaces stand above the ground, by type, so they show an edge: a slab is about half an inch proud, loose fill a little more. */
     surfaceThicknessFt: Partial<Record<HardscapeType, number>>;
     /** How the lot's fences are built: posts, spacing, how far the posts and the cap rail stand proud. */

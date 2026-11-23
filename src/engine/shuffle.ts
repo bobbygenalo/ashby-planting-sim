@@ -1,5 +1,5 @@
 import { distanceToPolygon, pointInPolygon } from './geometry';
-import { drivewayBlocks, footprint } from './hardscape';
+import { drivewayBlocks, footprint, elementColor } from './hardscape';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, Pt, SiteConfig, Species, StructureCfg } from './types';
 import type { ScenarioData } from './scenario';
 import { lightSuits, roomRatio, shadesRaisedBed, type Neighbor, type SunMap } from './placement';
@@ -103,7 +103,7 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
     if (opts.colors) {
       const category = matById.get(next.materialId)?.category;
       const palette = (category && cfg.colorsByCategory[category]) || [];
-      const options = palette.filter((c) => c !== next.color);
+      const options = palette.filter((c) => c !== elementColor(next, ctx.materials, ctx.engine.hardscape));
       if (options.length > 0) {
         next = { ...next, color: pick(rng, options) };
         changes.colors++;

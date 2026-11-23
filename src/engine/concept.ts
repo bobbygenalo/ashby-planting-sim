@@ -115,8 +115,6 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
     return {
       id: `c-${type}-${placed.length}`, type, name, points, materialId: id, height: t.height,
       depthIn: mat?.defaultDepthIn ?? t.depthIn, width: t.width, existing: false,
-      // One color per material, so a lawn, a mulch zone, gravel and a patio can be told apart at a glance.
-      ...(cfg.colors[id] ? { color: cfg.colors[id] } : {}),
     };
   };
   const add = (el: HardscapeElement) => {

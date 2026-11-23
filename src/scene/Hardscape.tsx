@@ -3,7 +3,7 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { polygonArea } from '../engine/geometry';
-import { footprint, snapAnchors, snapPoint, type SnapResult } from '../engine/hardscape';
+import { elementColor, footprint, snapAnchors, snapPoint, type SnapResult } from '../engine/hardscape';
 import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
 import type { HardscapeElement, Material, Pt } from '../engine/types';
@@ -56,12 +56,12 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
   const surface = mat?.surface;
   const texture = useMemo(() => (surface ? tiledSurface(surface.pattern, surface.tileFt) : null), [surface]);
   useEffect(() => () => texture?.dispose(), [texture]);
-  const topColor = el.color ?? mat?.color ?? '#aaa';
+  const topColor = elementColor(el, mat ? [mat] : [], cfg);
   const sideColor = useMemo(() => new THREE.Color(topColor).multiplyScalar(0.7), [topColor]);
   // A raised bed is a wooden frame with soil in it, not a solid block; a removed one is still drawn as the red ghost block.
   const frameCfg = cfg.raisedBedFrame;
   const soilTop = raisedBedSoilTop(el.height, soilRaw.raisedBed.freeboardIn);
-  const bedColor = el.color ?? mat?.color ?? '#8a6a47';
+  const bedColor = topColor;
   const bed = useMemo(
     () => (el.type === 'raisedBed' && !el.removed && poly.length >= 3 ? raisedBedGeometry(poly, el.height, soilTop, bedColor, frameCfg, el.id.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)) : null),
     [el.type, el.removed, el.id, el.height, poly, soilTop, bedColor, frameCfg],
@@ -120,7 +120,7 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
     setHsDrag({ id: el.id, kind: 'move', last: [e.point.x, -e.point.z] });
     if (controls) controls.enabled = false;
   };
-  const base = el.color ?? mat?.color ?? '#aaa';
+  const base = topColor;
   return (
     <group>
       {frame ? (

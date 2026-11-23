@@ -6,7 +6,7 @@ import speciesRaw from '../src/data/species.json';
 import materialsRaw from '../src/data/materials.json';
 import { generateConcept } from '../src/engine/concept';
 import { distanceToPolygon, pointInPolygon, polygonsIntersect } from '../src/engine/geometry';
-import { footprint } from '../src/engine/hardscape';
+import { elementColor, footprint } from '../src/engine/hardscape';
 import { emptyScenarioData } from '../src/engine/scenario';
 import { lookAlikes, mulberry32, shuffleScenario } from '../src/engine/shuffle';
 import { activeStructures, loadSite } from '../src/engine/site';
@@ -281,7 +281,9 @@ describe('concept hardscape variety', () => {
     for (let seed = 1; seed <= 40; seed++) {
       for (const e of fresh(seed)) {
         expect(e.name, `element ${e.id}`).toBeTruthy();
-        expect(e.color).toBe(engine.concept.colors[e.materialId]);
+        // the color comes from the material's mapping, not from a stamp on the element, so changing the material changes it
+        expect(e.color).toBeUndefined();
+        expect(elementColor(e, mats, engine.hardscape)).toBe(engine.hardscape.materialColors[e.materialId] ?? mats.find((m) => m.id === e.materialId)!.color);
         expect(mats.some((m) => m.id === e.materialId)).toBe(true);
         if (e.type === 'path') expect(engine.concept.path.materials).toContain(e.materialId);
         if (e.type === 'deck') expect(engine.concept.areas.deck.materials).toContain(e.materialId);
@@ -302,7 +304,7 @@ describe('concept hardscape variety', () => {
   });
 
   it('colors each material so a plan reads like a legend: no two materials look alike', () => {
-    const entries = Object.entries(engine.concept.colors);
+    const entries = Object.entries(engine.hardscape.materialColors);
     expect(entries.length).toBeGreaterThanOrEqual(12);
     for (const [id] of entries) expect(mats.some((m) => m.id === id), `${id} is not a material`).toBe(true);
     for (let i = 0; i < entries.length; i++) for (let j = i + 1; j < entries.length; j++) {

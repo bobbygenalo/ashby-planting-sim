@@ -997,7 +997,9 @@ export interface Crop {
   harvestStart: number;
   endMonth: number;
   leafColor: string;
-  produce?: { color: string; sizeFt: number; count: number };
+  produce?: { color: string; sizeFt: number; count: number; /** What it looks like, and where it sits on the plant. */ shape: 'sphere' | 'pepper' | 'eggplant' | 'zucchini' | 'cucumber' | 'pod' | 'head' | 'berry' | 'carrot'; place: 'stems' | 'center' | 'ground' | 'edge' };
+  /** How the leaves and stems look up close (the same data the garden plants use). */
+  look: LookData;
   perennial?: boolean;
   dormantMonths?: number[];
   regrowMonths?: number[];

@@ -220,8 +220,12 @@ export function buildFoliage(look: LookData, ctx: FoliageCtx): Foliage {
   let skeleton: Skeleton | null = null;
   const topZ = ctx.base + ctx.canopyH;
 
-  const leaf = (p: Vec3, dir: Vec3) => {
+  const leaf = (p: Vec3, dirIn: Vec3) => {
     const k = between(rng, 0.8, 1.2) * youngK;
+    // A leaf never reaches below the ground: tip it up until its end clears the soil.
+    let dir = dirIn;
+    const reach = lf.lengthFt * display * k;
+    if (p[2] + dir[2] * reach < 0.01) dir = norm([dir[0], dir[1], Math.max(dir[2], (0.01 - p[2]) / Math.max(reach, 1e-6))]);
     leaves.push({ p, dir, roll: rng() * Math.PI * 2, length: lf.lengthFt * display * k, width: lf.widthFt * display * k, shade: rng(), under: rng() < (lf.underShare ?? 0) });
   };
   /** Leaves along a segment of twig or stem, each turned out from it and drooping. */

@@ -1,11 +1,14 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { CROPS } from '../data/cropLibrary';
-import { activeCrop, cropPositions, planOf, produceOffsets } from '../engine/crops';
+import { buildCropPlant } from '../engine/cropPlants';
+import { activeCrop, cropPositions, planOf } from '../engine/crops';
+import { mulberry32 } from '../engine/shuffle';
 import { doyToMonthDay } from '../engine/time';
 import type { HardscapeElement } from '../engine/types';
 import { footprint } from '../engine/hardscape';
 import { useApp } from '../store/store';
+import { cropMeshes } from './cropGeometry';
 
 function hash(s: string): number {
   let h = 2166136261;
@@ -13,78 +16,72 @@ function hash(s: string): number {
   return h >>> 0;
 }
 
+const VARIANTS = 3;
+
+/** Instances of one built crop plant (or its produce) at the given places, sizes and turns. */
+function Instances({ geometry, matrices, material, shadow }: { geometry: THREE.BufferGeometry; matrices: THREE.Matrix4[]; material: THREE.Material; shadow?: boolean }) {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = mesh.current;
+    if (!m) return;
+    matrices.forEach((mat, i) => m.setMatrixAt(i, mat));
+    m.count = matrices.length;
+    m.instanceMatrix.needsUpdate = true;
+  }, [matrices]);
+  if (!matrices.length) return null;
+  return <instancedMesh ref={mesh} args={[geometry, material, matrices.length]} key={matrices.length} frustumCulled={false} castShadow={shadow} raycast={() => null} />;
+}
+
 /** Vegetables and fruit growing in one raised bed, for the month: seedlings, full plants with produce, fading, then pulled. */
 function BedCrops({ bed, index, month }: { bed: HardscapeElement; index: number; month: number }) {
   const cfg = useApp((s) => s.engine.crops);
+  const branches = useApp((s) => s.engine.branches);
+  const foliageCfg = useApp((s) => s.engine.foliage);
   const hs = useApp((s) => s.engine.hardscape);
   const poly = useMemo(() => footprint(bed, hs), [bed, hs]);
   const active = useMemo(() => activeCrop(planOf(bed, CROPS, index), CROPS, month, cfg), [bed, index, month, cfg]);
   const spots = useMemo(() => (active ? cropPositions(poly, active.crop.spacingFt, cfg) : []), [active, poly, cfg]);
-  const leaf = useRef<THREE.InstancedMesh>(null);
-  const fruit = useRef<THREE.InstancedMesh>(null);
   const top = bed.height;
+  const cropId = active?.crop.id;
 
-  const produce = useMemo(() => {
-    if (!active || !active.stage.produce || !active.crop.produce) return [];
-    const pr = active.crop.produce;
-    const out: [number, number, number][] = [];
+  // A few different plants of the crop, built once and drawn at every spot, so a bed is not a row of clones.
+  const variants = useMemo(() => {
+    if (!active) return [];
+    return Array.from({ length: VARIANTS }, (_, v) => cropMeshes(active.crop, buildCropPlant(active.crop, hash(bed.id) + v * 7919 + 13, branches, foliageCfg, cfg)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cropId, bed.id, branches, foliageCfg, cfg]);
+  useEffect(() => () => variants.forEach((v) => { v.foliage?.dispose(); v.produce?.dispose(); }), [variants]);
+
+  // Where each variant stands, how big it is this month, and which way it is turned.
+  const matrices = useMemo(() => {
+    const out: THREE.Matrix4[][] = Array.from({ length: VARIANTS }, () => []);
+    if (!active) return out;
+    const q = new THREE.Quaternion(), pos = new THREE.Vector3(), scl = new THREE.Vector3();
     spots.forEach(([x, y], n) => {
-      for (const [dx, dy, dz] of produceOffsets(pr.count, active.crop.widthFt * active.stage.size, hash(bed.id) + n)) {
-        out.push([x + dx, y + dy, top + active.crop.heightFt * active.stage.size * dz]);
-      }
+      const rng = mulberry32(hash(bed.id) + n * 31);
+      q.setFromAxisAngle(new THREE.Vector3(0, 0, 1), rng() * Math.PI * 2);
+      const k = Math.max(active.stage.size, 0.05) * (0.92 + rng() * 0.16);
+      pos.set(x, y, top);
+      scl.set(k, k, k);
+      out[n % VARIANTS].push(new THREE.Matrix4().compose(pos.clone(), q.clone(), scl.clone()));
     });
     return out;
   }, [active, spots, bed.id, top]);
 
-  useLayoutEffect(() => {
-    if (!active) return;
-    const dummy = new THREE.Object3D();
-    const { crop, stage } = active;
-    const m = leaf.current;
-    if (m) {
-      const w = Math.max(crop.widthFt * stage.size, 0.12) / 2, h = Math.max(crop.heightFt * stage.size, 0.1) / 2;
-      spots.forEach(([x, y], i) => {
-        dummy.position.set(x, y, top + h);
-        dummy.scale.set(w, w, h);
-        dummy.updateMatrix();
-        m.setMatrixAt(i, dummy.matrix);
-      });
-      m.count = spots.length;
-      m.instanceMatrix.needsUpdate = true;
-    }
-    const f = fruit.current;
-    if (f && crop.produce) {
-      const d = Math.max(crop.produce.sizeFt * cfg.produceDisplayScale, cfg.produceMinFt) / 2;
-      produce.forEach(([x, y, z], i) => {
-        dummy.position.set(x, y, z);
-        dummy.scale.set(d, d, d);
-        dummy.updateMatrix();
-        f.setMatrixAt(i, dummy.matrix);
-      });
-      f.count = produce.length;
-      f.instanceMatrix.needsUpdate = true;
-    }
-  }, [active, spots, produce, top, cfg]);
-
-  const color = useMemo(() => {
-    if (!active) return new THREE.Color();
-    const c = new THREE.Color(active.crop.leafColor);
-    return c.lerp(new THREE.Color(cfg.spentColor), active.stage.fade * cfg.spentBlend);
+  const leafMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.85 });
+    if (active) m.color.set('#ffffff').lerp(new THREE.Color(cfg.spentColor), active.stage.fade * cfg.spentBlend);
+    return m;
   }, [active, cfg]);
+  const fruitMat = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }), []);
+  useEffect(() => () => leafMat.dispose(), [leafMat]);
+  useEffect(() => () => fruitMat.dispose(), [fruitMat]);
 
   if (!active || spots.length === 0) return null;
   return (
     <group>
-      <instancedMesh ref={leaf} args={[undefined, undefined, spots.length]} key={`l-${bed.id}-${active.crop.id}-${spots.length}`} frustumCulled={false} castShadow>
-        <sphereGeometry args={[1, 10, 8]} />
-        <meshStandardMaterial color={color} roughness={1} />
-      </instancedMesh>
-      {produce.length > 0 && active.crop.produce && (
-        <instancedMesh ref={fruit} args={[undefined, undefined, produce.length]} key={`p-${bed.id}-${active.crop.id}-${produce.length}`} frustumCulled={false}>
-          <sphereGeometry args={[1, 8, 6]} />
-          <meshStandardMaterial color={active.crop.produce.color} roughness={0.55} />
-        </instancedMesh>
-      )}
+      {variants.map((v, i) => v.foliage && <Instances key={`f${i}`} geometry={v.foliage} matrices={matrices[i]} material={leafMat} shadow />)}
+      {active.stage.produce && variants.map((v, i) => v.produce && <Instances key={`p${i}`} geometry={v.produce} matrices={matrices[i]} material={fruitMat} />)}
     </group>
   );
 }

@@ -989,6 +989,21 @@
         66,
         6
       ]
+    },
+    {
+      "id": "yard",
+      "label": "Yard",
+      "kind": "perspective",
+      "position": [
+        60,
+        93,
+        66
+      ],
+      "target": [
+        22,
+        93,
+        0
+      ]
     }
   ],
   "printed": [

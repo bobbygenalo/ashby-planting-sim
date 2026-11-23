@@ -85,7 +85,7 @@
     "priceBasis": "sf",
     "surface": {
       "pattern": "granular",
-      "tileFt": 3,
+      "tileFt": 2,
       "bump": 0.5
     }
   },
@@ -103,7 +103,7 @@
     "priceBasis": "sf",
     "surface": {
       "pattern": "gravel",
-      "tileFt": 3,
+      "tileFt": 2,
       "bump": 1.0
     }
   },

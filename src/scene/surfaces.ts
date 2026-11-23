@@ -55,10 +55,25 @@ const PAINT: Record<SurfacePattern, Painter> = {
       ctx.lineWidth = 6 + rnd() * 12;
       wrapped(x, y, len, (px, py) => { ctx.beginPath(); ctx.arc(px, py, len * 0.6, a, a + 0.9); ctx.stroke(); });
     }
-    for (let n = 0; n < 500; n++) {
-      ctx.fillStyle = gray(rnd() < 0.6 ? 90 : 245, 0.5);
-      const x = rnd() * S, y = rnd() * S, r = 0.6 + rnd() * 1.6;
+    for (let n = 0; n < 2600; n++) {
+      ctx.fillStyle = gray(rnd() < 0.6 ? 90 + rnd() * 40 : 235 + rnd() * 20, 0.35 + rnd() * 0.3);
+      const x = rnd() * S, y = rnd() * S, r = 0.5 + rnd() * rnd() * 2.2;
       ctx.fillRect(x, y, r, r);
+    }
+    // Air-bubble pits, each dark with a pale lip.
+    for (let n = 0; n < 60; n++) {
+      const x = rnd() * S, y = rnd() * S, r = 0.8 + rnd() * 1.6;
+      wrapped(x, y, r + 2, (px, py) => {
+        ctx.fillStyle = gray(70, 0.7); ctx.beginPath(); ctx.arc(px, py, r, 0, 6.283); ctx.fill();
+        ctx.fillStyle = gray(250, 0.4); ctx.beginPath(); ctx.arc(px - 0.6, py - 0.6, r * 0.5, 0, 6.283); ctx.fill();
+      });
+    }
+    // A couple of hairline cracks that wander across the slab.
+    for (let n = 0; n < 2; n++) {
+      let x = rnd() * S, y = rnd() * S, a = rnd() * 6.283;
+      ctx.strokeStyle = gray(80, 0.55); ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(x, y);
+      for (let k = 0; k < 14; k++) { a += (rnd() - 0.5) * 0.9; x += Math.cos(a) * 14; y += Math.sin(a) * 14; ctx.lineTo(x, y); }
+      ctx.stroke();
     }
     ctx.fillStyle = gray(70);
     ctx.fillRect(0, 0, 3, S);
@@ -68,26 +83,28 @@ const PAINT: Record<SurfacePattern, Painter> = {
     ctx.fillRect(0, 3, S, 2);
   },
 
-  // Interlocking pavers, 8 by 4 in, in running bond, each its own shade, with narrow sand joints.
+  // Interlocking pavers, 8 by 4 in, in running bond: each its own shade, with beveled edges (pale top edge, dark bottom
+  // edge), a sandy grain, a little wear, and sand joints with grit.
   pavers(ctx, rnd) {
-    ctx.fillStyle = gray(110);
-    ctx.fillRect(0, 0, S, S);
+    noise(ctx, 105, 40, 61);
     const rows = 12, bw = S / 6, bh = S / rows;
     for (let r = 0; r < rows; r++) {
       for (let c = -1; c < 6; c++) {
         const x = c * bw + (r % 2 ? bw / 2 : 0), y = r * bh;
-        const tone = 196 + (rnd() - 0.5) * 38;
+        const tone = 192 + (rnd() - 0.5) * 46;
         const draw = (px: number) => {
           ctx.fillStyle = gray(tone);
-          ctx.fillRect(px + 2, y + 2, bw - 4, bh - 4);
-          for (let k = 0; k < 40; k++) { ctx.fillStyle = gray(rnd() < 0.5 ? tone - 40 : tone + 30, 0.5); ctx.fillRect(px + 2 + rnd() * (bw - 4), y + 2 + rnd() * (bh - 4), 1.4, 1.4); }
-          ctx.fillStyle = gray(tone + 22, 0.7);
-          ctx.fillRect(px + 2, y + 2, bw - 4, 2);
+          ctx.fillRect(px + 3, y + 3, bw - 6, bh - 6);
+          ctx.fillStyle = gray(tone + 26, 0.75); ctx.fillRect(px + 3, y + 3, bw - 6, 2); ctx.fillRect(px + 3, y + 3, 2, bh - 6);
+          ctx.fillStyle = gray(tone - 55, 0.7); ctx.fillRect(px + 3, y + bh - 5, bw - 6, 2); ctx.fillRect(px + bw - 5, y + 3, 2, bh - 6);
+          for (let k = 0; k < 140; k++) { ctx.fillStyle = gray(rnd() < 0.5 ? tone - 45 : tone + 35, 0.45); const g = 0.6 + rnd() * 1.2; ctx.fillRect(px + 5 + rnd() * (bw - 10), y + 5 + rnd() * (bh - 10), g, g); }
+          if (rnd() < 0.3) { const gx = px + bw * (0.2 + rnd() * 0.6), gy = y + bh * (0.3 + rnd() * 0.4); const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, 12); g.addColorStop(0, gray(tone - 30, 0.3)); g.addColorStop(1, gray(tone, 0)); ctx.fillStyle = g; ctx.fillRect(gx - 12, gy - 12, 24, 24); }
         };
         draw(x);
         if (x + bw > S) draw(x - S);
       }
     }
+    for (let n = 0; n < 1500; n++) { ctx.fillStyle = gray(rnd() < 0.5 ? 150 : 60, 0.5); ctx.fillRect(rnd() * S, rnd() * S, 1, 1); }
   },
 
   // Irregular flagstone cut by a Voronoi pattern of a dozen stones per tile, with mortar or open joints, each stone its own tone.
@@ -98,39 +115,51 @@ const PAINT: Record<SurfacePattern, Painter> = {
   granular(ctx, rnd) {
     noise(ctx, 200, 44, 29);
     blotches(ctx, rnd, 50, 0.08);
-    for (let n = 0; n < 700; n++) {
+    for (let n = 0; n < 3500; n++) {
       ctx.fillStyle = gray(rnd() < 0.5 ? 100 + rnd() * 50 : 225 + rnd() * 30, 0.8);
-      const r = 1 + rnd() * 2.6;
+      const r = 0.5 + rnd() * rnd() * 1.8;
       ctx.beginPath();
       ctx.arc(rnd() * S, rnd() * S, r, 0, 6.283);
       ctx.fill();
     }
   },
 
-  // Rounded gravel: stones with a shadow underneath and a highlight, over dark gaps.
+  // Pea gravel, about 3/8 to 3/4 in across: thousands of small rounded stones in two passes (a deeper layer, then a top
+  // layer), each with a contact shadow, a pale highlight and a speckle, over dark gaps and fine grit.
   gravel(ctx, rnd) {
-    ctx.fillStyle = gray(60);
-    ctx.fillRect(0, 0, S, S);
-    for (let n = 0; n < 900; n++) {
-      const x = rnd() * S, y = rnd() * S, rx = 5 + rnd() * 9, ry = rx * (0.65 + rnd() * 0.35), a = rnd() * 3.14;
-      const tone = 140 + rnd() * 90;
-      wrapped(x, y, rx + 4, (px, py) => {
-        ctx.fillStyle = gray(30, 0.55);
-        ctx.beginPath(); ctx.ellipse(px + 2, py + 2.5, rx, ry, a, 0, 6.283); ctx.fill();
-        ctx.fillStyle = gray(tone);
-        ctx.beginPath(); ctx.ellipse(px, py, rx, ry, a, 0, 6.283); ctx.fill();
-        ctx.fillStyle = gray(tone + 35, 0.6);
-        ctx.beginPath(); ctx.ellipse(px - rx * 0.25, py - ry * 0.3, rx * 0.4, ry * 0.3, a, 0, 6.283); ctx.fill();
-      });
+    noise(ctx, 58, 30, 53);
+    for (let pass = 0; pass < 2; pass++) {
+      const count = pass === 0 ? 4200 : 5200;
+      for (let n = 0; n < count; n++) {
+        const x = rnd() * S, y = rnd() * S, rx = 2.6 + rnd() * rnd() * 5.2, ry = rx * (0.6 + rnd() * 0.4), a = rnd() * 3.14;
+        const tone = (pass === 0 ? 105 : 135) + rnd() * 100;
+        wrapped(x, y, rx + 3, (px, py) => {
+          ctx.fillStyle = gray(18, 0.6);
+          ctx.beginPath(); ctx.ellipse(px + 1.3, py + 1.6, rx + 0.4, ry + 0.4, a, 0, 6.283); ctx.fill();
+          ctx.fillStyle = gray(tone);
+          ctx.beginPath(); ctx.ellipse(px, py, rx, ry, a, 0, 6.283); ctx.fill();
+          ctx.fillStyle = gray(tone - 38, 0.5);
+          ctx.beginPath(); ctx.ellipse(px + rx * 0.25, py + ry * 0.3, rx * 0.7, ry * 0.6, a, 0, 6.283); ctx.fill();
+          ctx.fillStyle = gray(tone + 40, 0.55);
+          ctx.beginPath(); ctx.ellipse(px - rx * 0.3, py - ry * 0.35, rx * 0.35, ry * 0.28, a, 0, 6.283); ctx.fill();
+          if (rx > 3.5 && rnd() < 0.5) { ctx.fillStyle = gray(rnd() < 0.5 ? tone - 60 : tone + 50, 0.6); ctx.fillRect(px + (rnd() - 0.5) * rx, py + (rnd() - 0.5) * ry, 1, 1); }
+        });
+      }
     }
+    // Fine grit and dust between the stones.
+    for (let n = 0; n < 4000; n++) {
+      ctx.fillStyle = gray(rnd() < 0.5 ? 40 + rnd() * 40 : 170 + rnd() * 70, 0.6);
+      ctx.fillRect(rnd() * S, rnd() * S, 1, 1);
+    }
+    blotches(ctx, rnd, 30, 0.07);
   },
 
   // Wood chip mulch: a heap of long chips at all angles, some pale, some dark, over a dark base.
   mulch(ctx, rnd) {
     ctx.fillStyle = gray(52);
     ctx.fillRect(0, 0, S, S);
-    for (let n = 0; n < 1300; n++) {
-      const x = rnd() * S, y = rnd() * S, len = 12 + rnd() * 24, wid = 4 + rnd() * 5, a = rnd() * 3.14;
+    for (let n = 0; n < 1900; n++) {
+      const x = rnd() * S, y = rnd() * S, len = 10 + rnd() * 20, wid = 3.5 + rnd() * 4, a = rnd() * 3.14;
       const tone = 80 + rnd() * 115;
       wrapped(x, y, len, (px, py) => {
         ctx.fillStyle = gray(tone);
@@ -172,7 +201,7 @@ const PAINT: Record<SurfacePattern, Painter> = {
         const draw = (px: number) => {
           ctx.fillStyle = gray(tone);
           ctx.fillRect(px + 4, y + 4, bw - 8, bh - 8);
-          for (let k = 0; k < 160; k++) { ctx.fillStyle = gray(rnd() < 0.6 ? tone - 55 : tone + 40, 0.5); const s = 0.8 + rnd() * 2; ctx.fillRect(px + 4 + rnd() * (bw - 8), y + 4 + rnd() * (bh - 8), s, s); }
+          for (let k = 0; k < 420; k++) { ctx.fillStyle = gray(rnd() < 0.6 ? tone - 55 : tone + 40, 0.5); const s = 0.6 + rnd() * 1.8; ctx.fillRect(px + 4 + rnd() * (bw - 8), y + 4 + rnd() * (bh - 8), s, s); }
         };
         draw(x);
         if (x + bw > S) draw(x - S);
@@ -221,17 +250,30 @@ function flagstone(ctx: CanvasRenderingContext2D, rnd: () => number, mortared: b
       const joint = mortared ? 6 : 5;
       let v: number;
       if (edge < joint) v = mortared ? 232 - jr() * 14 : 55 + jr() * 40;
-      else v = tones[k1] + (jr() - 0.5) * 26 - Math.max(0, 8 - (edge - joint)) * (mortared ? 3 : 5);
+      else v = tones[k1] + (jr() - 0.5) * 26 - Math.max(0, 10 - (edge - joint)) * (mortared ? 3 : 5) + (edge - joint > 2 && edge - joint < 5 ? 10 : 0);
       const i = (y * S + x) * 4;
       img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
       img.data[i + 3] = 255;
     }
   }
   ctx.putImageData(img, 0, 0);
-  // Pale streaks and a few darker pits on each stone.
-  for (let n = 0; n < 260; n++) {
-    ctx.fillStyle = gray(rnd() < 0.5 ? 120 : 240, 0.2);
-    ctx.fillRect(rnd() * S, rnd() * S, 1 + rnd() * 6, 1 + rnd() * 2);
+  // Soft lighter and darker patches across the stones, like weathering and mineral staining.
+  blotches(ctx, rnd, 70, 0.1);
+  // Layered bedding: faint streaks running one general way, short, with a few darker pits and specks.
+  for (let n = 0; n < 420; n++) {
+    ctx.fillStyle = gray(rnd() < 0.5 ? 110 : 245, 0.16);
+    ctx.fillRect(rnd() * S, rnd() * S, 4 + rnd() * 22, 0.8 + rnd() * 1.6);
+  }
+  for (let n = 0; n < 2200; n++) {
+    ctx.fillStyle = gray(rnd() < 0.5 ? 100 : 250, 0.25);
+    const g = 0.6 + rnd() * 1.4; ctx.fillRect(rnd() * S, rnd() * S, g, g);
+  }
+  // Hairline cracks inside a few stones.
+  for (let n = 0; n < 8; n++) {
+    let x = rnd() * S, y = rnd() * S, a = rnd() * 6.283;
+    ctx.strokeStyle = gray(70, 0.35); ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(x, y);
+    for (let k = 0; k < 7; k++) { a += (rnd() - 0.5) * 1.2; x += Math.cos(a) * 9; y += Math.sin(a) * 9; ctx.lineTo(x, y); }
+    ctx.stroke();
   }
 }
 
@@ -244,7 +286,7 @@ function decking(ctx: CanvasRenderingContext2D, rnd: () => number, wood: boolean
     ctx.fillStyle = gray(tone);
     ctx.fillRect(0, r * h + 1.5, S, h - 3);
     if (wood) {
-      for (let k = 0; k < 30; k++) {
+      for (let k = 0; k < 55; k++) {
         const y = r * h + 3 + rnd() * (h - 6), amp = 0.6 + rnd() * 1.6, ph = rnd() * 6;
         ctx.strokeStyle = gray(rnd() < 0.5 ? tone - 60 : tone + 25, 0.14 + rnd() * 0.22);
         ctx.lineWidth = 0.6 + rnd() * 1.1;
@@ -256,6 +298,9 @@ function decking(ctx: CanvasRenderingContext2D, rnd: () => number, wood: boolean
     } else {
       for (let k = 0; k < 90; k++) { ctx.fillStyle = gray(rnd() < 0.5 ? tone - 25 : tone + 20, 0.4); ctx.fillRect(rnd() * S, r * h + 2 + rnd() * (h - 4), 1.5, 1.5); }
     }
+    if (wood) { ctx.fillStyle = gray(tone + 22, 0.5); ctx.fillRect(0, r * h + 1.5, S, 1.5); ctx.fillStyle = gray(tone - 50, 0.5); ctx.fillRect(0, r * h + h - 3, S, 1.5); }
+    // Screw heads near the ends of each board, two to a joist line.
+    for (let sx = 40; sx < S; sx += 128) for (const dy of [h * 0.3, h * 0.7]) { ctx.fillStyle = gray(70, 0.65); ctx.beginPath(); ctx.arc(sx, r * h + dy, 1.5, 0, 6.283); ctx.fill(); }
     // A butt joint where two boards meet, a different place on every row.
     const bx = rnd() * S;
     ctx.fillStyle = gray(45);

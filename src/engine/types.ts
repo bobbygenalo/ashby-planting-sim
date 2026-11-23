@@ -561,6 +561,25 @@ export interface FoliageCfg {
   quantizeStep: number;
 }
 
+/** A raised bed's frame: boards about 5.5 in tall and 1.5 in thick stacked up to the cap, 4x4 corner posts, and a flat cap rail. */
+export interface RaisedBedFrameCfg {
+  boardHeightFt: number;
+  boardThicknessFt: number;
+  /** A hairline gap between stacked boards, so each reads as its own plank. */
+  seamGapFt: number;
+  postFt: number;
+  /** The posts stand this much above the cap. */
+  postRiseFt: number;
+  capThicknessFt: number;
+  capWidthFt: number;
+  /** The cap overhangs the outside of the boards by this much. */
+  capOverhangFt: number;
+  /** Boards differ in lightness by up to this share, so the wood is not uniform. */
+  colorJitter: number;
+  /** The grain texture repeats every this many feet along a board. */
+  grainFtPerTile: number;
+}
+
 /** Trunks: taper, a flare at the ground, and slightly ridged, sinuous bark. */
 export interface TrunkCfg {
   /** Radius at the base as a share of the whole plant height, kept between the two limits (feet). */
@@ -776,6 +795,8 @@ export interface EngineConfig {
     notDrawable?: HardscapeType[];
     /** Nothing is planted on the driveway (any element marked keep-clear) or this close to it, in feet. */
     drivewayBufferFt: number;
+    /** How a raised bed is built: stacked boards on corner posts under a cap rail, all in feet. */
+    raisedBedFrame: RaisedBedFrameCfg;
     snapToleranceFt: number;
     rootZoneFactor: number;
     drawOrder: HardscapeType[];

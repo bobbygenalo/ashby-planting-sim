@@ -323,7 +323,19 @@
       "wall",
       "fence"
     ],
-    "drivewayBufferFt": 3
+    "drivewayBufferFt": 3,
+    "raisedBedFrame": {
+      "boardHeightFt": 0.46,
+      "boardThicknessFt": 0.125,
+      "seamGapFt": 0.012,
+      "postFt": 0.29,
+      "postRiseFt": 0.04,
+      "capThicknessFt": 0.1,
+      "capWidthFt": 0.3,
+      "capOverhangFt": 0.05,
+      "colorJitter": 0.07,
+      "grainFtPerTile": 3
+    }
   },
   "conflicts": {
     "overlapToleranceFt": 1.0,

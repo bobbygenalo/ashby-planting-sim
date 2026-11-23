@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { CROPS } from '../data/cropLibrary';
+import soilRaw from '../data/soil.json';
+import { raisedBedSoilTop } from '../engine/soil';
 import { buildCropPlant } from '../engine/cropPlants';
 import { activeCrop, cropPositions, planOf } from '../engine/crops';
 import { mulberry32 } from '../engine/shuffle';
@@ -41,7 +43,7 @@ function BedCrops({ bed, index, month }: { bed: HardscapeElement; index: number;
   const poly = useMemo(() => footprint(bed, hs), [bed, hs]);
   const active = useMemo(() => activeCrop(planOf(bed, CROPS, index), CROPS, month, cfg), [bed, index, month, cfg]);
   const spots = useMemo(() => (active ? cropPositions(poly, active.crop.spacingFt, cfg) : []), [active, poly, cfg]);
-  const top = bed.height;
+  const top = raisedBedSoilTop(bed.height, soilRaw.raisedBed.freeboardIn);
   const cropId = active?.crop.id;
 
   // A few different plants of the crop, built once and drawn at every spot, so a bed is not a row of clones.

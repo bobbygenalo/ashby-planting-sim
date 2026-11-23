@@ -8,6 +8,10 @@ import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
 import type { HardscapeElement, Material, Pt } from '../engine/types';
 import { tableLayout } from '../engine/furniture';
+import soilRaw from '../data/soil.json';
+import { raisedBedSoilTop } from '../engine/soil';
+import { raisedBedGeometry } from './raisedBed';
+import { soilTexture, woodTexture } from './wood';
 import { chairPull } from './chairState';
 import { partyState } from './partyState';
 import { chairGeometry, modelFor, rectFrame } from './furniture';
@@ -44,6 +48,17 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
     const shape = new THREE.Shape(poly.map(([x, y]) => new THREE.Vector2(x, y)));
     return el.height > 0 ? new THREE.ExtrudeGeometry(shape, { depth: el.height, bevelEnabled: false }) : new THREE.ShapeGeometry(shape);
   }, [poly, el.height]);
+  // A raised bed is a wooden frame with soil in it, not a solid block; a removed one is still drawn as the red ghost block.
+  const frameCfg = cfg.raisedBedFrame;
+  const soilTop = raisedBedSoilTop(el.height, soilRaw.raisedBed.freeboardIn);
+  const bedColor = el.color ?? mat?.color ?? '#8a6a47';
+  const bed = useMemo(
+    () => (el.type === 'raisedBed' && !el.removed && poly.length >= 3 ? raisedBedGeometry(poly, el.height, soilTop, bedColor, frameCfg, el.id.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)) : null),
+    [el.type, el.removed, el.id, el.height, poly, soilTop, bedColor, frameCfg],
+  );
+  useEffect(() => () => { bed?.wood?.dispose(); bed?.soil?.dispose(); }, [bed]);
+  const wood = useMemo(() => woodTexture(), []);
+  const soilMap = useMemo(() => soilTexture(), []);
   const modelKind = cfg.types[el.type].model;
   const frame = useMemo(() => (modelKind && poly.length >= 3 ? rectFrame(poly) : null), [modelKind, poly]);
   const modelParts = useMemo(() => (modelKind && frame ? modelFor(modelKind, frame.long, frame.short) : []), [modelKind, frame]);
@@ -140,6 +155,19 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
               </mesh>
             </group>
           ))}
+        </group>
+      ) : bed ? (
+        <group onClick={onClick} onPointerDown={onDown}>
+          {bed.wood && (
+            <mesh geometry={bed.wood} castShadow receiveShadow>
+              <meshStandardMaterial vertexColors map={wood} roughness={0.92} />
+            </mesh>
+          )}
+          {bed.soil && (
+            <mesh geometry={bed.soil} receiveShadow>
+              <meshStandardMaterial color="#6a4f38" map={soilMap} bumpMap={soilMap} bumpScale={1.5} roughness={1} />
+            </mesh>
+          )}
         </group>
       ) : (
         <mesh geometry={geo} position={[0, 0, el.height > 0 ? 0 : z]} castShadow={el.height > 0} receiveShadow onClick={onClick} onPointerDown={onDown}>

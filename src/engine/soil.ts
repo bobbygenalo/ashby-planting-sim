@@ -107,12 +107,15 @@ export function soilQuantities(args: {
 }
 
 /** Fill volume for raised beds: footprint x (height - freeboard) (WS-14). */
+/** Height of the soil surface in a raised bed: the rim, less the freeboard the fill stops short by. */
+export const raisedBedSoilTop = (height: number, freeboardIn: number): number => Math.max(0, height - freeboardIn / 12);
+
 export function raisedBedFill(elements: HardscapeElement[], soil: SoilConfig, hardscapeCfg: EngineConfig['hardscape']): { id: string; name: string; areaSf: number; fillCuYd: number }[] {
   return elements
     .filter((e) => !e.removed && !e.existing && e.type === 'raisedBed')
     .map((e) => {
       const area = polygonArea(footprint(e, hardscapeCfg));
-      const depthFt = Math.max(0, e.height - soil.raisedBed.freeboardIn / 12);
+      const depthFt = raisedBedSoilTop(e.height, soil.raisedBed.freeboardIn);
       return { id: e.id, name: e.name ?? 'Raised bed', areaSf: area, fillCuYd: (area * depthFt) / CU_FT_PER_CU_YD };
     });
 }

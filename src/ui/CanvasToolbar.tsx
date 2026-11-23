@@ -9,6 +9,7 @@ const LAYERS = [
   ['context', 'Trees, fences, pole'],
   ['bloom', 'Bloom color on plants'],
   ['fruit', 'Fruit on trees'],
+  ['detail', 'Leaves and flowers (detailed plants)'],
   ['crops', 'Raised-bed crops'],
   ['life', 'People, dogs and bees'],
   ['conflicts', 'Conflict rings'],

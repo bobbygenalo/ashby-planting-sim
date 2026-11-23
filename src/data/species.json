@@ -64,6 +64,27 @@
         "confidence": "Partly verified",
         "verified": "Size and low water (San Diego County plant list); pollinators (SNWA plant database)",
         "toVerify": "WUCOLS rating; bloom months; soil pH"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 22,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.38,
+          "widthFt": 0.09,
+          "perFt": 10,
+          "underColor": "#e6ece0",
+          "underShare": 0.3,
+          "droop": 0.2,
+          "fold": 0.3
+        },
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.075,
+          "count": 9,
+          "stalkFt": 1.1
+        }
       }
     },
     {
@@ -128,6 +149,28 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers, NC State"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 20,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.2,
+          "widthFt": 0.03,
+          "perFt": 10
+        },
+        "zRange": [
+          0.3,
+          1
+        ],
+        "trunkColor": "#a89070",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.1,
+          "count": 160,
+          "color": "#fbd0e4",
+          "centerColor": "#fde68a"
+        }
       }
     },
     {
@@ -190,6 +233,31 @@
         "confidence": "Partly verified",
         "verified": "Soil and pH (Calscape export); wildlife (Calscape, via City of Folsom list)",
         "toVerify": "WUCOLS rating; size; pet toxicity"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 20,
+        "leaf": {
+          "shape": "frond",
+          "lengthFt": 0.22,
+          "widthFt": 0.06,
+          "perFt": 20
+        },
+        "zRange": [
+          0.05,
+          0.6
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.04,
+          "count": 40,
+          "heads": 8,
+          "headFt": 0.22,
+          "flat": true,
+          "unit": "petal",
+          "stalkFt": 0.8
+        }
       }
     },
     {
@@ -245,6 +313,21 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers"
+      },
+      "look": {
+        "kind": "blades",
+        "count": 60,
+        "leaf": {
+          "shape": "strap",
+          "lengthFt": 1,
+          "widthFt": 0.035
+        },
+        "flower": {
+          "form": "plume",
+          "sizeFt": 0.25,
+          "count": 12,
+          "stalkFt": 0.6
+        }
       }
     },
     {
@@ -310,6 +393,25 @@
       },
       "crown": {
         "density": 0.75
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.2,
+          "widthFt": 0.12,
+          "perFt": 14,
+          "droop": 0.35
+        },
+        "twigs": 900,
+        "limbs": 6,
+        "trunkColor": "#7a6552",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.1,
+          "count": 1500,
+          "centerColor": "#fff3a0"
+        }
       }
     },
     {
@@ -378,6 +480,31 @@
         "confidence": "Partly verified",
         "verified": "Berry toxicity (UC Marin Master Gardeners)",
         "toVerify": "WUCOLS rating; size; Cal-IPC status; pollinator data is for a related species"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 26,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.15,
+          "widthFt": 0.1,
+          "perFt": 16,
+          "fold": 0.3
+        },
+        "zRange": [
+          0.1,
+          0.7
+        ],
+        "trunkColor": "#7a8a5a",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.05,
+          "count": 16,
+          "heads": 14,
+          "headFt": 0.12,
+          "unit": "petal",
+          "stalkFt": 0.3
+        }
       }
     },
     {
@@ -437,6 +564,27 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers"
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 0.12,
+          "widthFt": 0.014,
+          "perFt": 50,
+          "display": 2,
+          "droop": 0.2
+        },
+        "twigs": 700,
+        "limbs": 6,
+        "trunkColor": "#6a5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 800,
+          "color": "#f9a8d4",
+          "centerColor": "#be185d"
+        }
       }
     },
     {
@@ -495,6 +643,27 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers"
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 0.12,
+          "widthFt": 0.014,
+          "perFt": 50,
+          "display": 2,
+          "droop": 0.2
+        },
+        "twigs": 600,
+        "limbs": 6,
+        "trunkColor": "#6a5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 800,
+          "color": "#f9a8d4",
+          "centerColor": "#be185d"
+        }
       }
     },
     {
@@ -560,6 +729,25 @@
         "confidence": "Partly verified",
         "verified": "Invasive status (Cal-IPC horticulture list)",
         "toVerify": "WUCOLS rating; size; bloom; soil"
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.15,
+          "widthFt": 0.07,
+          "perFt": 20,
+          "fold": 0.3
+        },
+        "twigs": 700,
+        "limbs": 6,
+        "trunkColor": "#6a5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.06,
+          "count": 600,
+          "centerColor": "#fde68a"
+        }
       }
     },
     {
@@ -625,6 +813,25 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers"
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.13,
+          "widthFt": 0.06,
+          "perFt": 20,
+          "fold": 0.3
+        },
+        "twigs": 500,
+        "limbs": 5,
+        "trunkColor": "#6a5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 400,
+          "centerColor": "#fde68a"
+        }
       }
     },
     {
@@ -683,6 +890,25 @@
         "confidence": "Partly verified",
         "verified": "Size, soil texture, pH and drainage (NC State Plant Toolbox)",
         "toVerify": "WUCOLS rating; Los Angeles size and bloom months"
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.15,
+          "widthFt": 0.1,
+          "perFt": 16,
+          "fold": 0.3
+        },
+        "twigs": 800,
+        "limbs": 6,
+        "trunkColor": "#5a4038",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.08,
+          "count": 800,
+          "centerColor": "#9d174d"
+        }
       }
     },
     {
@@ -740,6 +966,22 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers"
+      },
+      "look": {
+        "kind": "blades",
+        "count": 24,
+        "leaf": {
+          "shape": "strap",
+          "lengthFt": 1,
+          "widthFt": 0.22
+        },
+        "flower": {
+          "form": "raceme",
+          "sizeFt": 0.1,
+          "count": 16,
+          "heads": 3,
+          "stalkFt": 2.5
+        }
       }
     },
     {
@@ -799,6 +1041,25 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, NC State, Cal-IPC, UC toxicity list"
+      },
+      "look": {
+        "kind": "blades",
+        "count": 30,
+        "leaf": {
+          "shape": "strap",
+          "lengthFt": 1,
+          "widthFt": 0.12
+        },
+        "leafHeightFrac": 0.5,
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.12,
+          "count": 40,
+          "heads": 8,
+          "headFt": 0.35,
+          "unit": "tube",
+          "stalkFt": 1
+        }
       }
     },
     {
@@ -862,6 +1123,25 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, San Marcos Growers"
+      },
+      "look": {
+        "kind": "blades",
+        "count": 30,
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 1,
+          "widthFt": 0.025
+        },
+        "leafHeightFrac": 0.6,
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.06,
+          "count": 10,
+          "heads": 8,
+          "headFt": 0.1,
+          "unit": "tube",
+          "stalkFt": 0.4
+        }
       }
     },
     {
@@ -924,6 +1204,32 @@
         "confidence": "Partly verified",
         "verified": "Size and low water (San Diego County plant list)",
         "toVerify": "WUCOLS rating; native status (Calscape); bloom months"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 40,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.06,
+          "widthFt": 0.04,
+          "perFt": 40,
+          "display": 1.5
+        },
+        "zRange": [
+          0.1,
+          0.9
+        ],
+        "trunkColor": "#7a8a5a",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.02,
+          "count": 8,
+          "heads": 20,
+          "headFt": 0.06,
+          "flat": true,
+          "unit": "petal",
+          "stalkFt": 0.1
+        }
       }
     },
     {
@@ -979,6 +1285,21 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, Calscape"
+      },
+      "look": {
+        "kind": "blades",
+        "count": 90,
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 1,
+          "widthFt": 0.018
+        },
+        "flower": {
+          "form": "plume",
+          "sizeFt": 0.08,
+          "count": 15,
+          "stalkFt": 0.4
+        }
       }
     },
     {
@@ -1045,6 +1366,28 @@
           8,
           9
         ]
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.15,
+          "widthFt": 0.1,
+          "perFt": 14,
+          "underColor": "#8aa878",
+          "underShare": 0.1,
+          "fold": 0.35
+        },
+        "twigs": 700,
+        "limbs": 6,
+        "trunkColor": "#8a3f2c",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 700,
+          "color": "#fbe3ee",
+          "centerColor": "#f0a8c0"
+        }
       }
     },
     {
@@ -1103,6 +1446,32 @@
         "confidence": "Partly verified",
         "verified": "Bloom months and pollinators (UC ANR Southern California ornamentals study, 'Aromas')",
         "toVerify": "WUCOLS rating; size; soil (Calscape)"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 30,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.1,
+          "widthFt": 0.07,
+          "perFt": 24,
+          "underColor": "#c8d4c0",
+          "underShare": 0.2
+        },
+        "zRange": [
+          0.25,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.04,
+          "count": 14,
+          "heads": 18,
+          "headFt": 0.13,
+          "unit": "tube",
+          "stalkFt": 0.8
+        }
       }
     },
     {
@@ -1161,6 +1530,29 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, Calscape"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 24,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.12,
+          "widthFt": 0.03,
+          "perFt": 16,
+          "underColor": "#d0d8c8",
+          "underShare": 0.3
+        },
+        "zRange": [
+          0.2,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "raceme",
+          "sizeFt": 0.09,
+          "count": 8,
+          "stalkFt": 0.5
+        }
       }
     },
     {
@@ -1217,6 +1609,32 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 30,
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 0.08,
+          "widthFt": 0.014,
+          "perFt": 40,
+          "display": 1.6
+        },
+        "zRange": [
+          0.3,
+          1
+        ],
+        "trunkColor": "#8a7f66",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.03,
+          "count": 14,
+          "heads": 20,
+          "headFt": 0.15,
+          "flat": true,
+          "unit": "petal",
+          "stalkFt": 0.5
+        }
       }
     },
     {
@@ -1275,6 +1693,25 @@
         "confidence": "Partly verified",
         "verified": "Bloom months and pollinators (UC ANR study, 'Concha'); soil is from SelecTree for 'Ray Hartman'",
         "toVerify": "WUCOLS rating; size (Calscape)"
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.06,
+          "perFt": 18,
+          "fold": 0.4
+        },
+        "twigs": 800,
+        "limbs": 6,
+        "trunkColor": "#5a4a40",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.06,
+          "count": 1200,
+          "centerColor": "#a5b4fc"
+        }
       }
     },
     {
@@ -1331,6 +1768,29 @@
       },
       "crown": {
         "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.1,
+          "widthFt": 0.015,
+          "perFt": 60,
+          "display": 2.6,
+          "underColor": "#d8dfd2",
+          "underShare": 0.3,
+          "droop": 0.1
+        },
+        "twigs": 600,
+        "limbs": 6,
+        "trunkColor": "#7a6a58",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.03,
+          "count": 700,
+          "color": "#60a5fa",
+          "centerColor": "#dbeafe"
+        }
       }
     },
     {
@@ -1382,6 +1842,29 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 30,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.2,
+          "widthFt": 0.025,
+          "perFt": 24,
+          "underColor": "#d4dccc",
+          "underShare": 0.3
+        },
+        "zRange": [
+          0.3,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.05,
+          "count": 12,
+          "stalkFt": 0.8
+        }
       }
     },
     {
@@ -1436,6 +1919,29 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 24,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.1,
+          "widthFt": 0.07,
+          "perFt": 22,
+          "underColor": "#d4dccc",
+          "underShare": 0.3
+        },
+        "zRange": [
+          0.25,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.04,
+          "count": 10,
+          "stalkFt": 0.5
+        }
       }
     },
     {
@@ -1486,6 +1992,21 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "blades",
+        "count": 70,
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 1,
+          "widthFt": 0.03
+        },
+        "flower": {
+          "form": "plume",
+          "sizeFt": 0.5,
+          "count": 30,
+          "stalkFt": 1.6
+        }
       }
     },
     {
@@ -1537,6 +2058,29 @@
         "behavior": "shallow",
         "minFoundationFt": 0.5,
         "minPavingFt": 0
+      },
+      "look": {
+        "kind": "stems",
+        "count": 30,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.35,
+          "widthFt": 0.15,
+          "perFt": 6,
+          "underColor": "#d8e0d0",
+          "underShare": 0.3
+        },
+        "zRange": [
+          0.1,
+          0.7
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.07,
+          "count": 8,
+          "stalkFt": 0.8
+        }
       }
     },
     {
@@ -1587,6 +2131,23 @@
         "behavior": "shallow",
         "minFoundationFt": 0.5,
         "minPavingFt": 0
+      },
+      "look": {
+        "kind": "rosette",
+        "count": 12,
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 1,
+          "widthFt": 0.3
+        },
+        "leafHeightFrac": 0.5,
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.12,
+          "count": 8,
+          "stalkFt": 1,
+          "heads": 4
+        }
       }
     },
     {
@@ -1643,6 +2204,26 @@
       },
       "crown": {
         "density": 0.85
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.3,
+          "widthFt": 0.27,
+          "perFt": 12,
+          "fold": 0.3,
+          "droop": 0.3
+        },
+        "twigs": 800,
+        "limbs": 5,
+        "trunkColor": "#5e4a44",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.06,
+          "count": 1200,
+          "centerColor": "#a21caf"
+        }
       }
     },
     {
@@ -1705,6 +2286,28 @@
           1,
           2
         ]
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.3,
+          "widthFt": 0.12,
+          "perFt": 14,
+          "underColor": "#7aa072",
+          "underShare": 0.1,
+          "fold": 0.4
+        },
+        "twigs": 900,
+        "limbs": 6,
+        "trunkColor": "#6a5240",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 900,
+          "color": "#fbfbf4",
+          "centerColor": "#e6dca0"
+        }
       }
     },
     {
@@ -1764,6 +2367,25 @@
       },
       "crown": {
         "density": 0.75
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.18,
+          "widthFt": 0.1,
+          "perFt": 14,
+          "droop": 0.3
+        },
+        "twigs": 900,
+        "limbs": 6,
+        "trunkColor": "#b9a794",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.1,
+          "count": 1300,
+          "centerColor": "#f5d6e6"
+        }
       }
     },
     {
@@ -1810,6 +2432,22 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 6,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.25,
+          "widthFt": 0.1,
+          "fold": 0.5
+        },
+        "zRange": [
+          0.7,
+          1
+        ],
+        "tipRosette": 14,
+        "trunkColor": "#6a5a4a"
       }
     },
     {
@@ -1883,6 +2521,28 @@
       },
       "crown": {
         "density": 0.9
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.22,
+          "widthFt": 0.1,
+          "perFt": 16,
+          "underColor": "#6a9a5e",
+          "underShare": 0.08,
+          "fold": 0.4
+        },
+        "twigs": 700,
+        "limbs": 6,
+        "trunkColor": "#6b5646",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.08,
+          "count": 300,
+          "color": "#ffffff",
+          "centerColor": "#f2d55c"
+        }
       }
     },
     {
@@ -1954,6 +2614,28 @@
       },
       "crown": {
         "density": 0.9
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.3,
+          "widthFt": 0.13,
+          "perFt": 15,
+          "underColor": "#6a9a5e",
+          "underShare": 0.08,
+          "fold": 0.4
+        },
+        "twigs": 850,
+        "limbs": 7,
+        "trunkColor": "#6b5646",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.09,
+          "count": 450,
+          "color": "#ffffff",
+          "centerColor": "#f2d55c"
+        }
       }
     },
     {
@@ -2029,6 +2711,29 @@
       },
       "crown": {
         "density": 0.88
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.3,
+          "widthFt": 0.14,
+          "perFt": 16,
+          "underColor": "#6a9a5e",
+          "underShare": 0.08,
+          "droop": 0.25,
+          "fold": 0.4
+        },
+        "trunkColor": "#6b5646",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.1,
+          "count": 600,
+          "color": "#ffffff",
+          "centerColor": "#f2d55c"
+        },
+        "twigs": 900,
+        "limbs": 7
       }
     },
     {
@@ -2079,6 +2784,27 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.22,
+          "widthFt": 0.07,
+          "perFt": 14,
+          "underColor": "#a8b8a0",
+          "underShare": 0.2,
+          "fold": 0.3
+        },
+        "twigs": 600,
+        "limbs": 6,
+        "trunkColor": "#6a5648",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.17,
+          "count": 250,
+          "centerColor": "#f2d55c"
+        }
       }
     },
     {
@@ -2135,6 +2861,27 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 30,
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.12,
+          "widthFt": 0.05,
+          "perFt": 20
+        },
+        "zRange": [
+          0.3,
+          1
+        ],
+        "trunkColor": "#8a8a68",
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.08,
+          "count": 6,
+          "stalkFt": 0.5
+        }
       }
     },
     {
@@ -2191,6 +2938,31 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 22,
+        "leaf": {
+          "shape": "frond",
+          "lengthFt": 0.15,
+          "widthFt": 0.06,
+          "perFt": 16
+        },
+        "zRange": [
+          0.1,
+          0.8
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.035,
+          "count": 12,
+          "heads": 16,
+          "headFt": 0.12,
+          "flat": true,
+          "unit": "petal",
+          "stalkFt": 0.25
+        }
       }
     },
     {
@@ -2242,6 +3014,27 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 14,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.35,
+          "widthFt": 0.06,
+          "perFt": 8
+        },
+        "zRange": [
+          0.3,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.1,
+          "count": 8,
+          "stalkFt": 0.9
+        }
       }
     },
     {
@@ -2292,6 +3085,22 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "rosette",
+        "count": 14,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 1,
+          "widthFt": 0.3
+        },
+        "leafHeightFrac": 0.4,
+        "flower": {
+          "form": "plume",
+          "sizeFt": 0.3,
+          "count": 8,
+          "stalkFt": 1
+        }
       }
     },
     {
@@ -2345,6 +3154,25 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.2,
+          "widthFt": 0.04,
+          "perFt": 18,
+          "fold": 0.3
+        },
+        "twigs": 500,
+        "limbs": 5,
+        "trunkColor": "#7a6a58",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.13,
+          "count": 250,
+          "centerColor": "#f59e0b"
+        }
       }
     },
     {
@@ -2395,6 +3223,32 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 32,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.07,
+          "perFt": 22,
+          "underColor": "#d0d8c8",
+          "underShare": 0.25
+        },
+        "zRange": [
+          0.25,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.04,
+          "count": 14,
+          "heads": 20,
+          "headFt": 0.13,
+          "unit": "tube",
+          "stalkFt": 0.9
+        }
       }
     },
     {
@@ -2449,6 +3303,27 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 14,
+        "leaf": {
+          "shape": "frond",
+          "lengthFt": 0.2,
+          "widthFt": 0.05,
+          "perFt": 10
+        },
+        "zRange": [
+          0.3,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.15,
+          "count": 40,
+          "centerColor": "#f59e0b"
+        }
       }
     },
     {
@@ -2510,6 +3385,30 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 10,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.35,
+          "widthFt": 0.03,
+          "perFt": 10
+        },
+        "zRange": [
+          0.5,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.04,
+          "count": 20,
+          "heads": 5,
+          "headFt": 0.15,
+          "unit": "petal",
+          "stalkFt": 0.4
+        }
       }
     },
     {
@@ -2574,6 +3473,26 @@
           9,
           10
         ]
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.25,
+          "widthFt": 0.13,
+          "perFt": 12,
+          "fold": 0.35
+        },
+        "twigs": 800,
+        "limbs": 6,
+        "trunkColor": "#5a4a3e",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.03,
+          "count": 600,
+          "color": "#d9f99d",
+          "centerColor": "#a3e635"
+        }
       }
     },
     {
@@ -2620,6 +3539,21 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "blades",
+        "count": 80,
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 1,
+          "widthFt": 0.012
+        },
+        "flower": {
+          "form": "plume",
+          "sizeFt": 0.12,
+          "count": 14,
+          "stalkFt": 0.5
+        }
       }
     },
     {
@@ -2670,6 +3604,33 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 22,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.06,
+          "widthFt": 0.04,
+          "perFt": 40,
+          "display": 1.5,
+          "fold": 0.3
+        },
+        "zRange": [
+          0.1,
+          0.8
+        ],
+        "trunkColor": "#6a3a3a",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.03,
+          "count": 14,
+          "heads": 6,
+          "headFt": 0.12,
+          "flat": true,
+          "unit": "petal",
+          "stalkFt": 0.2
+        }
       }
     },
     {
@@ -2717,6 +3678,31 @@
         "behavior": "shallow",
         "minFoundationFt": 0.5,
         "minPavingFt": 0
+      },
+      "look": {
+        "kind": "stems",
+        "count": 30,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.1,
+          "widthFt": 0.02,
+          "perFt": 40,
+          "display": 1.5,
+          "underColor": "#e8f0ee",
+          "underShare": 0.5
+        },
+        "zRange": [
+          0.1,
+          0.9
+        ],
+        "trunkColor": "#8a9a8a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.06,
+          "count": 40,
+          "color": "#fde68a",
+          "centerColor": "#f59e0b"
+        }
       }
     },
     {
@@ -2770,6 +3756,26 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 0.15,
+          "widthFt": 0.015,
+          "perFt": 40,
+          "display": 2,
+          "droop": 0.1
+        },
+        "twigs": 600,
+        "limbs": 6,
+        "trunkColor": "#6a5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.1,
+          "count": 300,
+          "centerColor": "#be185d"
+        }
       }
     },
     {
@@ -2829,6 +3835,25 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.1,
+          "widthFt": 0.04,
+          "perFt": 24,
+          "fold": 0.3
+        },
+        "twigs": 300,
+        "limbs": 5,
+        "trunkColor": "#6a5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 300,
+          "centerColor": "#f5d0fe"
+        }
       }
     },
     {
@@ -2881,6 +3906,29 @@
         "behavior": "shallow",
         "minFoundationFt": 3,
         "minPavingFt": 1.5
+      },
+      "look": {
+        "kind": "stems",
+        "count": 30,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.3,
+          "widthFt": 0.08,
+          "perFt": 12,
+          "underColor": "#d4dccc",
+          "underShare": 0.2
+        },
+        "zRange": [
+          0.25,
+          1
+        ],
+        "trunkColor": "#8f9c78",
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.07,
+          "count": 9,
+          "stalkFt": 1
+        }
       }
     },
     {
@@ -2931,6 +3979,22 @@
         "behavior": "shallow",
         "minFoundationFt": 1,
         "minPavingFt": 0.5
+      },
+      "look": {
+        "kind": "rosette",
+        "count": 18,
+        "leaf": {
+          "shape": "strap",
+          "lengthFt": 1,
+          "widthFt": 0.2
+        },
+        "flower": {
+          "form": "raceme",
+          "sizeFt": 0.17,
+          "count": 14,
+          "stalkFt": 1.4,
+          "heads": 2
+        }
       }
     },
     {
@@ -3016,6 +4080,27 @@
       },
       "crown": {
         "density": 0.85
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.5,
+          "widthFt": 0.25,
+          "perFt": 8,
+          "droop": 0.35,
+          "fold": 0.3
+        },
+        "twigs": 700,
+        "limbs": 6,
+        "trunkColor": "#4a3f38",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.08,
+          "count": 300,
+          "color": "#fff3d0",
+          "centerColor": "#e8c870"
+        }
       }
     },
     {
@@ -3094,6 +4179,29 @@
       },
       "crown": {
         "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.25,
+          "widthFt": 0.15,
+          "perFt": 14,
+          "underColor": "#a9b98b",
+          "underShare": 0.15,
+          "droop": 0.3,
+          "fold": 0.35
+        },
+        "trunkColor": "#5b4a3c",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.14,
+          "count": 900,
+          "color": "#fbe3ee",
+          "centerColor": "#f4d35e"
+        },
+        "twigs": 900,
+        "limbs": 6
       }
     },
     {
@@ -3171,6 +4279,29 @@
       },
       "crown": {
         "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.25,
+          "widthFt": 0.15,
+          "perFt": 14,
+          "underColor": "#a9b98b",
+          "underShare": 0.15,
+          "droop": 0.3,
+          "fold": 0.35
+        },
+        "twigs": 900,
+        "limbs": 6,
+        "trunkColor": "#5b4a3c",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.14,
+          "count": 900,
+          "color": "#f6bcd2",
+          "centerColor": "#f4d35e"
+        }
       }
     },
     {
@@ -3252,6 +4383,30 @@
       },
       "crown": {
         "density": 0.55
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.15,
+          "widthFt": 0.04,
+          "perFt": 22,
+          "display": 2.4,
+          "underColor": "#dfe4d6",
+          "underShare": 0.35,
+          "droop": 0.2,
+          "fold": 0.25
+        },
+        "twigs": 900,
+        "limbs": 6,
+        "trunkColor": "#6e675c",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.025,
+          "count": 1000,
+          "color": "#f4efd6",
+          "centerColor": "#e6d9a0"
+        }
       }
     },
     {
@@ -3375,6 +4530,30 @@
             0
           ]
         ]
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 0.17,
+          "widthFt": 0.045,
+          "perFt": 22,
+          "underColor": "#dfe4d6",
+          "underShare": 0.35,
+          "droop": 0.2,
+          "fold": 0.25,
+          "display": 2.4
+        },
+        "trunkColor": "#6e675c",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.025,
+          "count": 1500,
+          "color": "#f4efd6",
+          "centerColor": "#e6d9a0"
+        },
+        "twigs": 1100,
+        "limbs": 6
       }
     },
     {
@@ -3435,6 +4614,30 @@
         "confidence": "Recall only",
         "verified": null,
         "toVerify": "All fields: WUCOLS, Calscape"
+      },
+      "look": {
+        "kind": "stems",
+        "count": 14,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.15,
+          "widthFt": 0.1,
+          "perFt": 8
+        },
+        "zRange": [
+          0.15,
+          0.6
+        ],
+        "trunkColor": "#8a7a66",
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.035,
+          "count": 30,
+          "heads": 10,
+          "headFt": 0.2,
+          "unit": "petal",
+          "stalkFt": 0.8
+        }
       }
     },
     {
@@ -3504,6 +4707,26 @@
       },
       "crown": {
         "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.12,
+          "widthFt": 0.06,
+          "perFt": 20,
+          "fold": 0.3
+        },
+        "twigs": 450,
+        "limbs": 6,
+        "trunkColor": "#6b5a4a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 350,
+          "color": "#f6dfe6",
+          "centerColor": "#e8b9c8"
+        }
       }
     },
     {
@@ -3573,6 +4796,26 @@
       },
       "crown": {
         "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 0.13,
+          "widthFt": 0.065,
+          "perFt": 20,
+          "fold": 0.3
+        },
+        "twigs": 550,
+        "limbs": 6,
+        "trunkColor": "#6b5a4a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 450,
+          "color": "#faf1f3",
+          "centerColor": "#e8b9c8"
+        }
       }
     },
     {
@@ -3645,6 +4888,27 @@
       },
       "crown": {
         "density": 0.7
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.3,
+          "widthFt": 0.2,
+          "perFt": 8,
+          "droop": 0.3,
+          "fold": 0.3
+        },
+        "twigs": 450,
+        "limbs": 5,
+        "trunkColor": "#7a5a50",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.12,
+          "count": 120,
+          "color": "#fbf4f6",
+          "centerColor": "#e8d05a"
+        }
       }
     },
     {
@@ -3695,6 +4959,25 @@
         "behavior": "shallow",
         "minFoundationFt": 2.0,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "blades",
+        "count": 40,
+        "leaf": {
+          "shape": "strap",
+          "lengthFt": 1,
+          "widthFt": 0.08
+        },
+        "leafHeightFrac": 0.85,
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.25,
+          "count": 3,
+          "heads": 6,
+          "headFt": 0.1,
+          "unit": "petal",
+          "stalkFt": 0.5
+        }
       }
     },
     {
@@ -3738,6 +5021,15 @@
         "behavior": "shallow",
         "minFoundationFt": 2.0,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "rosette",
+        "count": 16,
+        "leaf": {
+          "shape": "frond",
+          "lengthFt": 1,
+          "widthFt": 0.22
+        }
       }
     },
     {
@@ -3781,6 +5073,15 @@
         "behavior": "shallow",
         "minFoundationFt": 3.0,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "rosette",
+        "count": 16,
+        "leaf": {
+          "shape": "frond",
+          "lengthFt": 1,
+          "widthFt": 0.25
+        }
       }
     },
     {
@@ -3839,6 +5140,29 @@
           6,
           7
         ]
+      },
+      "look": {
+        "kind": "stems",
+        "count": 24,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.15,
+          "widthFt": 0.12,
+          "perFt": 14,
+          "fold": 0.3
+        },
+        "zRange": [
+          0.1,
+          0.7
+        ],
+        "trunkColor": "#6a4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.04,
+          "count": 120,
+          "color": "#a0344a",
+          "centerColor": "#f5c0c8"
+        }
       }
     },
     {
@@ -3899,6 +5223,27 @@
           8,
           9
         ]
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.3,
+          "widthFt": 0.15,
+          "perFt": 10,
+          "fold": 0.4,
+          "droop": 0.2
+        },
+        "twigs": 700,
+        "limbs": 6,
+        "trunkColor": "#6a5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 700,
+          "color": "#f5d94a",
+          "centerColor": "#f59e0b"
+        }
       }
     },
     {
@@ -3946,6 +5291,21 @@
         "behavior": "shallow",
         "minFoundationFt": 1.5,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "blades",
+        "count": 70,
+        "leaf": {
+          "shape": "blade",
+          "lengthFt": 1,
+          "widthFt": 0.02
+        },
+        "flower": {
+          "form": "plume",
+          "sizeFt": 0.1,
+          "count": 10,
+          "stalkFt": 0.4
+        }
       }
     },
     {
@@ -3990,6 +5350,15 @@
         "behavior": "shallow",
         "minFoundationFt": 1.5,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "rosette",
+        "count": 20,
+        "leaf": {
+          "shape": "elliptic",
+          "lengthFt": 1,
+          "widthFt": 0.3
+        }
       }
     },
     {
@@ -4040,6 +5409,22 @@
         "behavior": "shallow",
         "minFoundationFt": 1.0,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "blades",
+        "count": 50,
+        "leaf": {
+          "shape": "strap",
+          "lengthFt": 1,
+          "widthFt": 0.045
+        },
+        "flower": {
+          "form": "spike",
+          "sizeFt": 0.05,
+          "count": 12,
+          "stalkFt": 0.4,
+          "heads": 9
+        }
       }
     },
     {
@@ -4090,6 +5475,25 @@
         "behavior": "shallow",
         "minFoundationFt": 2.0,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "rosette",
+        "count": 18,
+        "leaf": {
+          "shape": "lanceolate",
+          "lengthFt": 1,
+          "widthFt": 0.15
+        },
+        "leafHeightFrac": 0.7,
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.13,
+          "count": 5,
+          "heads": 8,
+          "headFt": 0.15,
+          "unit": "petal",
+          "stalkFt": 0.4
+        }
       }
     },
     {
@@ -4137,6 +5541,25 @@
         "behavior": "shallow",
         "minFoundationFt": 2.0,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "blades",
+        "count": 16,
+        "leaf": {
+          "shape": "strap",
+          "lengthFt": 1,
+          "widthFt": 0.22
+        },
+        "leafHeightFrac": 0.7,
+        "flower": {
+          "form": "head",
+          "sizeFt": 0.12,
+          "count": 14,
+          "heads": 3,
+          "headFt": 0.25,
+          "unit": "tube",
+          "stalkFt": 0.6
+        }
       }
     },
     {
@@ -4189,6 +5612,29 @@
         "behavior": "shallow",
         "minFoundationFt": 0.5,
         "minPavingFt": 1
+      },
+      "look": {
+        "kind": "stems",
+        "count": 22,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.1,
+          "widthFt": 0.09,
+          "perFt": 20,
+          "fold": 0.3
+        },
+        "zRange": [
+          0.1,
+          0.8
+        ],
+        "trunkColor": "#7a8a5a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.04,
+          "count": 60,
+          "color": "#f4f4ee",
+          "centerColor": "#e0e0d0"
+        }
       }
     },
     {
@@ -4266,6 +5712,29 @@
         ],
         "count": 28,
         "source": "General estimate for display; fruiting months vary with weather."
+      },
+      "look": {
+        "kind": "stems",
+        "count": 14,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.15,
+          "widthFt": 0.12,
+          "perFt": 6,
+          "fold": 0.4
+        },
+        "zRange": [
+          0.1,
+          0.8
+        ],
+        "trunkColor": "#8a9a6a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.08,
+          "count": 40,
+          "color": "#ffffff",
+          "centerColor": "#f2d55c"
+        }
       }
     },
     {
@@ -4344,6 +5813,29 @@
         ],
         "count": 36,
         "source": "General estimate for display; fruiting months vary with weather."
+      },
+      "look": {
+        "kind": "stems",
+        "count": 16,
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.17,
+          "widthFt": 0.14,
+          "perFt": 6,
+          "fold": 0.4
+        },
+        "zRange": [
+          0.1,
+          0.8
+        ],
+        "trunkColor": "#8a9a6a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.08,
+          "count": 40,
+          "color": "#ffffff",
+          "centerColor": "#f2d55c"
+        }
       }
     }
   ],

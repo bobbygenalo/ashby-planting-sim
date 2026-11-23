@@ -1667,5 +1667,25 @@
     "fullDayElevationDeg": 8,
     "duskElevationDeg": -1,
     "fullNightElevationDeg": -12
+  },
+  "foliage": {
+    "maxLeaves": 16000,
+    "leafDisplayScale": 1.4,
+    "flowerDisplayScale": 2.4,
+    "maxInflate": 3.5,
+    "quantizeStep": 0.06
+  },
+  "trunk": {
+    "radiusPerHeight": 0.02,
+    "minRadiusFt": 0.03,
+    "maxRadiusFt": 0.9,
+    "topRatio": 0.72,
+    "flare": 1.55,
+    "flareHeightFrac": 0.1,
+    "ridgeAmp": 0.06,
+    "ridges": 7,
+    "sway": 0.025,
+    "sides": 14,
+    "rings": 18
   }
 }

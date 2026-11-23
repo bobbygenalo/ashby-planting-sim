@@ -13,6 +13,7 @@ import { branchSkeleton, type Skeleton } from '../engine/branches';
 import { branchGeometry } from './branchGeometry';
 import { MIN_FORM_SIZE, partGeometry, plantParts } from './forms';
 import { LeafDrop } from './LeafDrop';
+import { DetailedPlant } from './DetailedPlant';
 
 // Spheres and domes are shared unit shapes that each plant scales; the rest are built per plant and thrown away with it.
 const UNIT_ELLIPSOID = partGeometry({ shape: 'ellipsoid', material: 'foliage', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1], args: [] });
@@ -45,8 +46,11 @@ function FormBody({ p, month }: { p: PlacedPlant; month: number }) {
   const trunkFrac = useApp((s) => s.engine.growth.trunkClearanceFraction[p.species.type] ?? 0);
   const tintFrac = useApp((s) => s.engine.growth.bloomTintFraction);
   const showBloom = useApp((s) => s.layers.bloom);
+  const detailOn = useApp((s) => s.layers.detail);
   const leafOff = isLeafOff(p.species, month);
-  const blooming = showBloom && isBlooming(p.species, month) && !leafOff;
+  // A detailed plant shows its blooms as flowers, not as a tint on the leaves.
+  const detailed = detailOn && !!p.species.look;
+  const blooming = showBloom && isBlooming(p.species, month) && !leafOff && !detailed;
   const { species: s, size } = p;
   const color = useMemo(() => {
     const c = new THREE.Color(s.foliageColor);
@@ -68,14 +72,18 @@ function FormBody({ p, month }: { p: PlacedPlant; month: number }) {
     },
     [geometries],
   );
-  const skeleton = useSkeleton(p, leafOff);
+  const skeleton = useSkeleton(p, leafOff && !detailed);
   return (
     <group>
+      {detailed && <DetailedPlant p={p} month={month} />}
       {skeleton && <Branches skeleton={skeleton} />}
-      {parts.map((part, i) => (part.material !== 'trunk' && leafOff ? null : (
+      {parts.map((part, i) => ((part.material !== 'trunk' && leafOff) || (part.material === 'trunk' && detailed) ? null : (
         <mesh key={i} geometry={geometries[i]} position={part.position} rotation={part.rotation} scale={part.scale} castShadow={s.habit !== 'mat' || part.material === 'trunk'} receiveShadow={s.habit === 'mat'}>
           {part.material === 'trunk' ? (
-            <meshStandardMaterial color="#6b4f3a" />
+            <meshStandardMaterial color={s.look?.trunkColor ?? '#6b4f3a'} />
+          ) : detailed ? (
+            // The leaves are drawn by DetailedPlant; this simple crown only casts the shadow, so the sun map agrees with it.
+            <meshStandardMaterial colorWrite={false} depthWrite={false} />
           ) : (
             <meshStandardMaterial color={color} roughness={1} />
           )}

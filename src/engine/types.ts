@@ -496,6 +496,91 @@ export interface LifeCfg {
   maxStepS: number;
 }
 
+/** How a species looks up close: what it grows from, its leaves and its flowers (see `engine/foliage.ts`). */
+export interface LookData {
+  /** tree: leafy twigs on forking branches; stems: soft stems with paired leaves; blades: arching blades; rosette: leaves around a center. */
+  kind: 'tree' | 'stems' | 'blades' | 'rosette';
+  leaf: {
+    shape: 'lanceolate' | 'elliptic' | 'oval' | 'strap' | 'blade' | 'frond';
+    /** Real leaf size, feet. For blades and rosettes the length comes from the plant's size and only the width is used. */
+    lengthFt: number;
+    widthFt: number;
+    /** Leaves per foot of twig or stem. */
+    perFt?: number;
+    /** Drawn this much larger again than the general display scale (a thin leaf like an olive's needs more to be seen). */
+    display?: number;
+    /** The underside, shown by leaves that hang or flip. */
+    underColor?: string;
+    /** Share of leaves that show their underside, 0 to 1. */
+    underShare?: number;
+    /** Lengthwise fold (0 flat to 1 deeply folded) and droop of the tip. */
+    fold?: number;
+    droop?: number;
+  };
+  /** Trees: twig tips at full size, and main limbs. The crown is filled by growing twigs toward points inside its outline. */
+  twigs?: number;
+  limbs?: number;
+  trunkColor?: string;
+  /** Blades, stems or rosette leaves at full size. */
+  count?: number;
+  /** Stems: the share of the canopy height their tips reach, [lowest, highest] (a groundcover's stay low). */
+  zRange?: [number, number];
+  /** Stems: a rosette of this many leaves at every stem tip (aeonium). */
+  tipRosette?: number;
+  /** Blades and rosettes: leaves reach only this share of the plant's height, the flower stalks carry on to the rest. */
+  leafHeightFrac?: number;
+  flower?: {
+    /** blossom: flat five-petal flowers on the twigs; spike: whorls of tubes up a stalk; raceme: tubes hanging off one stalk; plume: slender seed heads above grass. */
+    form: 'blossom' | 'spike' | 'raceme' | 'plume' | 'head';
+    color?: string;
+    centerColor?: string;
+    /** Real flower size, feet (a blossom's width, a tube's length, a plume's length). */
+    sizeFt: number;
+    /** Blossoms, or flowers per spike, at full size. */
+    count: number;
+    /** Stalk length above where it starts, feet, for spikes, racemes and plumes. */
+    stalkFt?: number;
+    /** Heads: how many heads at full size, the radius of one (feet), whether it is a flat plate (yarrow), and its florets as small flat flowers or tubes. */
+    heads?: number;
+    headFt?: number;
+    flat?: boolean;
+    unit?: 'petal' | 'tube';
+  };
+}
+
+/** Level of detail for the closer-up plants. */
+export interface FoliageCfg {
+  /** Most leaves drawn on one plant; past it they are fewer and larger. */
+  maxLeaves: number;
+  /** Leaves and flowers are drawn this much larger than life so they read at yard scale. */
+  leafDisplayScale: number;
+  flowerDisplayScale: number;
+  /** How much larger leaves may grow when capped. */
+  maxInflate: number;
+  /** A plant is rebuilt only when its size changes by this much (a log step), and stretched to its exact size in between. */
+  quantizeStep: number;
+}
+
+/** Trunks: taper, a flare at the ground, and slightly ridged, sinuous bark. */
+export interface TrunkCfg {
+  /** Radius at the base as a share of the whole plant height, kept between the two limits (feet). */
+  radiusPerHeight: number;
+  minRadiusFt: number;
+  maxRadiusFt: number;
+  /** Radius at the top of the trunk as a share of the radius just above the flare. */
+  topRatio: number;
+  /** The base is this many times wider at the ground, falling off over this share of the trunk height. */
+  flare: number;
+  flareHeightFrac: number;
+  /** Ridges in the bark: how deep (share of the radius) and how many around. */
+  ridgeAmp: number;
+  ridges: number;
+  /** The trunk wanders sideways by up to this share of its height, and is zero at the top where the limbs begin. */
+  sway: number;
+  sides: number;
+  rings: number;
+}
+
 export interface BranchCfg {
   /** Main limbs from the top of the trunk, as [least, most]. */
   limbs: [number, number];
@@ -623,6 +708,8 @@ export interface EngineConfig {
   pricing: PricingCfg;
   holiday: HolidayCfg;
   vehicle: VehicleCfg;
+  foliage: FoliageCfg;
+  trunk: TrunkCfg;
   /** Background colors by sun height: bright day, the glow around sunset, and night. */
   sky: { day: string; dusk: string; night: string; fullDayElevationDeg: number; duskElevationDeg: number; fullNightElevationDeg: number };
   litter: LitterCfg;
@@ -744,6 +831,8 @@ export interface Species {
   sun: 'full' | 'part' | 'shade';
   /** Crown outline and light transmission (shadow and drawing share the outline). */
   crown?: CrownData;
+  /** How it looks up close; species without it keep the simple shape. */
+  look?: LookData;
   /** Berries and seeds birds eat, in these months, besides any `fruit`. */
   birdFood?: { months: number[] };
   wucols: 'very low' | 'low' | 'moderate' | 'high';

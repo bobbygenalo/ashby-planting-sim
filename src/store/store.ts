@@ -50,6 +50,8 @@ export interface Layers {
   bloom: boolean;
   /** Show fruit on fruiting plants when it is in season. */
   fruit: boolean;
+  /** Draw plants with leaves, branches and flowers where a species has them (otherwise the simple shape). */
+  detail: boolean;
   /** Show vegetables and fruit growing in raised beds. */
   crops: boolean;
   /** Show people, dogs and bees moving about the yard. */
@@ -373,7 +375,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: false, easements: false, context: true, bloom: true, fruit: true, crops: true, life: true, suggestions: true, conflicts: true },
+      layers: { sunHours: true, dimensions: false, setbacks: false, easements: false, context: true, bloom: true, fruit: true, detail: true, crops: true, life: true, suggestions: true, conflicts: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,

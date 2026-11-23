@@ -2,7 +2,8 @@ import { circleOverlapsPolygon } from './geometry';
 import { sunFit } from './growth';
 import { buildSunScene } from './site';
 import { computeSunHours, type SunHoursResult } from './sunhours';
-import type { EngineConfig, Pt, SiteConfig, Species } from './types';
+import { pairNeed } from './companions';
+import type { CompanionCfg, EngineConfig, Pt, SiteConfig, Species } from './types';
 
 /** Average growing-season sun hours across the lot, from the buildings alone (so a plant is not judged by its own shade). */
 export interface SunMap {
@@ -42,14 +43,14 @@ export interface Neighbor {
 
 /**
  * How far from its nearest neighbor a plant stands, as a share of the room the two need at maturity (their mature
- * widths averaged, times the allowance). 1 or more means enough room. Groundcovers may run under taller plants.
+ * widths averaged, times the allowance). 1 or more means enough room. Nothing stands under another's crown unless the pair
+ * is purposeful or beautiful (`pairNeed`): a drift of one species, a low plant at the foot of a tall one, a contrast.
  */
-export function roomRatio(sp: Species, p: Pt, others: Neighbor[], allowance: number): number {
+export function roomRatio(sp: Species, p: Pt, others: Neighbor[], allowance: number, companions?: CompanionCfg): number {
   let worst = Infinity;
   for (const o of others) {
-    if ((o.species.type === 'groundcover') !== (sp.type === 'groundcover')) continue;
-    const need = (allowance * (o.species.matureWidth + sp.matureWidth)) / 2;
-    worst = Math.min(worst, Math.hypot(o.position[0] - p[0], o.position[1] - p[1]) / need);
+    const { need } = pairNeed(sp, o.species, allowance, companions);
+    worst = Math.min(worst, Math.hypot(o.position[0] - p[0], o.position[1] - p[1]) / Math.max(need, 1e-6));
   }
   return worst;
 }

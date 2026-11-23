@@ -132,7 +132,7 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
   // A plant stays where it suits: enough light, room to grow beside its neighbors, no tree canopy over a raised bed.
   // A spot that was already poor is not made worse.
   const suits = (sp: Species, p: Pt, index: number) =>
-    lightSuits(sp, p, ctx.sunMap, ctx.engine) && roomRatio(sp, p, neighbors(index), allowance) >= 1 && !shadesRaisedBed(sp, p, raisedBeds);
+    lightSuits(sp, p, ctx.sunMap, ctx.engine) && roomRatio(sp, p, neighbors(index), allowance, ctx.engine.concept.plants.companions) >= 1 && !shadesRaisedBed(sp, p, raisedBeds);
   if (opts.species) {
     instances = instances.map((inst, index) => {
       if (inst.existing) return inst;

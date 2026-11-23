@@ -1,3 +1,4 @@
+import { pairNeed } from '../src/engine/companions';
 import { describe, expect, it } from 'vitest';
 import siteRaw from '../src/data/site.json';
 import engineRaw from '../src/data/engine.json';
@@ -77,7 +78,7 @@ describe('concept generator', () => {
     for (let seed = 1; seed <= 25; seed++) {
       const r = generateConcept(ctx, BOTH, mulberry32(seed));
       expect(r.counts.plants).toBeGreaterThanOrEqual(5);
-      expect(r.counts.plants).toBeLessThanOrEqual(engine.concept.plants.count[1]);
+      expect(r.counts.plants).toBeLessThanOrEqual(engine.concept.plants.maxTotal);
       const fresh = r.data.hardscape.filter((e) => !e.existing);
       const trees = r.data.instances.filter((i) => bySpecies(i.speciesId).type === 'tree');
       expect(trees.length).toBeLessThanOrEqual(engine.concept.plants.maxTrees);
@@ -94,9 +95,9 @@ describe('concept generator', () => {
       }
       for (let i = 0; i < r.data.instances.length; i++) for (let j = i + 1; j < r.data.instances.length; j++) {
         const a = bySpecies(r.data.instances[i].speciesId), b = bySpecies(r.data.instances[j].speciesId);
-        if ((a.type === 'groundcover') !== (b.type === 'groundcover')) continue;
         const d = Math.hypot(r.data.instances[i].position[0] - r.data.instances[j].position[0], r.data.instances[i].position[1] - r.data.instances[j].position[1]);
-        expect(d).toBeGreaterThanOrEqual(engine.concept.plants.overlapAllowance * (a.matureWidth + b.matureWidth) / 2 - 1e-6);
+        // Crowns stay apart unless the pair is purposeful or beautiful (a drift, a shade plant under a tree, a contrast).
+        expect(d, `${a.common} and ${b.common}`).toBeGreaterThanOrEqual(pairNeed(a, b, engine.concept.plants.overlapAllowance, engine.concept.plants.companions).need - 1e-6);
       }
     }
   });

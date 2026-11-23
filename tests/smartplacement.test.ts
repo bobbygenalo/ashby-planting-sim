@@ -1,3 +1,4 @@
+import { pairNeed } from '../src/engine/companions';
 import { beforeAll, describe, expect, it } from 'vitest';
 import siteRaw from '../src/data/site.json';
 import engineRaw from '../src/data/engine.json';
@@ -55,9 +56,8 @@ describe('smart concepts', () => {
       const r = generateConcept(ctx(), OPTS, mulberry32(seed));
       const ps = r.data.instances.map((i) => ({ i, sp: spById.get(i.speciesId)! }));
       for (let a = 0; a < ps.length; a++) for (let b = a + 1; b < ps.length; b++) {
-        if ((ps[a].sp.type === 'groundcover') !== (ps[b].sp.type === 'groundcover')) continue;
         const d = Math.hypot(ps[a].i.position[0] - ps[b].i.position[0], ps[a].i.position[1] - ps[b].i.position[1]);
-        expect(d, `${ps[a].sp.common} and ${ps[b].sp.common}`).toBeGreaterThanOrEqual(engine.concept.plants.overlapAllowance * (ps[a].sp.matureWidth + ps[b].sp.matureWidth) / 2 - 1e-6);
+        expect(d, `${ps[a].sp.common} and ${ps[b].sp.common}`).toBeGreaterThanOrEqual(pairNeed(ps[a].sp, ps[b].sp, engine.concept.plants.overlapAllowance, engine.concept.plants.companions).need - 1e-6);
       }
     }
   });
@@ -94,9 +94,8 @@ describe('smart shuffles', () => {
       }
       const ps = r.data.instances.map((i) => ({ i, sp: spById.get(i.speciesId)! }));
       for (let a = 0; a < ps.length; a++) for (let b = a + 1; b < ps.length; b++) {
-        if ((ps[a].sp.type === 'groundcover') !== (ps[b].sp.type === 'groundcover')) continue;
         const d = Math.hypot(ps[a].i.position[0] - ps[b].i.position[0], ps[a].i.position[1] - ps[b].i.position[1]);
-        expect(d).toBeGreaterThanOrEqual(engine.concept.plants.overlapAllowance * (ps[a].sp.matureWidth + ps[b].sp.matureWidth) / 2 - 1e-6);
+        expect(d, `${ps[a].sp.common} and ${ps[b].sp.common}`).toBeGreaterThanOrEqual(pairNeed(ps[a].sp, ps[b].sp, engine.concept.plants.overlapAllowance, engine.concept.plants.companions).need - 1e-6);
       }
     }
   });

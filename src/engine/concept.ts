@@ -1,6 +1,7 @@
 import { circleOverlapsPolygon, distanceToPolygon, lineToPolygon, pointInPolygon, polygonsIntersect } from './geometry';
 import { drivewayBlocks, footprint } from './hardscape';
 import { routePaths, type Hub } from './pathnet';
+import { castsShade, compatible } from './companions';
 import { lightSuits, roomRatio, shadesRaisedBed, type SunMap } from './placement';
 import type { ScenarioData } from './scenario';
 import { emptyScenarioData } from './scenario';
@@ -397,6 +398,29 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
       const yardZones = pc.zones.map(zone).filter((z): z is NonNullable<typeof z> => !!z);
       const insideYards = (x: number, y: number) => yardZones.some((z) => pointInPolygon(x, y, z.polygon));
       const hard = keepOff();
+      // Everything a spot must satisfy for a species: inside a yard, clear of buildings, paving, the driveway, paths and doors, with
+      // the light it needs, and room beside its neighbors (closer only for a purposeful or beautiful pairing).
+      const neighborsAt = () => instances.map((o) => ({ position: o.position, species: ctx.species.find((q) => q.id === o.speciesId)! }));
+      const spotOk = (sp: Species, p: Pt): boolean => {
+      if (!insideYards(p[0], p[1])) return false;
+      if (p[0] < cfg.lotMarginFt || p[1] < cfg.lotMarginFt || p[0] > lotW - cfg.lotMarginFt || p[1] > lotD - cfg.lotMarginFt) return false;
+      if (ctx.structures.some((s) => pointInPolygon(p[0], p[1], s.footprint) || distanceToPolygon(p[0], p[1], s.footprint) < sp.roots.minFoundationFt)) return false;
+      // Plants go in beds, gravel, mulch and open ground, not on paving, decks, paths or lawn.
+      if (hard.some((poly) => pointInPolygon(p[0], p[1], poly))) return false;
+      if (base.hardscape.some((e) => pointInPolygon(p[0], p[1], footprint(e, ctx.engine.hardscape)))) return false;
+      // And nothing within a few feet of the driveway.
+      if (drivewayBlocks(p, base.hardscape, ctx.engine.hardscape)) return false;
+      if (ctx.site.easements.some((e) => pointInPolygon(p[0], p[1], e.polygon))) return false;
+      if (trees.some((o) => Math.hypot(o.position![0] - p[0], o.position![1] - p[1]) < (o.canopyWidth ?? 10) / 2)) return false;
+      if (placed.some((e) => e.type === 'path' && distanceToPolygon(p[0], p[1], polyOf.get(e.id)!) < cfg.path.plantEdgeFt)) return false;
+      if (opts.hardscape && doors.some((d) => Math.hypot(d.point[0] - p[0], d.point[1] - p[1]) < cfg.path.doorKeepClearFt)) return false;
+      // Light: a sun lover is not put in shade, nor a shade plant in full sun.
+      if (!lightSuits(sp, p, ctx.sunMap, ctx.engine)) return false;
+      // Room: neighbors keep their distance at mature size, and a tree's full canopy stays off raised beds.
+      if (roomRatio(sp, p, neighborsAt(), pc.overlapAllowance, pc.companions) < 1) return false;
+      if (shadesRaisedBed(sp, p, raised)) return false;
+        return true;
+      };
       const target_n = betweenInt(rng, pc.count);
       let treesPlaced = 0;
       for (let k = 0; k < target_n; k++) {
@@ -417,23 +441,7 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
             p = [between(rng, [Math.min(...xs), Math.max(...xs)]), between(rng, [Math.min(...ys), Math.max(...ys)])];
           }
           p = [Number(p[0].toFixed(2)), Number(p[1].toFixed(2))];
-          if (!insideYards(p[0], p[1])) continue;
-          if (p[0] < cfg.lotMarginFt || p[1] < cfg.lotMarginFt || p[0] > lotW - cfg.lotMarginFt || p[1] > lotD - cfg.lotMarginFt) continue;
-          if (ctx.structures.some((s) => pointInPolygon(p[0], p[1], s.footprint) || distanceToPolygon(p[0], p[1], s.footprint) < sp.roots.minFoundationFt)) continue;
-          // Plants go in beds, gravel, mulch and open ground, not on paving, decks, paths or lawn.
-          if (hard.some((poly) => pointInPolygon(p[0], p[1], poly))) continue;
-          if (base.hardscape.some((e) => pointInPolygon(p[0], p[1], footprint(e, ctx.engine.hardscape)))) continue;
-          // And nothing within a few feet of the driveway.
-          if (drivewayBlocks(p, base.hardscape, ctx.engine.hardscape)) continue;
-          if (ctx.site.easements.some((e) => pointInPolygon(p[0], p[1], e.polygon))) continue;
-          if (trees.some((o) => Math.hypot(o.position![0] - p[0], o.position![1] - p[1]) < (o.canopyWidth ?? 10) / 2)) continue;
-          if (placed.some((e) => e.type === 'path' && distanceToPolygon(p[0], p[1], polyOf.get(e.id)!) < cfg.path.plantEdgeFt)) continue;
-          if (opts.hardscape && doors.some((d) => Math.hypot(d.point[0] - p[0], d.point[1] - p[1]) < cfg.path.doorKeepClearFt)) continue;
-          // Light: a sun lover is not put in shade, nor a shade plant in full sun.
-          if (!lightSuits(sp, p, ctx.sunMap, ctx.engine)) continue;
-          // Room: neighbors keep their distance at mature size, and a tree's full canopy stays off raised beds.
-          if (roomRatio(sp, p, instances.map((o) => ({ position: o.position, species: ctx.species.find((q) => q.id === o.speciesId)! })), pc.overlapAllowance) < 1) continue;
-          if (shadesRaisedBed(sp, p, raised)) continue;
+          if (!spotOk(sp, p)) continue;
           instances.push({
             id: `c-plant-${k}`, speciesId: sp.id, position: p, plantedMonth: 0,
             container: (sp.type === 'tree' ? pc.treeContainer : pc.container) as PlantInstance['container'], existing: false,
@@ -442,6 +450,44 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
           done = true;
           break;
         }
+        }
+      }
+      // Purposeful closeness. Plants otherwise keep their crowns apart; these are the pairings that earn being close:
+      // drifts of one small species (massed, so the planting reads as a whole), and low companions at the feet of trees and
+      // big shrubs, in the shade or at the edge of the crown, never at the trunk.
+      const comp = pc.companions;
+      const speciesOf = (i: PlantInstance) => ctx.species.find((q) => q.id === i.speciesId)!;
+      const around = (c: Pt, rMin: number, rMax: number): Pt => {
+        const a = rng() * Math.PI * 2, r = between(rng, [rMin, rMax]);
+        return [Number((c[0] + Math.cos(a) * r).toFixed(2)), Number((c[1] + Math.sin(a) * r).toFixed(2))];
+      };
+      let extra = 0;
+      const anchors = instances.slice();
+      for (const a of anchors) {
+        const sp = speciesOf(a);
+        // Fruiting plants stay single: each can be reached and picked, and a path can come to it.
+        if (sp.type === 'tree' || sp.fruit || sp.matureWidth > comp.driftMaxWidthFt || rng() >= comp.driftChance) continue;
+        const need = comp.driftSpacing * sp.matureWidth;
+        for (let g = betweenInt(rng, comp.driftGroup) - 1, tries = 0; g > 0 && tries < 60 && instances.length < pc.maxTotal; tries++) {
+          const p = around(a.position, need, need * 1.2);
+          if (!spotOk(sp, p)) continue;
+          instances.push({ id: `c-plant-d${extra++}`, speciesId: sp.id, position: p, plantedMonth: 0, container: pc.container as PlantInstance['container'], existing: false });
+          g--;
+        }
+      }
+      for (const a of anchors) {
+        const tall = speciesOf(a);
+        // Fruit trees keep clear ground beneath them, so the fruit can be picked and a path can come to the tree.
+        if (tall.fruit || !(tall.type === 'tree' || (tall.matureWidth >= 5 && tall.matureHeight >= 4)) || rng() >= comp.understoryChance) continue;
+        const lows = family.filter((s) => s.id !== tall.id && tall.matureHeight >= comp.layerHeightRatio * s.matureHeight && compatible(tall, s) && !(castsShade(tall, comp) && s.sun === 'full'));
+        if (lows.length === 0) continue;
+        const r = tall.matureWidth / 2;
+        for (let want = betweenInt(rng, [1, comp.understoryMax]), tries = 0; want > 0 && tries < 80 && instances.length < pc.maxTotal; tries++) {
+          const sp = draw(lows);
+          const p = around(a.position, r * comp.coreFraction, r + sp.matureWidth * 0.25);
+          if (!spotOk(sp, p)) continue;
+          instances.push({ id: `c-plant-u${extra++}`, speciesId: sp.id, position: p, plantedMonth: 0, container: pc.container as PlantInstance['container'], existing: false });
+          want--;
         }
       }
       counts.plants = instances.length;

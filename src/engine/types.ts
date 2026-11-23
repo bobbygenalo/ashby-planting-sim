@@ -243,6 +243,8 @@ export interface ConceptCfg {
   colors: Record<string, string>;
   plants: {
     count: [number, number];
+    /** The most plants in a concept, drifts and companions included. */
+    maxTotal: number;
     maxTrees: number;
     overlapAllowance: number;
     /** Species drawn in turn for one plant when none finds a spot that suits it. */
@@ -255,8 +257,37 @@ export interface ConceptCfg {
     /** How many water-use steps from the chosen category a concept may stray. */
     waterSpread: number;
     pollinatorWeights: Record<string, number>;
+    companions: CompanionCfg;
   };
   minPoolSize: number;
+}
+
+/**
+ * When plants may stand closer than their crowns allow: a pair must share a watering need and a light that suits both,
+ * and be purposeful (a drift of one species, a low plant at the foot of a tall one, groundcover round a shrub) or beautiful
+ * (a clear contrast of foliage or bloom). Anything else keeps its crowns apart.
+ */
+export interface CompanionCfg {
+  /** A drift of one species: centers this share of the crowns' summed radii apart (under 1 means the crowns interweave). */
+  driftSpacing: number;
+  /** A low plant counts as layered under a taller one when the taller is at least this many times higher. */
+  layerHeightRatio: number;
+  /** A layered plant stays at least this share of the taller one's radius from its trunk. */
+  coreFraction: number;
+  /** A plant this tall or taller (or any tree) casts shade a full-sun plant would not want. */
+  shadeHeightFt: number;
+  /** Contrasting neighbors of a similar size: centers this share of the crowns' summed radii apart. */
+  contrastSpacing: number;
+  /** Foliage lightness difference (0 to 1), or bloom hue difference (degrees) with a shared bloom month, that counts as a contrast. */
+  contrastLightness: number;
+  contrastHue: number;
+  /** A concept turns this share of its small plants into a drift, of this many, for plants up to this wide. */
+  driftChance: number;
+  driftGroup: [number, number];
+  driftMaxWidthFt: number;
+  /** A concept gives this share of its trees and big shrubs a few low companions at their feet, up to this many. */
+  understoryChance: number;
+  understoryMax: number;
 }
 
 export interface FruitCfg {
@@ -797,6 +828,10 @@ export interface EngineConfig {
     drivewayBufferFt: number;
     /** How a raised bed is built: stacked boards on corner posts under a cap rail, all in feet. */
     raisedBedFrame: RaisedBedFrameCfg;
+    /** How far flat surfaces stand above the ground, by type, so they show an edge: a slab is about half an inch proud, loose fill a little more. */
+    surfaceThicknessFt: Partial<Record<HardscapeType, number>>;
+    /** How the lot's fences are built: posts, spacing, how far the posts and the cap rail stand proud. */
+    fence: { postFt: number; postSpacingFt: number; postRiseFt: number; capFt: number; capOverhangFt: number };
     snapToleranceFt: number;
     rootZoneFactor: number;
     drawOrder: HardscapeType[];
@@ -918,7 +953,12 @@ export interface Material {
   /** Stand-in installed price in dollars per `priceBasis`: per square foot, per linear foot, or each. The owner can override it. */
   price?: number;
   priceBasis?: 'sf' | 'lf' | 'each';
+  /** How the surface looks up close: a pattern, how many feet one repeat of its texture covers, and how rough it is (0 to 1). */
+  surface?: { pattern: SurfacePattern; tileFt: number; bump: number };
 }
+
+/** The look of a surface: slab concrete with joints, pavers, mortared or dry-laid flagstone, fine granules, gravel, wood chips, turf, deck boards, composite decking, block wall, fence boards. */
+export type SurfacePattern = 'slab' | 'pavers' | 'flagstone-mortar' | 'flagstone-dry' | 'granular' | 'gravel' | 'mulch' | 'turf' | 'planks' | 'composite' | 'cmu' | 'boards';
 
 export interface HardscapeElement {
   id: string;

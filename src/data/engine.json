@@ -335,6 +335,20 @@
       "capOverhangFt": 0.05,
       "colorJitter": 0.07,
       "grainFtPerTile": 3
+    },
+    "surfaceThicknessFt": {
+      "patio": 0.05,
+      "path": 0.045,
+      "bed": 0.08,
+      "lawn": 0.03,
+      "gravel": 0.06
+    },
+    "fence": {
+      "postFt": 0.33,
+      "postSpacingFt": 8,
+      "postRiseFt": 0.25,
+      "capFt": 0.12,
+      "capOverhangFt": 0.06
     }
   },
   "conflicts": {
@@ -518,7 +532,25 @@
         "moderate": 2,
         "low": 1
       },
-      "speciesTries": 8
+      "speciesTries": 8,
+      "companions": {
+        "driftSpacing": 0.8,
+        "layerHeightRatio": 2.5,
+        "coreFraction": 0.55,
+        "shadeHeightFt": 6,
+        "contrastSpacing": 0.85,
+        "contrastLightness": 0.18,
+        "contrastHue": 100,
+        "driftChance": 0.4,
+        "driftGroup": [
+          3,
+          5
+        ],
+        "driftMaxWidthFt": 4.5,
+        "understoryChance": 0.6,
+        "understoryMax": 3
+      },
+      "maxTotal": 32
     },
     "minPoolSize": 3,
     "areas": {

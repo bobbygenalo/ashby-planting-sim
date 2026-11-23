@@ -11,6 +11,7 @@ import { tableLayout } from '../engine/furniture';
 import soilRaw from '../data/soil.json';
 import { raisedBedSoilTop } from '../engine/soil';
 import { raisedBedGeometry } from './raisedBed';
+import { tiledSurface } from './surfaces';
 import { soilTexture, woodTexture } from './wood';
 import { chairPull } from './chairState';
 import { partyState } from './partyState';
@@ -44,10 +45,19 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
   const duplicateElement = useApp((s) => s.duplicateElement);
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
   const poly = useMemo(() => footprint(el, cfg), [el, cfg]);
+  // Flat surfaces stand a little proud of the ground, so a patio or a path shows an edge; walls, fences and decks are as tall as drawn.
+  const thick = el.height > 0 ? el.height : cfg.surfaceThicknessFt[el.type] ?? 0.03;
   const geo = useMemo(() => {
     const shape = new THREE.Shape(poly.map(([x, y]) => new THREE.Vector2(x, y)));
-    return el.height > 0 ? new THREE.ExtrudeGeometry(shape, { depth: el.height, bevelEnabled: false }) : new THREE.ShapeGeometry(shape);
-  }, [poly, el.height]);
+    return new THREE.ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false });
+  }, [poly, thick]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  // What the surface looks like up close: its pattern, tinted by the element's color, with a bump from the same texture.
+  const surface = mat?.surface;
+  const texture = useMemo(() => (surface ? tiledSurface(surface.pattern, surface.tileFt) : null), [surface]);
+  useEffect(() => () => texture?.dispose(), [texture]);
+  const topColor = el.color ?? mat?.color ?? '#aaa';
+  const sideColor = useMemo(() => new THREE.Color(topColor).multiplyScalar(0.7), [topColor]);
   // A raised bed is a wooden frame with soil in it, not a solid block; a removed one is still drawn as the red ghost block.
   const frameCfg = cfg.raisedBedFrame;
   const soilTop = raisedBedSoilTop(el.height, soilRaw.raisedBed.freeboardIn);
@@ -171,7 +181,15 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
         </group>
       ) : (
         <mesh geometry={geo} position={[0, 0, el.height > 0 ? 0 : z]} castShadow={el.height > 0} receiveShadow onClick={onClick} onPointerDown={onDown}>
-          <meshStandardMaterial color={ghost ? '#c0392b' : base} roughness={0.95} transparent={ghost} opacity={ghost ? 0.3 : 1} />
+          {ghost || !texture ? (
+            <meshStandardMaterial color={ghost ? '#c0392b' : base} roughness={0.95} transparent={ghost} opacity={ghost ? 0.3 : 1} />
+          ) : (
+            <>
+              {/* ExtrudeGeometry's first group is the top and bottom faces, the second the sides; a tall element shows its pattern on both. */}
+              <meshStandardMaterial attach="material-0" color={topColor} map={texture} bumpMap={texture} bumpScale={surface!.bump} roughness={0.95} />
+              <meshStandardMaterial attach="material-1" color={el.height > 0 ? topColor : sideColor} map={el.height > 0 ? texture : null} bumpMap={el.height > 0 ? texture : null} bumpScale={surface!.bump} roughness={0.95} />
+            </>
+          )}
         </mesh>
       )}
       {selected && (

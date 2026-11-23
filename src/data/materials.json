@@ -10,7 +10,12 @@
     "color": "#b8b8b4",
     "note": "Base is compacted aggregate.",
     "price": 12,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "slab",
+      "tileFt": 8,
+      "bump": 0.5
+    }
   },
   {
     "id": "pavers-sand",
@@ -23,7 +28,12 @@
     "color": "#c9a98b",
     "note": "Sand-set joints let a little water through.",
     "price": 18,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "pavers",
+      "tileFt": 4,
+      "bump": 0.6
+    }
   },
   {
     "id": "flagstone-mortar",
@@ -36,7 +46,12 @@
     "color": "#a99f94",
     "note": "",
     "price": 28,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "flagstone-mortar",
+      "tileFt": 6,
+      "bump": 0.7
+    }
   },
   {
     "id": "flagstone-dry",
@@ -49,7 +64,12 @@
     "color": "#b4aa9d",
     "note": "Set in sand or fine gravel with open joints.",
     "price": 22,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "flagstone-dry",
+      "tileFt": 6,
+      "bump": 0.8
+    }
   },
   {
     "id": "decomposed-granite",
@@ -62,7 +82,12 @@
     "color": "#c8b48a",
     "note": "Compacted DG over a base.",
     "price": 4,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "granular",
+      "tileFt": 3,
+      "bump": 0.5
+    }
   },
   {
     "id": "gravel",
@@ -75,7 +100,12 @@
     "color": "#bdb7aa",
     "note": "",
     "price": 3.5,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "gravel",
+      "tileFt": 3,
+      "bump": 1.0
+    }
   },
   {
     "id": "soil-bed",
@@ -88,7 +118,12 @@
     "color": "#6e5640",
     "note": "Surface depth is the mulch layer.",
     "price": 2.5,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "mulch",
+      "tileFt": 3,
+      "bump": 0.9
+    }
   },
   {
     "id": "lawn",
@@ -101,7 +136,12 @@
     "color": "#7fb06a",
     "note": "Depth is soil preparation under sod or seed.",
     "price": 2.5,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "turf",
+      "tileFt": 5,
+      "bump": 0.8
+    }
   },
   {
     "id": "wood-deck",
@@ -114,7 +154,12 @@
     "color": "#a9825a",
     "note": "Surface depth is board thickness. Footings are not included.",
     "price": 38,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "planks",
+      "tileFt": 4,
+      "bump": 0.5
+    }
   },
   {
     "id": "composite-deck",
@@ -127,7 +172,12 @@
     "color": "#8d7b6b",
     "note": "Footings are not included.",
     "price": 58,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "composite",
+      "tileFt": 4,
+      "bump": 0.3
+    }
   },
   {
     "id": "raised-bed-wood",
@@ -153,7 +203,12 @@
     "color": "#a6a29a",
     "note": "Base depth is the footing. Surface volume is zero.",
     "price": 90,
-    "priceBasis": "lf"
+    "priceBasis": "lf",
+    "surface": {
+      "pattern": "cmu",
+      "tileFt": 4,
+      "bump": 0.8
+    }
   },
   {
     "id": "wood-fence",
@@ -166,7 +221,12 @@
     "color": "#b49a78",
     "note": "Post footings are not included.",
     "price": 45,
-    "priceBasis": "lf"
+    "priceBasis": "lf",
+    "surface": {
+      "pattern": "boards",
+      "tileFt": 4,
+      "bump": 0.6
+    }
   },
   {
     "id": "mulch",
@@ -179,7 +239,12 @@
     "color": "#3f2d22",
     "note": "Surface depth is the mulch layer. Replace every year or two.",
     "price": 1.5,
-    "priceBasis": "sf"
+    "priceBasis": "sf",
+    "surface": {
+      "pattern": "mulch",
+      "tileFt": 3,
+      "bump": 0.9
+    }
   },
   {
     "id": "outdoor-table",

@@ -1,5 +1,6 @@
 import { skyColor } from '../engine/sky';
-import { useMemo } from 'react';
+import { tiledSurface } from './surfaces';
+import { useEffect, useMemo } from 'react';
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { elementAt } from '../engine/hardscape';
 import { Html, Line, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
@@ -50,22 +51,48 @@ function StructureMesh({ s }: { s: StructureCfg }) {
   );
 }
 
+/** One run of fence or wall: boards (or blocks) on posts, with a cap along the top. */
+function FenceRun({ a, b, o }: { a: [number, number]; b: [number, number]; o: ContextObjectCfg }) {
+  const cfg = useApp((st) => st.engine.hardscape.fence);
+  const isWall = o.kind === 'wall';
+  const t = o.thickness ?? 0.3;
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const tex = useMemo(() => {
+    const m = tiledSurface(isWall ? 'cmu' : 'boards', 4);
+    // One repeat per four feet along the run and up its height, on every face of the box.
+    m?.repeat.set(len / 4, o.height / 4);
+    return m;
+  }, [isWall, len, o.height]);
+  useEffect(() => () => tex?.dispose(), [tex]);
+  const posts = isWall ? 0 : Math.max(1, Math.round(len / cfg.postSpacingFt));
+  const color = isWall ? '#a6a29a' : '#b49a78';
+  return (
+    <group position={[a[0], a[1], 0]} rotation={[0, 0, ang]}>
+      <mesh position={[len / 2, 0, o.height / 2]} castShadow receiveShadow>
+        <boxGeometry args={[len, t, o.height]} />
+        <meshStandardMaterial color={color} map={tex} bumpMap={tex} bumpScale={0.7} roughness={1} />
+      </mesh>
+      {/* The cap rail along the top, a little wider than the fence. */}
+      <mesh position={[len / 2, 0, o.height + cfg.capFt / 2]} castShadow>
+        <boxGeometry args={[len + cfg.capOverhangFt * 2, t + cfg.capOverhangFt * 2, cfg.capFt]} />
+        <meshStandardMaterial color={isWall ? '#bdb9b1' : '#9a8460'} roughness={1} />
+      </mesh>
+      {Array.from({ length: posts + 1 }, (_, i) => (
+        <mesh key={i} position={[(i / posts) * len, 0, (o.height + cfg.postRiseFt) / 2]} castShadow>
+          <boxGeometry args={[cfg.postFt, t + cfg.postFt * 0.5, o.height + cfg.postRiseFt]} />
+          <meshStandardMaterial color="#8f7a58" roughness={1} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function FenceMesh({ o }: { o: ContextObjectCfg }) {
   const line = o.line ?? [];
-  const t = o.thickness ?? 0.3;
   return (
     <group>
-      {line.slice(0, -1).map(([x1, y1], i) => {
-        const [x2, y2] = line[i + 1];
-        const len = Math.hypot(x2 - x1, y2 - y1);
-        const ang = Math.atan2(y2 - y1, x2 - x1);
-        return (
-          <mesh key={i} position={[(x1 + x2) / 2, (y1 + y2) / 2, o.height / 2]} rotation={[0, 0, ang]} castShadow receiveShadow>
-            <boxGeometry args={[len, t, o.height]} />
-            <meshStandardMaterial color="#b49a78" roughness={1} />
-          </mesh>
-        );
-      })}
+      {line.slice(0, -1).map((a, i) => <FenceRun key={i} a={a} b={line[i + 1]} o={o} />)}
     </group>
   );
 }
@@ -292,6 +319,9 @@ function Ground() {
       }
     }
   };
+  // The bare ground between everything else: dusty and slightly gritty, not a flat color.
+  const groundTex = useMemo(() => tiledSurface('granular', 6), []);
+  useEffect(() => () => groundTex?.dispose(), [groundTex]);
   return (
     <>
       <mesh position={[width / 2, depth / 2, -0.05]} receiveShadow>
@@ -300,7 +330,7 @@ function Ground() {
       </mesh>
       <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick} onDoubleClick={onDouble} onPointerDown={onDown} onPointerMove={onMove}>
         <planeGeometry args={[width, depth]} />
-        <meshStandardMaterial color="#a9b98f" roughness={1} />
+        <meshStandardMaterial color="#a9b98f" map={groundTex} bumpMap={groundTex} bumpScale={0.6} roughness={1} />
       </mesh>
       <Line
         points={[[0, 0, 0.1], [width, 0, 0.1], [width, depth, 0.1], [0, depth, 0.1], [0, 0, 0.1]]}

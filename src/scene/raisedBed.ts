@@ -69,8 +69,15 @@ export function raisedBedGeometry(poly: Pt[], height: number, soilZ: number, col
     // Inward is to the left of the edge for a counter-clockwise outline, and to the right for a clockwise one.
     const nx = ccw ? -uy : uy, ny = ccw ? ux : -ux;
     const angle = Math.atan2(uy, ux);
-    const run = len - 2 * frame.postFt;
-    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    // A board stops a post's width short of a convex corner, where a post stands; at an inside (reflex) corner of an L or U
+    // the boards run to the corner and the post sits in the angle.
+    const convexAt = (p: Pt, q: Pt, r: Pt) => ((q[0] - p[0]) * (r[1] - q[1]) - (q[1] - p[1]) * (r[0] - q[0]) > 0) === ccw;
+    const prev = poly[(i + n - 1) % n], after = poly[(i + 2) % n];
+    const shortA = convexAt(prev, a, b) ? frame.postFt : 0, shortB = convexAt(a, b, after) ? frame.postFt : 0;
+    const run = len - shortA - shortB;
+    // The board's middle, moved along the edge when the two ends are trimmed by different amounts.
+    const along = (shortA - shortB) / 2;
+    const mx = (a[0] + b[0]) / 2 + ux * along, my = (a[1] + b[1]) / 2 + uy * along;
     if (run > 0.05) {
       for (let k = 0; k < layers; k++) {
         const z = k * (boardH + frame.seamGapFt) + boardH / 2;

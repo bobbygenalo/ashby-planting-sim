@@ -1,3 +1,4 @@
+import { bedFromCells, bedGap, bedSize, rotateCells, type Cell } from './bed';
 import { circleOverlapsPolygon, distanceToPolygon, lineToPolygon, pointInPolygon, polygonsIntersect } from './geometry';
 import { drivewayBlocks, footprint } from './hardscape';
 import { routePaths, type Hub } from './pathnet';
@@ -360,12 +361,33 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
       }
     }
 
-    // Raised beds: small, tidy, in either direction.
+    // Raised beds: one of the set shapes (3 by 3, bar, 6 by 6, L or U), turned a random quarter turn, kept far enough from
+    // the next that two beds do not read as meant to snap together.
+    const mod = ctx.engine.hardscape.raisedBedModule;
     for (let n = 0, want = betweenInt(rng, theme.raisedBeds); n < want; n++) {
-      const poly = placeArea(cfg.areas.raisedBed, gap, true);
-      if (!poly) break;
-      add(make('raisedBed', poly, `Raised bed ${number('raisedBed')}`));
-      raised.push(poly);
+      const area = cfg.areas.raisedBed;
+      let found: { points: Pt[]; cells: Cell[] } | null = null;
+      for (let i = 0; i < area.attempts && !found; i++) {
+        const z = zone(pick(rng, area.zones));
+        if (!z) continue;
+        const shape = mod.shapes.find((sh) => sh.id === pick(rng, area.shapes ?? mod.shapes.map((q) => q.id)));
+        if (!shape) continue;
+        const cells = rotateCells(shape.cells, Math.floor(rng() * 4));
+        const [cw, ch] = bedSize(cells);
+        const xs = z.polygon.map((p) => p[0]), ys = z.polygon.map((p) => p[1]);
+        const w = cw * mod.cellFt, d = ch * mod.cellFt;
+        if (Math.max(...xs) - Math.min(...xs) < w || Math.max(...ys) - Math.min(...ys) < d) continue;
+        const x = snap(Math.min(...xs) + rng() * (Math.max(...xs) - Math.min(...xs) - w));
+        const y = snap(Math.min(...ys) + rng() * (Math.max(...ys) - Math.min(...ys) - d));
+        const bed = bedFromCells(cells, [x, y], mod.cellFt);
+        // The ordinary gap check looks at corners only, so an L or U could close round another bed; check module to module.
+        const mine: HardscapeElement = { ...make('raisedBed', bed.points, ''), cells: bed.cells };
+        if (placed.some((e) => e.type === 'raisedBed' && e.cells && bedGap(mine, e, mod.cellFt) <= mod.snapFt + 0.5)) continue;
+        if (fits(bed.points, [z.id], Math.max(gap, mod.snapFt + 0.5))) found = bed;
+      }
+      if (!found) break;
+      add({ ...make('raisedBed', found.points, `Raised bed ${number('raisedBed')}`), cells: found.cells });
+      raised.push(found.points);
       counts.raisedBeds++;
     }
 

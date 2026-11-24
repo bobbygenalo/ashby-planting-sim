@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CROPS } from '../data/cropLibrary';
 import { activeCrop, planOf, seasonOf } from '../engine/crops';
 import { doyToMonthDay } from '../engine/time';
+import { shapeIdOf } from '../engine/bed';
 import { isRectangle } from '../engine/geometry';
 import { elementColor, elementMetrics, hardscapeWarnings } from '../engine/hardscape';
 import { elementPrice, money, priceLabel } from '../engine/pricing';
@@ -51,6 +52,7 @@ export function HardscapeInspector() {
     if (!sel) return;
     s.beginGesture();
     s.moveElementBy(sel.id, dx, dy);
+    if (sel.cells) s.settleBed(sel.id);
   };
 
   return (
@@ -100,6 +102,21 @@ export function HardscapeInspector() {
           <label>{sel.type === 'path' ? 'Width (ft)' : 'Thickness (ft)'}{num(sel.width, (n) => s.updateElement(sel.id, { width: Math.max(0.1, n) }), 0.25, !edit || sel.existing)}</label>
         )}
       </div>
+      {sel.type === 'raisedBed' && !sel.existing && (() => {
+        const mod = cfg.raisedBedModule;
+        const cur = sel.cells ? shapeIdOf(sel.cells, mod) : null;
+        return (
+          <div>
+            <label>Shape
+              <select disabled={!edit} value={cur ?? ''} aria-label="Raised bed shape" onChange={(e) => e.target.value && s.setBedShape(sel.id, e.target.value)}>
+                {!cur && <option value="">Free-form (older bed): pick a shape to replace it</option>}
+                {mod.shapes.map((sh) => <option key={sh.id} value={sh.id}>{sh.label}{sh.id === 'L' || sh.id === 'U' ? ' shape' : ' ft'}</option>)}
+              </select>
+            </label>
+            <p className="muted small">Beds come in set shapes built from {formatFeetInches(mod.cellFt)} squares, so you can always reach the middle. Place or drag one within {formatFeetInches(mod.snapFt)} of another and they snap together when they make a bar, an L, a 6×6 or a U. Turn it with Rotate 90° or R.</p>
+          </div>
+        );
+      })()}
       {sel.type === 'raisedBed' && (() => {
         const beds = s.hardscape.filter((e) => e.type === 'raisedBed' && !e.removed);
         const plan = planOf(sel, CROPS, Math.max(0, beds.findIndex((b) => b.id === sel.id)));
@@ -149,7 +166,10 @@ export function HardscapeInspector() {
         </div>
       )}
       <div className="row">
-        {cfg.types[sel.type].shape === 'polygon' && !sel.existing && isRectangle(sel.points) && (
+        {sel.type === 'raisedBed' && !sel.existing && (
+          <button disabled={!edit} onClick={() => s.rotateElement(sel.id)} title="Turn a quarter turn about its center (press R)">Rotate 90°</button>
+        )}
+        {cfg.types[sel.type].shape === 'polygon' && !sel.existing && sel.type !== 'raisedBed' && isRectangle(sel.points) && (
           <>
             <button disabled={!edit} onClick={() => s.rotateElement(sel.id, 15)} title="Turn 15° counterclockwise about its center" aria-label="Rotate 15 degrees counterclockwise">↺ 15°</button>
             <button disabled={!edit} onClick={() => s.rotateElement(sel.id, -15)} title="Turn 15° clockwise about its center" aria-label="Rotate 15 degrees clockwise">↻ 15°</button>

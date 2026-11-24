@@ -11,6 +11,7 @@ import { GrowthStagesDialog } from './GrowthStagesDialog';
 import { TopBar } from './TopBar';
 import { CanvasToolbar } from './CanvasToolbar';
 import { SimDock } from './SimDock';
+import { WalkOverlay } from './WalkOverlay';
 import { SelectionCard } from './SelectionCard';
 import { ShuffleBar } from './ShuffleControl';
 import { arrowDelta, isPlayPauseKey, viewForKey } from './shortcuts';
@@ -99,6 +100,8 @@ function useShortcuts() {
         st.setView(view);
         return;
       }
+      // In the Walk view the space bar is jump and the arrow keys turn, so growth play and nudging stay out of it.
+      if (st.site.views.find((v) => v.id === st.view)?.kind === 'walk' && (e.key === ' ' || e.key.startsWith('Arrow'))) return;
       // Space plays and pauses growth (and with it the seasons), unless a dialog is open.
       if (isPlayPauseKey(e) && !document.querySelector('.dialog')) {
         e.preventDefault();
@@ -164,8 +167,16 @@ function useShortcuts() {
         else if (st.selectedId) st.deleteInstance(st.selectedId);
       }
     };
+    // A raised bed nudged with the arrow keys snaps to a neighbor within reach once the key is let go.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!e.key.startsWith('Arrow')) return;
+      const st = appStore.getState();
+      const bed = st.selectedElementId ? st.hardscape.find((h) => h.id === st.selectedElementId) : undefined;
+      if (bed?.cells && st.mode === 'edit') st.settleBed(bed.id);
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onKeyUp); };
   }, []);
 }
 
@@ -202,6 +213,7 @@ function Planner() {
       <TopBar onScenarios={() => setScenariosOpen(true)} panelOpen={panelOpen} onTogglePanel={togglePanel} />
       <main className="stage">
         <SiteScene sunResult={sun.result} />
+        <WalkOverlay />
         <CanvasToolbar />
         <ShuffleBar />
         <SimDock />

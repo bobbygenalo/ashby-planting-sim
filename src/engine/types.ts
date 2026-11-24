@@ -73,7 +73,8 @@ export interface ZoneCfg {
 export interface ViewCfg {
   id: string;
   label: string;
-  kind: 'perspective' | 'plan';
+  /** 'walk' is the first-person view: you stand in the yard and move with the keyboard (`position` is where you start, `target` is where you face). */
+  kind: 'perspective' | 'plan' | 'walk';
   position?: Pt3;
   target?: Pt3;
 }
@@ -192,6 +193,8 @@ export interface ConceptAreaCfg {
   attempts: number;
   /** Materials to choose from; the element type's own material when absent. */
   materials?: string[];
+  /** Raised beds: the set shapes (ids from `hardscape.raisedBedModule`) a concept draws from; each is turned at random. */
+  shapes?: string[];
 }
 
 export interface ConceptTheme {
@@ -756,6 +759,7 @@ export interface EngineConfig {
   pricing: PricingCfg;
   holiday: HolidayCfg;
   vehicle: VehicleCfg;
+  player: PlayerCfg;
   foliage: FoliageCfg;
   trunk: TrunkCfg;
   /** Background colors by sun height: bright day, the glow around sunset, and night. */
@@ -826,6 +830,8 @@ export interface EngineConfig {
     drivewayBufferFt: number;
     /** How a raised bed is built: stacked boards on corner posts under a cap rail, all in feet. */
     raisedBedFrame: RaisedBedFrameCfg;
+    /** Raised beds come in a few shapes made of square modules; modules placed near each other snap together into one. */
+    raisedBedModule: RaisedBedModuleCfg;
     /** The color every element of a material shows, chosen so materials can be told apart on the plan. An element's own `color` overrides it; a material missing here uses its own `color` in the materials list. */
     materialColors: Record<string, string>;
     /** How far flat surfaces stand above the ground, by type, so they show an edge: a slab is about half an inch proud, loose fill a little more. */
@@ -984,6 +990,12 @@ export interface HardscapeElement {
   keepClear?: boolean;
   /** Raised beds: the crops grown there. Without it the bed gets a default rotation from its id. */
   crops?: CropPlan;
+  /**
+   * Raised beds are built from square modules on a grid (`hardscape.raisedBedModule.cellFt`): the [column, row] of each
+   * module counted from the lower-left corner of the bed's bounding box, which is the lower-left of `points`. `points`
+   * is the outline of the modules. A bed without it is an older free-form bed and is left alone.
+   */
+  cells?: [number, number][];
 }
 
 export type Irrigation = 'drip' | 'spray' | 'hand' | 'none';
@@ -1095,4 +1107,42 @@ export interface Prices {
   plant: Record<string, number>;
   /** Per material, by material id: per square foot, linear foot or each, as the material's basis says. */
   material: Record<string, number>;
+}
+
+/** The first-person "Walk" view: a person you steer with WASD, run with Shift and jump with the space bar. */
+export interface PlayerCfg {
+  eyeHeightFt: number;
+  /** Speeds in feet per second. */
+  walkFtS: number;
+  runFtS: number;
+  /** How fast speed changes on the ground and in the air (feet per second squared). */
+  groundAccel: number;
+  airAccel: number;
+  gravityFtS2: number;
+  jumpFtS: number;
+  /** The tallest edge walked up without jumping. */
+  stepUpFt: number;
+  /** Body radius, so you cannot squeeze into a wall or a trunk. */
+  radiusFt: number;
+  /** Stay this far inside the lot edge. */
+  lotMarginFt: number;
+  /** Arrow keys turn this fast (radians per second); the mouse turns `lookRadPerPx` per pixel dragged. */
+  turnRadS: number;
+  lookRadPerPx: number;
+  pitchLimitRad: number;
+  fovDeg: number;
+  /** Plants this short (share of their height at the feet) can be stepped or jumped over. */
+  plantClearShare: number;
+  /** A plant blocks within this share of its canopy radius; a tree only at its trunk. */
+  plantBlockShare: number;
+}
+
+/** The raised bed shapes an owner can place, built from square modules. */
+export interface RaisedBedModuleCfg {
+  /** Side of one module, in feet (3 ft: the smallest bed, and an arm's reach to the middle from either side). */
+  cellFt: number;
+  /** Modules this close edge to edge (feet) snap flush and join, when together they make one of the shapes below. */
+  snapFt: number;
+  /** The shapes: `cells` are [column, row]. Turning and mirroring give the same shape, so only one orientation is listed. */
+  shapes: { id: string; label: string; cells: [number, number][] }[];
 }

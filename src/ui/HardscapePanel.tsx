@@ -41,7 +41,16 @@ export function HardscapePanel() {
     <div className="hardscape">
       <h2>Draw</h2>
       <div className="row wrap">
-        {types.map((t) => (
+        {types.map((t) => t === 'raisedBed' ? (
+          <span key={t} className="row wrap" role="group" aria-label="Raised bed shapes">
+            {cfg.raisedBedModule.shapes.map((sh) => (
+              <button key={sh.id} disabled={!edit} className={s.drawing?.type === t && s.drawing.shape === sh.id ? 'on' : ''} title={`Raised bed, ${sh.label}`}
+                onClick={() => s.startDrawing(s.drawing?.type === t && s.drawing.shape === sh.id ? null : t, sh.id)}>
+                Raised bed {sh.label}
+              </button>
+            ))}
+          </span>
+        ) : (
           <button key={t} disabled={!edit} className={s.drawing?.type === t ? 'on' : ''} onClick={() => s.startDrawing(s.drawing?.type === t ? null : t)}>
             {cfg.types[t].label}
           </button>
@@ -50,7 +59,11 @@ export function HardscapePanel() {
       {!edit && <p className="muted small">View only: the plan cannot be changed.</p>}
       {s.drawing ? (
         <div className="drawbox">
-          {cfg.types[s.drawing.type].placeSize ? (
+          {s.drawing.type === 'raisedBed' ? (
+            <p className="small">
+              Placing a <b>raised bed, {cfg.raisedBedModule.shapes.find((sh) => sh.id === s.drawing!.shape)?.label}</b>: click in the yard where its center goes. A bed placed within {formatFeetInches(cfg.raisedBedModule.snapFt)} of another snaps flush and joins it when together they make a 3×6, an L, a 6×6 or a U. Esc cancels.
+            </p>
+          ) : cfg.types[s.drawing.type].placeSize ? (
             <p className="small">
               Placing a <b>{cfg.types[s.drawing.type].label.toLowerCase()}</b> ({cfg.types[s.drawing.type].placeSize!.map((n) => formatFeetInches(n)).join(' × ')}): click in the yard where its center goes. Turn it or resize it afterwards from its card or its corner handles. Esc cancels.
             </p>

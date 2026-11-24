@@ -271,7 +271,11 @@
         "material": "raised-bed-wood",
         "height": 1.5,
         "depthIn": 0,
-        "width": 0
+        "width": 0,
+        "placeSize": [
+          3,
+          3
+        ]
       },
       "wall": {
         "label": "Wall",
@@ -363,6 +367,102 @@
       "wood-deck": "#e0a040",
       "composite-deck": "#85807a",
       "raised-bed-wood": "#b0582a"
+    },
+    "raisedBedModule": {
+      "cellFt": 3,
+      "snapFt": 2,
+      "shapes": [
+        {
+          "id": "square",
+          "label": "3×3",
+          "cells": [
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "id": "bar",
+          "label": "3×6",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        },
+        {
+          "id": "large",
+          "label": "6×6",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        },
+        {
+          "id": "L",
+          "label": "L",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ]
+        },
+        {
+          "id": "U",
+          "label": "U",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              1
+            ]
+          ]
+        }
+      ]
     }
   },
   "conflicts": {
@@ -644,7 +744,15 @@
           "back_yard",
           "front_yard"
         ],
-        "attempts": 300
+        "attempts": 300,
+        "shapes": [
+          "square",
+          "square",
+          "bar",
+          "large",
+          "L",
+          "U"
+        ]
       }
     },
     "themes": [
@@ -1731,5 +1839,23 @@
     "sway": 0.025,
     "sides": 14,
     "rings": 18
+  },
+  "player": {
+    "eyeHeightFt": 5.5,
+    "walkFtS": 4.8,
+    "runFtS": 12,
+    "groundAccel": 45,
+    "airAccel": 12,
+    "gravityFtS2": 32.2,
+    "jumpFtS": 11,
+    "stepUpFt": 0.7,
+    "radiusFt": 0.8,
+    "lotMarginFt": 0.8,
+    "turnRadS": 2.2,
+    "lookRadPerPx": 0.0045,
+    "pitchLimitRad": 1.35,
+    "fovDeg": 72,
+    "plantClearShare": 0.8,
+    "plantBlockShare": 0.5
   }
 }

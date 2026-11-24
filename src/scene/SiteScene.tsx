@@ -1,3 +1,4 @@
+import { WalkRig } from './Walk';
 import { skyColor } from '../engine/sky';
 import { tiledSurface } from './surfaces';
 import { useEffect, useMemo } from 'react';
@@ -431,6 +432,7 @@ function Dimensions() {
 function Cameras() {
   const site = useApp((s) => s.site);
   const view = useApp((s) => s.view);
+  const engine = useApp((s) => s.engine);
   const { size } = useThree();
   const cfg = site.views.find((v) => v.id === view) ?? site.views[0];
   const cx = site.lot.width / 2;
@@ -464,6 +466,15 @@ function Cameras() {
           far={1200}
         />
         <OrbitControls key="plan-ctl" makeDefault enableDamping={false} target={[cx, 0, -cyView]} enableRotate={false} screenSpacePanning />
+      </>
+    );
+  }
+  if (cfg.kind === 'walk') {
+    // First person: no orbit controls; WalkRig moves the camera with the keyboard.
+    return (
+      <>
+        <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={engine.player.fovDeg} near={0.1} far={2000} position={SITE_TO_THREE(cfg.position?.[0] ?? cx, cfg.position?.[1] ?? 14, engine.player.eyeHeightFt)} />
+        <WalkRig key={`rig-${cfg.id}`} viewId={cfg.id} />
       </>
     );
   }

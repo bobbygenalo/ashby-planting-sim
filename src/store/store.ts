@@ -4,6 +4,7 @@ import engineRaw from '../data/engine.json';
 import type { Conflict } from '../engine/conflicts';
 import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engine/geometry';
 import { drivewayBlocks, dropMappedColors } from '../engine/hardscape';
+import { placeShape, reshapeBed, rotateBed, settleBed } from '../engine/bed';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
 import { buildSunMap, type SunMap } from '../engine/placement';
@@ -148,7 +149,8 @@ export interface AppState {
   setPlaceContainer: (c: ContainerId) => void;
   materials: Material[];
   hardscape: HardscapeElement[];
-  drawing: { type: HardscapeType; points: Pt[] } | null;
+  /** `shape` is the raised bed shape being placed (a set shape id from `hardscape.raisedBedModule`). */
+  drawing: { type: HardscapeType; points: Pt[]; shape?: string } | null;
   selectedElementId: string | null;
   hsDrag: HsDrag | null;
   /** What the pointer snapped to while drawing or dragging a vertex, for the cursor color. */
@@ -159,7 +161,7 @@ export interface AppState {
   redo: () => void;
   /** Record one undo step before a drag begins; the drag itself then updates silently. */
   beginGesture: () => void;
-  startDrawing: (type: HardscapeType | null) => void;
+  startDrawing: (type: HardscapeType | null, shape?: string) => void;
   addDrawPoint: (p: Pt) => void;
   removeLastDrawPoint: () => void;
   finishDrawing: () => string | null;
@@ -167,6 +169,10 @@ export interface AppState {
   placePreset: (center: Pt) => string | null;
   /** Turn a rectangular element about its center, a quarter turn by default (counterclockwise from above; negative turns the other way). */
   rotateElement: (id: string, degrees?: number) => void;
+  /** Raised beds: swap the shape for another set shape, around the same center. */
+  setBedShape: (id: string, shapeId: string) => void;
+  /** Raised beds: after placing or moving one, slide it flush to a neighbor within the snap distance and join them when together they make a set shape. Returns the surviving bed's id, or null when nothing joined. */
+  settleBed: (id: string) => string | null;
   /** Keep a drawing in progress if it already has enough points (switching tools never throws it away). */
   commitDrawing: () => void;
   /** Copy an element (offset slightly, as new work) and select the copy. */
@@ -501,11 +507,11 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       beginGesture: () => {
         if (get().mode === 'edit') record();
       },
-      startDrawing: (type) => {
+      startDrawing: (type, shape) => {
         if (get().mode !== 'edit') return;
         // Picking another type keeps what was drawn so far; Esc and Cancel (type null) discard it.
         if (type) get().commitDrawing();
-        set({ drawing: type ? { type, points: [] } : null, placingSpeciesId: null, measureActive: false, selectedId: null, selectedElementId: null });
+        set({ drawing: type ? { type, points: [], ...(type === 'raisedBed' ? { shape: shape ?? engine.hardscape.raisedBedModule.shapes[0].id } : {}) } : null, placingSpeciesId: null, measureActive: false, selectedId: null, selectedElementId: null });
       },
       addDrawPoint: (p) => {
         const d = get().drawing;
@@ -539,6 +545,24 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         if (!d || get().mode !== 'edit') return null;
         const cfgT = engine.hardscape.types[d.type];
         if (!cfgT.placeSize) return null;
+        if (d.type === 'raisedBed') {
+          // A raised bed is one of the set shapes, centered on the click; it joins a neighbor within the snap distance.
+          const mod = engine.hardscape.raisedBedModule;
+          const placed = placeShape(d.shape ?? mod.shapes[0].id, [cx, cy], mod);
+          if (!placed) return null;
+          const { width: lw, depth: ld } = get().site.lot;
+          const xs = placed.points.map((p) => p[0]), ys = placed.points.map((p) => p[1]);
+          const dx = Math.min(0, lw - Math.max(...xs)) + Math.max(0, -Math.min(...xs)), dy = Math.min(0, ld - Math.max(...ys)) + Math.max(0, -Math.min(...ys));
+          const bedId = uid('h');
+          const bed: HardscapeElement = {
+            id: bedId, type: 'raisedBed', name: cfgT.label, points: placed.points.map(([x, y]): Pt => [x + dx, y + dy]), cells: placed.cells,
+            materialId: cfgT.material, height: cfgT.height, depthIn: cfgT.depthIn, width: cfgT.width, existing: false,
+          };
+          record();
+          const joined = settleBed(bedId, [...get().hardscape, bed], mod);
+          set({ hardscape: joined ? joined.elements : [...get().hardscape, bed], drawing: null, selectedElementId: joined ? joined.id : bedId, hover: null });
+          return joined ? joined.id : bedId;
+        }
         const [a, b] = cfgT.placeSize;
         const x = Math.min(Math.max(cx, a / 2), get().site.lot.width - a / 2), y = Math.min(Math.max(cy, b / 2), get().site.lot.depth - b / 2);
         const id = uid('h');
@@ -552,8 +576,30 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       },
       rotateElement: (id, degrees = 90) => {
         const el = get().hardscape.find((e) => e.id === id);
+        if (el?.cells && !el.existing && get().mode === 'edit') {
+          // Module beds turn in quarter turns only, so they stay on the grid.
+          const quarters = -Math.round(degrees / 90);
+          if (quarters % 4 === 0) return;
+          const turned = rotateBed(el, engine.hardscape.raisedBedModule, quarters);
+          if (turned) scenario({ hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, cells: turned.cells, points: turned.points } : e)) });
+          return;
+        }
         if (!el || el.existing || get().mode !== 'edit' || engine.hardscape.types[el.type].shape !== 'polygon' || !isRectangle(el.points)) return;
         scenario({ hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, points: rotatePoints(e.points, degrees) } : e)) });
+      },
+      setBedShape: (id, shapeId) => {
+        const el = get().hardscape.find((e) => e.id === id);
+        if (!el || el.type !== 'raisedBed' || el.existing || get().mode !== 'edit') return;
+        const next = reshapeBed(el, shapeId, engine.hardscape.raisedBedModule);
+        if (!next) return;
+        scenario({ hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, cells: next.cells, points: next.points } : e)) });
+      },
+      settleBed: (id) => {
+        if (get().mode !== 'edit') return null;
+        const joined = settleBed(id, get().hardscape, engine.hardscape.raisedBedModule);
+        if (!joined) return null;
+        mutate({ hardscape: joined.elements, selectedElementId: get().selectedElementId === id ? joined.id : get().selectedElementId });
+        return joined.id;
       },
       commitDrawing: () => {
         const d = get().drawing;

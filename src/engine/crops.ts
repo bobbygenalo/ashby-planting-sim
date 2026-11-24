@@ -1,4 +1,4 @@
-import { pointInPolygon } from './geometry';
+import { distanceToSegment, pointInPolygon } from './geometry';
 import { mulberry32 } from './shuffle';
 import type { CropCfg, Crop, CropPlan, Pt } from './types';
 
@@ -62,6 +62,13 @@ export function defaultCropPlan(bedId: string, crops: Crop[], index = 0): CropPl
 export const planOf = (bed: { id: string; crops?: CropPlan }, crops: Crop[], index = 0): CropPlan => bed.crops ?? defaultCropPlan(bed.id, crops, index);
 
 /** Where plants stand: a grid at the crop's spacing inside the bed outline, widened when the bed would hold too many. */
+/** How far a point is from the nearest edge of a polygon, whether it is inside or out. */
+function edgeDistance(p: Pt, poly: Pt[]): number {
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i++) best = Math.min(best, distanceToSegment(p, poly[i], poly[(i + 1) % poly.length]).dist);
+  return best;
+}
+
 export function cropPositions(poly: Pt[], spacing: number, cfg: CropCfg): Pt[] {
   const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]);
   const [x0, x1, y0, y1] = [Math.min(...xs) + cfg.insetFt, Math.max(...xs) - cfg.insetFt, Math.min(...ys) + cfg.insetFt, Math.max(...ys) - cfg.insetFt];
@@ -75,7 +82,8 @@ export function cropPositions(poly: Pt[], spacing: number, cfg: CropCfg): Pt[] {
       const oy = ny === 1 ? (y0 + y1) / 2 : y0 + ((y1 - y0) - (ny - 1) * sp) / 2;
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
         const p: Pt = [ox + i * sp, oy + j * sp];
-        if (pointInPolygon(p[0], p[1], poly)) out.push(p);
+        // Inside the bed and a margin from its walls, so nothing is rooted in a board at the notch of an L or U.
+        if (pointInPolygon(p[0], p[1], poly) && edgeDistance(p, poly) >= cfg.insetFt * 0.5) out.push(p);
       }
       return out;
     }

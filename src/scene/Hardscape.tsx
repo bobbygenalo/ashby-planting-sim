@@ -9,6 +9,7 @@ import { formatFeetInches } from '../engine/units';
 import type { HardscapeElement, Material, Pt } from '../engine/types';
 import { tableLayout } from '../engine/furniture';
 import soilRaw from '../data/soil.json';
+import { placeShape } from '../engine/bed';
 import { raisedBedSoilTop } from '../engine/soil';
 import { raisedBedGeometry } from './raisedBed';
 import { tiledSurface } from './surfaces';
@@ -16,7 +17,7 @@ import { soilTexture, woodTexture } from './wood';
 import { chairPull } from './chairState';
 import { partyState } from './partyState';
 import { chairGeometry, modelFor, rectFrame } from './furniture';
-import { useApp } from '../store/store';
+import { appStore, useApp } from '../store/store';
 
 const SNAP_COLOR: Record<SnapResult['kind'], string> = { vertex: '#f97316', edge: '#2563eb', grid: '#6b7280' };
 
@@ -204,7 +205,8 @@ function Handles({ el }: { el: HardscapeElement }) {
   const setHsDrag = useApp((s) => s.setHsDrag);
   const beginGesture = useApp((s) => s.beginGesture);
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
-  if (!edit || el.existing) return null;
+  // Raised beds come in set shapes, so they have no corner handles to stretch.
+  if (!edit || el.existing || el.type === 'raisedBed') return null;
   return (
     <group>
       {el.points.map(([x, y], i) => (
@@ -255,6 +257,8 @@ function DrawingPreview() {
   const isLine = cfg.types[drawing.type].shape === 'line';
   const preset = cfg.types[drawing.type].placeSize;
   // Furniture and fixtures show the outline they would take where the pointer is.
+  const bedShape = drawing.type === 'raisedBed' ? placeShape(drawing.shape ?? cfg.raisedBedModule.shapes[0].id, hover ?? [0, 0], cfg.raisedBedModule) : null;
+  if (bedShape && hover) return <Line points={[...bedShape.points, bedShape.points[0]].map(([x, y]): [number, number, number] => [x, y, 0.25])} color="#16a34a" lineWidth={2.5} />;
   const ghost: Pt[] | null = preset && hover ? [[hover[0] - preset[0] / 2, hover[1] - preset[1] / 2], [hover[0] + preset[0] / 2, hover[1] - preset[1] / 2], [hover[0] + preset[0] / 2, hover[1] + preset[1] / 2], [hover[0] - preset[0] / 2, hover[1] + preset[1] / 2]] : null;
   if (preset) {
     return ghost ? <Line points={[...ghost, ghost[0]].map(([x, y]): [number, number, number] => [x, y, 0.25])} color="#16a34a" lineWidth={2.5} /> : null;
@@ -298,7 +302,10 @@ export function HardscapeLayer() {
   // End a drag wherever the pointer is released, and give the camera back.
   useEffect(() => {
     const up = () => {
+      // A raised bed let go near another snaps flush and joins it.
+      const d = appStore.getState().hsDrag;
       setHsDrag(null);
+      if (d?.kind === 'move') appStore.getState().settleBed(d.id);
       if (controls) controls.enabled = true;
     };
     window.addEventListener('pointerup', up);

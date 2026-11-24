@@ -5837,6 +5837,861 @@
           "centerColor": "#f2d55c"
         }
       }
+    },
+    {
+      "id": "rosa-iceberg",
+      "botanical": "Rosa 'Iceberg'",
+      "common": "Iceberg rose (floribunda)",
+      "type": "shrub",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        1
+      ],
+      "matureHeight": 4,
+      "matureWidth": 4,
+      "yearsToMaturity": 3,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "bloomColor": "#fbf8f2",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "low",
+        "groups": [
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Reliable white floribunda, light honey scent; prune hard in January. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.072,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.2,
+          "count": 260,
+          "centerColor": "#f2d55c"
+        }
+      }
+    },
+    {
+      "id": "rosa-julia-child",
+      "botanical": "Rosa 'Julia Child'",
+      "common": "Julia Child rose (floribunda)",
+      "type": "shrub",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        1
+      ],
+      "matureHeight": 3,
+      "matureWidth": 3,
+      "yearsToMaturity": 3,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "bloomColor": "#f2d04b",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "low",
+        "groups": [
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Butter-yellow, licorice scent, compact and shade-tolerant for a rose. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.072,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.22,
+          "count": 200,
+          "centerColor": "#e8b030"
+        }
+      }
+    },
+    {
+      "id": "rosa-knock-out",
+      "botanical": "Rosa 'Radrazz' (Knock Out)",
+      "common": "Knock Out rose",
+      "type": "shrub",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        1
+      ],
+      "matureHeight": 4,
+      "matureWidth": 4,
+      "yearsToMaturity": 3,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "low",
+      "bloomMonths": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "bloomColor": "#d6336c",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "honey bees",
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Disease resistant, near-continuous bloom, tolerates heat and less water than hybrid teas. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.072,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.17,
+          "count": 320,
+          "centerColor": "#f2d55c"
+        }
+      }
+    },
+    {
+      "id": "rosa-mr-lincoln",
+      "botanical": "Rosa 'Mr. Lincoln'",
+      "common": "Mr. Lincoln rose (hybrid tea)",
+      "type": "shrub",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        1
+      ],
+      "matureHeight": 5,
+      "matureWidth": 3,
+      "yearsToMaturity": 3,
+      "habit": "vase",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "bloomColor": "#b0122b",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "low",
+        "groups": [
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Classic dark red, strong fragrance; one stem per bloom, so cut flowers. Watch for powdery mildew. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.7
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.072,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.34,
+          "count": 110,
+          "centerColor": "#7a0f1e"
+        }
+      }
+    },
+    {
+      "id": "rosa-double-delight",
+      "botanical": "Rosa 'Double Delight'",
+      "common": "Double Delight rose (hybrid tea)",
+      "type": "shrub",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        1
+      ],
+      "matureHeight": 4,
+      "matureWidth": 3,
+      "yearsToMaturity": 3,
+      "habit": "vase",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "bloomColor": "#ecc4bd",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "low",
+        "groups": [
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Cream flowers edged in red, very fragrant. Needs good drainage and deep water. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.7
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.072,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.34,
+          "count": 110,
+          "centerColor": "#d9a39a"
+        }
+      }
+    },
+    {
+      "id": "rosa-the-fairy",
+      "botanical": "Rosa 'The Fairy'",
+      "common": "The Fairy rose (polyantha)",
+      "type": "shrub",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        1
+      ],
+      "matureHeight": 3,
+      "matureWidth": 4,
+      "yearsToMaturity": 3,
+      "habit": "spreading",
+      "sun": "full",
+      "wucols": "low",
+      "bloomMonths": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "bloomColor": "#f4a9c0",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "honey bees",
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Low, spreading mound of small pink flowers; holds up well in heat. Few thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.08,
+          "widthFt": 0.048,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.1,
+          "count": 500,
+          "centerColor": "#f2d55c"
+        }
+      }
+    },
+    {
+      "id": "rosa-mutabilis",
+      "botanical": "Rosa x odorata 'Mutabilis'",
+      "common": "Butterfly rose (Mutabilis)",
+      "type": "shrub",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        1
+      ],
+      "matureHeight": 6,
+      "matureWidth": 5,
+      "yearsToMaturity": 4,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "low",
+      "bloomMonths": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "bloomColor": "#f2a07a",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "honey bees",
+          "native bees",
+          "butterflies"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Old China rose; single flowers open buff, turn pink then crimson. Heat tolerant, near year-round bloom in LA, good for bees. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.072,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.17,
+          "count": 380,
+          "centerColor": "#f2d55c"
+        }
+      }
+    },
+    {
+      "id": "rosa-cecile-brunner-climbing",
+      "botanical": "Rosa 'Climbing Cécile Brünner'",
+      "common": "Climbing Cécile Brünner",
+      "type": "vine",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 15,
+      "matureWidth": 8,
+      "yearsToMaturity": 5,
+      "habit": "vine",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        3,
+        4,
+        5
+      ],
+      "bloomColor": "#f6bfcf",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "low",
+        "groups": [
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Sweetheart-rose buds in big spring flushes, a few the rest of the year. Needs a trellis or fence and tying. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.16,
+          "widthFt": 0.09,
+          "perFt": 11,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.1,
+          "count": 900,
+          "centerColor": "#f2d55c"
+        }
+      }
+    },
+    {
+      "id": "rosa-banksiae",
+      "botanical": "Rosa banksiae 'Lutea'",
+      "common": "Lady Banks rose",
+      "type": "vine",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 20,
+      "matureWidth": 25,
+      "yearsToMaturity": 5,
+      "habit": "vine",
+      "sun": "full",
+      "wucols": "low",
+      "bloomMonths": [
+        3,
+        4
+      ],
+      "bloomColor": "#f6e27a",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "honey bees",
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Thornless, evergreen and very vigorous; one huge spring bloom. Needs a big structure and room; hard to keep small.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3,
+        "minPavingFt": 2
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.9
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.22,
+          "widthFt": 0.12,
+          "perFt": 9,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 700,
+        "limbs": 8,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.09,
+          "count": 1500,
+          "centerColor": "#e8c850"
+        }
+      }
+    },
+    {
+      "id": "rosa-californica",
+      "botanical": "Rosa californica",
+      "common": "California wild rose",
+      "type": "shrub",
+      "origin": "california native",
+      "evergreen": false,
+      "leafOffMonths": [
+        12,
+        1,
+        2
+      ],
+      "matureHeight": 6,
+      "matureWidth": 6,
+      "yearsToMaturity": 5,
+      "habit": "spreading",
+      "sun": "full",
+      "wucols": "low",
+      "bloomMonths": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "bloomColor": "#e98aa8",
+      "foliageColor": "#3f6b3c",
+      "pollinator": {
+        "value": "high",
+        "groups": [
+          "native bees",
+          "honey bees",
+          "butterflies"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "low",
+      "notes": "Native thicket-former with single pink flowers and red hips for birds. Suckers, so give it room. Thorns.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "shallow",
+        "minFoundationFt": 4,
+        "minPavingFt": 3
+      },
+      "sheet": {
+        "confidence": "Recall only",
+        "verified": null,
+        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "birdFood": {
+        "months": [
+          9,
+          10,
+          11,
+          12
+        ]
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.12,
+          "widthFt": 0.072,
+          "perFt": 16,
+          "underColor": "#8fb08a",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 800,
+        "limbs": 9,
+        "trunkColor": "#6b4a3a",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.14,
+          "count": 260,
+          "centerColor": "#f2d55c"
+        }
+      }
     }
   ],
   "soilNote": "Soil needs (drainage, texture, pH) are general horticultural expectations, unverified: confidence low.",

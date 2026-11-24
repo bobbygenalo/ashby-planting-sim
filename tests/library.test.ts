@@ -97,3 +97,24 @@ describe('growth stages', () => {
     expect(engine.growthStages.maxPlants).toBe(4);
   });
 });
+
+describe('roses for Los Angeles', () => {
+  const roses = lib.species.filter((s) => s.botanical.startsWith('Rosa'));
+
+  it('has ten roses, each a complete row (bloom months, soil, roots, a detailed look) marked low confidence', () => {
+    expect(roses.length).toBeGreaterThanOrEqual(10);
+    for (const s of roses) {
+      expect(Array.isArray(s.bloomMonths) && s.bloomMonths.length > 0, s.id).toBe(true);
+      expect(s.soil.textures.length, s.id).toBeGreaterThan(0);
+      expect(s.roots, s.id).toBeDefined();
+      expect(s.look, s.id).toBeDefined();
+      expect(s.sheet?.confidence, s.id).toBe('Recall only');
+    }
+  });
+
+  it('covers the kinds an owner will ask for: hybrid tea, floribunda, shrub, climber and a California native', () => {
+    for (const id of ['rosa-mr-lincoln', 'rosa-iceberg', 'rosa-knock-out', 'rosa-banksiae', 'rosa-californica']) expect(sp(id), id).toBeDefined();
+    expect(sp('rosa-banksiae').type).toBe('vine');
+    expect(sp('rosa-californica').origin).toBe('california native');
+  });
+});

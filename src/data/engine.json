@@ -904,7 +904,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "f",
+          "build": "average"
         },
         {
           "age": 30,
@@ -912,7 +914,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "m",
+          "build": "average"
         },
         {
           "age": 9,
@@ -920,7 +924,9 @@
           "speedFt": [
             3.4,
             4.4
-          ]
+          ],
+          "sex": "f",
+          "build": "average"
         },
         {
           "age": 30,
@@ -928,7 +934,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "f",
+          "build": "slim"
         },
         {
           "age": 3,
@@ -936,7 +944,9 @@
           "speedFt": [
             1.6,
             2.2
-          ]
+          ],
+          "sex": "m",
+          "build": "average"
         },
         {
           "age": 30,
@@ -944,7 +954,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "m",
+          "build": "average"
         },
         {
           "age": 11,
@@ -952,7 +964,9 @@
           "speedFt": [
             3.4,
             4.2
-          ]
+          ],
+          "sex": "f",
+          "build": "average"
         },
         {
           "age": 30,
@@ -960,7 +974,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "m",
+          "build": "broad"
         },
         {
           "age": 14,
@@ -968,7 +984,9 @@
           "speedFt": [
             3.0,
             3.8
-          ]
+          ],
+          "sex": "m",
+          "build": "average"
         },
         {
           "age": 30,
@@ -976,7 +994,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "f",
+          "build": "average"
         },
         {
           "age": 9,
@@ -984,7 +1004,9 @@
           "speedFt": [
             3.4,
             4.4
-          ]
+          ],
+          "sex": "m",
+          "build": "average"
         },
         {
           "age": 30,
@@ -992,7 +1014,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "f",
+          "build": "average"
         },
         {
           "age": 30,
@@ -1000,7 +1024,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "m",
+          "build": "average"
         },
         {
           "age": 30,
@@ -1008,7 +1034,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "f",
+          "build": "slim"
         },
         {
           "age": 30,
@@ -1016,7 +1044,9 @@
           "speedFt": [
             2.6,
             3.6
-          ]
+          ],
+          "sex": "f",
+          "build": "broad"
         }
       ],
       "toddlerFollowFt": [
@@ -1029,7 +1059,33 @@
         10,
         60
       ],
-      "doorApproachFt": 3
+      "doorApproachFt": 3,
+      "defaultCount": 8,
+      "spaceFt": 1.0,
+      "bodyRadiusShare": 0.11,
+      "blockedReplanS": 1.5,
+      "meet": {
+        "bias": 0.07,
+        "rangeFt": 32,
+        "talkFt": 3.2,
+        "hugChance": 0.4,
+        "hugFt": 0.15,
+        "hugS": [
+          2.2,
+          3.6
+        ],
+        "hugMoveFtS": 1.3,
+        "talkS": [
+          6,
+          16
+        ],
+        "speakerS": [
+          2.5,
+          5
+        ],
+        "cooldownS": 60
+      },
+      "giveUpS": 9
     },
     "dogs": {
       "max": 2,
@@ -1101,9 +1157,9 @@
         2.5,
         5.5
       ],
-      "sitDropFt": 0.95,
       "scootShare": 0.3,
-      "headTurnMax": 1.0
+      "headTurnMax": 1.0,
+      "seatHeightFt": 1.6
     },
     "movie": {
       "screenBuilding": "garage",
@@ -1545,10 +1601,6 @@
       "fromMin": 420,
       "toMin": 1080,
       "maxPickers": 3,
-      "capacity": [
-        12,
-        20
-      ],
       "fillShare": [
         0.55,
         1.0
@@ -1557,17 +1609,24 @@
         3,
         7
       ],
-      "pickEveryS": 1.7,
-      "flightS": 0.55,
-      "reachFt": 3.2,
+      "pickEveryS": 3.0,
+      "reachFt": 2.0,
       "standMinFt": 0.4,
-      "standMaxFt": 3.5,
+      "standMaxFt": 1.8,
       "basket": {
-        "radiusFt": 0.5,
-        "heightFt": 0.42,
         "color": "#b88a4a",
-        "itemMaxFt": 0.2
-      }
+        "flare": 0.72,
+        "heightShare": 0.8
+      },
+      "basketVolumesFt3": [
+        0.3,
+        0.45,
+        0.65
+      ],
+      "packing": 0.62,
+      "handfulFt3": 0.0065,
+      "pluckAt": 0.36,
+      "releaseAt": 0.8
     }
   },
   "branches": {
@@ -1891,6 +1950,159 @@
     "plantBlockShare": 0.5,
     "crouchEyeHeightFt": 2.9,
     "crouchSpeedShare": 0.45,
-    "crouchRate": 7
+    "crouchRate": 7,
+    "dropHeightFt": 14,
+    "dropSearchFt": 45
+  },
+  "anatomy": {
+    "note": "Shares of stature, general estimates: adult segment ratios after Drillis and Contini (1966); children's head and leg shares from growth studies; unverified against one source. A figure is the stature times these.",
+    "keys": [
+      {
+        "age": 3,
+        "hipJoint": 0.43,
+        "ankle": 0.045,
+        "head": 0.175,
+        "neck": 0.04,
+        "upperArm": 0.17,
+        "forearm": 0.135,
+        "hand": 0.1,
+        "foot": 0.14,
+        "shoulderHalf": 0.1,
+        "hipHalf": 0.05,
+        "chestW": 0.21,
+        "chestD": 0.15,
+        "waistW": 0.19,
+        "waistD": 0.145,
+        "hipW": 0.2,
+        "hipD": 0.14
+      },
+      {
+        "age": 9,
+        "hipJoint": 0.49,
+        "ankle": 0.042,
+        "head": 0.145,
+        "neck": 0.045,
+        "upperArm": 0.18,
+        "forearm": 0.14,
+        "hand": 0.105,
+        "foot": 0.148,
+        "shoulderHalf": 0.097,
+        "hipHalf": 0.05,
+        "chestW": 0.2,
+        "chestD": 0.13,
+        "waistW": 0.17,
+        "waistD": 0.12,
+        "hipW": 0.185,
+        "hipD": 0.12
+      },
+      {
+        "age": 11,
+        "hipJoint": 0.5,
+        "ankle": 0.041,
+        "head": 0.14,
+        "neck": 0.048,
+        "upperArm": 0.183,
+        "forearm": 0.143,
+        "hand": 0.107,
+        "foot": 0.15,
+        "shoulderHalf": 0.096,
+        "hipHalf": 0.052,
+        "chestW": 0.195,
+        "chestD": 0.125,
+        "waistW": 0.165,
+        "waistD": 0.115,
+        "hipW": 0.18,
+        "hipD": 0.115
+      },
+      {
+        "age": 14,
+        "hipJoint": 0.52,
+        "ankle": 0.04,
+        "head": 0.135,
+        "neck": 0.05,
+        "upperArm": 0.185,
+        "forearm": 0.145,
+        "hand": 0.108,
+        "foot": 0.152,
+        "shoulderHalf": 0.096,
+        "hipHalf": 0.053,
+        "chestW": 0.19,
+        "chestD": 0.12,
+        "waistW": 0.16,
+        "waistD": 0.11,
+        "hipW": 0.18,
+        "hipD": 0.115
+      },
+      {
+        "age": 18,
+        "hipJoint": 0.53,
+        "ankle": 0.04,
+        "head": 0.13,
+        "neck": 0.052,
+        "upperArm": 0.186,
+        "forearm": 0.146,
+        "hand": 0.108,
+        "foot": 0.152,
+        "shoulderHalf": 0.095,
+        "hipHalf": 0.054,
+        "chestW": 0.19,
+        "chestD": 0.12,
+        "waistW": 0.16,
+        "waistD": 0.11,
+        "hipW": 0.18,
+        "hipD": 0.115
+      }
+    ],
+    "sex": {
+      "f": {
+        "shoulderHalf": 0.94,
+        "hipHalf": 1.05,
+        "chestW": 0.93,
+        "waistW": 0.94,
+        "hipW": 1.08,
+        "hipD": 1.05,
+        "hipJoint": 0.985
+      },
+      "m": {
+        "shoulderHalf": 1.03,
+        "chestW": 1.04,
+        "hipW": 0.97
+      }
+    },
+    "sexFromAge": [
+      9,
+      16
+    ],
+    "build": {
+      "slim": 0.92,
+      "average": 1,
+      "broad": 1.1
+    },
+    "radii": {
+      "thigh": 0.051,
+      "knee": 0.037,
+      "calf": 0.039,
+      "ankle": 0.021,
+      "upperArm": 0.032,
+      "elbow": 0.026,
+      "forearm": 0.027,
+      "wrist": 0.017,
+      "neck": 0.031,
+      "footWidth": 0.4,
+      "headWidth": 0.72,
+      "headDepth": 0.92
+    },
+    "eyeFromTopShare": 0.49,
+    "seatHipAboveSeat": 0.035,
+    "gait": {
+      "froude": 0.25,
+      "stepOverLeg": 0.78,
+      "stepExponent": 0.6,
+      "gravity": 32.2,
+      "maxSwing": 1.0,
+      "kneeFlex": 0.95,
+      "armSwingShare": 0.55,
+      "maxSitTilt": 0.35
+    }
   }
 }

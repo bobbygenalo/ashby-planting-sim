@@ -8,8 +8,13 @@ import { isBlooming, type PlacedPlant } from './growth';
 import { mulberry32 } from './shuffle';
 import { skyWatchSpots } from './fireworks';
 import { fruitState } from './fruit';
+import { bodyOf, stepLengthFt } from './anatomy';
 import type { SedanSpot } from './vehicle';
-import type { EngineConfig, HardscapeElement, Material, Pt, SiteConfig, StructureCfg } from './types';
+import engineData from '../data/engine.json';
+import type { AnatomyCfg, EngineConfig, HardscapeElement, Material, Pt, SiteConfig, StructureCfg } from './types';
+
+/** The body proportions from engine.json, for a sim built without being handed any. */
+const defaultAnatomy = (engineData as unknown as { anatomy: AnatomyCfg }).anatomy;
 
 type Cfg = EngineConfig['life'];
 
@@ -68,6 +73,8 @@ export interface HarvestPlant {
   color: string;
   /** How big a piece looks on the plant, in feet. */
   diameterFt: number;
+  /** How big a piece really is, in feet: this sets how much fits in a basket. */
+  pieceFt: number;
   aspect: number;
 }
 
@@ -239,7 +246,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   for (const p of input.plants) {
     const fs = fruitState(p.species, p.size, input.month, input.engine.fruit);
     if (fs?.phase === 'ripe' && fs.count >= 3) {
-      w.harvest.push({ id: p.inst.id, speciesId: p.species.id, common: p.species.common, x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3), color: fs.color, diameterFt: fs.diameterFt, aspect: fs.aspect });
+      w.harvest.push({ id: p.inst.id, speciesId: p.species.id, common: p.species.common, x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3), color: fs.color, diameterFt: fs.diameterFt, pieceFt: p.species.fruit!.diameterFt, aspect: fs.aspect });
     }
   }
 
@@ -572,13 +579,42 @@ export type Act =
   | { kind: 'watch'; phase: 'to' | 'watch'; spot: Pt; /** The fireworks, not the film: face the sky beyond the back of the lot. */ sky?: boolean }
   | { kind: 'cake'; seat: string; phase: 'to' | 'gather' }
   /** Picking ripe fruit into a basket: walk to a plant, pick a few pieces, move to a different plant, and go in with the basket. */
-  | { kind: 'harvest'; phase: 'to' | 'pick'; plant: string; stand: Pt; /** Pieces still to take from this plant. */ chunk: number; /** Seconds into the current piece. */ t: number; fired: boolean; /** The basket count they are aiming to carry in. */ final: number; /** Species already picked from. */ species: string[] };
+  /** Two free people meet to talk, sometimes hugging first: each walks to a spot facing the other, the pair greet (a hug brings them closer than people pass), then talk and part. */
+  | { kind: 'meet'; phase: 'to' | 'wait' | 'greet' | 'talk'; partner: number; spot: Pt; hug: boolean; /** Seconds into this phase. */ t: number; /** How long the phase lasts. */ left: number; /** Who is speaking, by walker index, and for how much longer. */ speaker: number; speakerLeft: number }
+  | { kind: 'harvest'; phase: 'to' | 'pick'; plant: string; stand: Pt; /** Pieces still to take from this plant. */ chunk: number; /** Seconds into the current pick. */ t: number; /** A pick is under way (the hand is out, carrying, or coming back). */ cycle: boolean; fired: boolean; /** How full (as used volume, cubic feet) they want the basket before carrying it in. */ final: number; /** Species already picked from. */ species: string[] };
 
 /** What a person carries when picking: fruit in the basket, and how many it holds. */
 export interface Basket {
-  cap: number;
+  /** How much it holds, in cubic feet; fruit piled in fills `packing` of it, so a pick of fruit uses more than its own volume. */
+  volume: number;
+  /** The volume used so far, counting the gaps between the fruit. */
+  used: number;
+  /** One piece per pick: a handful of small fruit or a single large one, drawn as one ball of that volume. */
   items: { color: string; d: number; aspect: number }[];
 }
+
+/** A basket's dimensions from its volume, in feet: top radius, bottom radius and depth. */
+export function basketDims(volume: number, cfg: { basket: { flare: number; heightShare: number } }): { top: number; bottom: number; depth: number } {
+  const { flare, heightShare } = cfg.basket;
+  // A frustum: V = pi h / 3 (R^2 + R r + r^2) with r = flare R and h = heightShare R.
+  const top = Math.cbrt(volume / ((Math.PI * heightShare / 3) * (1 + flare + flare * flare)));
+  return { top, bottom: top * flare, depth: top * heightShare };
+}
+
+/** The volume of one pick of a plant's fruit, as fruit: a whole piece when it is big, or a handful when it is small. */
+export function pickVolumeFt3(plant: { pieceFt: number; aspect: number }, cfg: { handfulFt3: number }): number {
+  const piece = (Math.PI / 6) * plant.pieceFt ** 3 * plant.aspect;
+  return Math.max(piece, cfg.handfulFt3);
+}
+
+/** What a pick takes up in a basket, counting the gaps between the fruit. */
+export const pickBulkFt3 = (plant: { pieceFt: number; aspect: number }, cfg: { handfulFt3: number; packing: number }): number => pickVolumeFt3(plant, cfg) / cfg.packing;
+
+/** The diameter of the ball drawn for one pick, so what is drawn has the volume that is taken. */
+export const pickBallFt = (plant: { pieceFt: number; aspect: number }, cfg: { handfulFt3: number }): number => Math.cbrt((6 * pickVolumeFt3(plant, cfg)) / Math.PI / plant.aspect);
+
+/** How many picks of a plant's fruit a basket of this volume holds. */
+export const basketPicks = (volume: number, plant: { pieceFt: number; aspect: number }, cfg: { handfulFt3: number; packing: number }): number => Math.floor(volume / pickBulkFt3(plant, cfg));
 
 /** One piece of fruit in the air between the plant and the basket. */
 export interface Flight {
@@ -587,7 +623,11 @@ export interface Flight {
   /** 0 at the plant, 1 in the basket. */
   p: number;
   color: string;
+  /** The ball drawn once it is in the basket, and what it takes up there. */
   d: number;
+  /** The size it hangs at on the plant. */
+  from: number;
+  bulk: number;
   aspect: number;
 }
 
@@ -612,10 +652,29 @@ export interface Walker {
   act: Act | null;
   /** How far down into a chair they are, 0 standing to 1 seated. */
   sit: number;
+  /** From the roster, for the body: sex and build. */
+  sex?: 'f' | 'm';
+  build?: 'slim' | 'average' | 'broad';
+  /** How long a step is at their walking speed, in feet: the legs swing to match how far they travel. */
+  stepFt: number;
   /** A basket in hand while picking fruit, and on the walk indoors with it. */
   basket: Basket | null;
-  /** How far the picking arm is raised toward the fruit, 0 to 1. */
-  reach: number;
+  /** How far through a pick the hand is, 0 to 1: reaching for the fruit, pulling it free, carrying it to the basket, then back to rest. */
+  pickU: number;
+  /** Where the fruit being picked hangs, in site coordinates, while a pick is under way. */
+  aim: [number, number, number] | null;
+  /** How far into a hug, 0 to 1. */
+  hug: number;
+  /** Seconds held up by someone in the way. */
+  blockedS: number;
+  /** Seconds, lately, without making headway while on the move; at `giveUpS` the errand is dropped. */
+  heldTotal: number;
+  /** Where they were a few seconds ago and how long ago, for checking headway. */
+  probeX: number;
+  probeY: number;
+  probeT: number;
+  /** Seconds before this person will start another meeting. */
+  meetCool: number;
   /** True while this person is the one speaking at their table. */
   talking: boolean;
   /** True while they are cheering and clapping around the cake. */
@@ -689,11 +748,14 @@ export class LifeSim {
   private clock = 0;
   private rng: () => number;
   private cfg: Cfg;
+  /** The body proportions, to work out step lengths. */
+  anatomy: AnatomyCfg;
   private counts: LifeCounts;
 
-  constructor(world: LifeWorld, cfg: Cfg, seed: number, counts: LifeCounts) {
+  constructor(world: LifeWorld, cfg: Cfg, seed: number, counts: LifeCounts, anatomy: AnatomyCfg = defaultAnatomy) {
     this.world = world;
     this.cfg = cfg;
+    this.anatomy = anatomy;
     this.rng = mulberry32(seed);
     this.counts = { people: Math.max(0, Math.min(cfg.people.max, Math.floor(counts.people))), dogs: Math.max(0, Math.min(cfg.dogs.max, Math.floor(counts.dogs))), bees: counts.bees };
     this.populate();
@@ -723,9 +785,15 @@ export class LifeSim {
       } else if (!person && this.counts.people > 0) leader = (n - this.counts.people) % this.counts.people;
       this.walkers.push({
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
-        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, basket: null, reach: 0, talking: false, cheer: false, lookUp: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
+        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, stepFt: 1.5, basket: null, pickU: 0, aim: null, hug: 0, blockedS: 0, heldTotal: 0, probeX: 0, probeY: 0, probeT: 0, meetCool: this.rng() * 30, talking: false, cheer: false, lookUp: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
         replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
       });
+      const made = this.walkers[this.walkers.length - 1];
+      if (spec) {
+        made.sex = spec.sex;
+        made.build = spec.build;
+        made.stepFt = stepLengthFt(bodyOf(spec.age, spec.heightFt, this.anatomy, spec.sex, spec.build), made.cruise, this.anatomy);
+      }
     }
     this.bees = [];
     const hive = this.world.hive;
@@ -742,7 +810,12 @@ export class LifeSim {
     for (const wk of this.walkers) {
       wk.route = [];
       // A seat, or the screen, that is gone ends what they were doing there; the rest carry on.
-      if (wk.act?.kind === 'harvest') {
+      if (wk.act?.kind === 'meet') {
+        // A meeting carries on where it is; one still on the way walks again.
+        const partner = this.walkers[wk.act.partner];
+        if (!partner || partner.act?.kind !== 'meet') this.endAct(wk);
+        else if (wk.act.phase !== 'to') continue;
+      } else if (wk.act?.kind === 'harvest') {
         // The tree they were at has stopped bearing (or is gone): take what is in the basket in.
         const a = wk.act;
         if (!world.harvest.some((q) => q.id === a.plant)) this.finishHarvest(wk);
@@ -847,6 +920,7 @@ export class LifeSim {
       if (this.movieOn && this.rng() < this.cfg.movie.joinBias && this.assignWatch(wk)) return;
       if (this.world.tables.length && this.rng() < this.cfg.dining.bias && this.startDinner(wk)) return;
       if (this.harvestOk(wk) && this.rng() < this.cfg.harvest.bias && this.startHarvest(wk)) return;
+      if (this.rng() < this.cfg.people.meet.bias && this.startMeet(wk)) return;
     }
     if (wk.visit?.phase === 'to' && !this.world.doors.some((d) => d.id === wk.visit!.door)) wk.visit = null;
     const door = wk.visit?.phase === 'to' ? this.world.doors.find((d) => d.id === wk.visit!.door)! : this.pickDoor(wk);
@@ -890,21 +964,29 @@ export class LifeSim {
       wk.speed = 0;
       wk.x = door.stand[0];
       wk.y = door.stand[1];
-      if (v.left <= 0) v.phase = 'out';
+      // Step out only when no one is standing in the doorway.
+      if (v.left <= 0 && !this.crowded(door.stand[0], door.stand[1], wk)) v.phase = 'out';
       return;
     }
     const goal = v.phase === 'in' ? door.stand : door.approach;
     const dx = goal[0] - wk.x, dy = goal[1] - wk.y;
     const dist = Math.hypot(dx, dy);
     const speed = wk.cruise * 0.7;
-    const move = Math.min(dist, speed * dt);
+    let move = Math.min(dist, speed * dt);
     if (dist > 1e-6) {
       wk.heading = Math.atan2(dy, dx);
-      wk.x += (dx / dist) * move;
-      wk.y += (dy / dist) * move;
+      const adj = wk.kind === 'person' ? this.avoid(wk, wk.x + (dx / dist) * move, wk.y + (dy / dist) * move) : [wk.x + (dx / dist) * move, wk.y + (dy / dist) * move] as Pt;
+      if (adj) {
+        move = Math.hypot(adj[0] - wk.x, adj[1] - wk.y);
+        wk.x = adj[0];
+        wk.y = adj[1];
+      } else {
+        move = 0; // someone is in the doorway: wait, and in time give up
+        this.heldUp(wk, dt);
+      }
     }
     wk.speed = dt > 0 ? move / dt : 0;
-    wk.gait += move * 1.6 * (5.6 / wk.heightFt) ** 0.8;
+    wk.gait += move * Math.PI / wk.stepFt;
     if (dist - move < 0.05) {
       if (v.phase === 'in') {
         wk.basket = null; // set down indoors
@@ -928,6 +1010,312 @@ export class LifeSim {
   // -------------------------------------------------------------------------------------------
 
   // -------------------------------------------------------------------------------------------
+  // Personal space, and meeting to talk or hug
+  // -------------------------------------------------------------------------------------------
+
+  /** A person's body radius, in feet, from their height. */
+  private bodyR(wk: Walker): number {
+    return this.cfg.people.bodyRadiusShare * wk.heightFt;
+  }
+
+  /** Nearer than people pass: hugging is allowed to be, and so is sitting or standing together at a table or the cake. */
+  private mayTouch(a: Walker, b: Walker): boolean {
+    const x = a.act, y = b.act;
+    if (x?.kind === 'meet' && y?.kind === 'meet' && x.partner === this.walkers.indexOf(b) && (x.phase === 'greet' || y.phase === 'greet')) return true;
+    const together = (k?: string) => k === 'dine' || k === 'cake';
+    return together(x?.kind) && together(y?.kind);
+  }
+
+  /** Whether another picker is already heading for, or standing at, a spot within a person's space of this one. */
+  private claimed(x: number, y: number, wk: Walker): boolean {
+    const sp = this.cfg.people.spaceFt;
+    return this.walkers.some((o) => {
+      if (o === wk || o.act?.kind !== 'harvest') return false;
+      return Math.hypot(o.act.stand[0] - x, o.act.stand[1] - y) < this.bodyR(wk) + this.bodyR(o) + sp;
+    });
+  }
+
+  /** Whether another person stands within a person's space of a spot. */
+  private crowded(x: number, y: number, wk: Walker): boolean {
+    const sp = this.cfg.people.spaceFt;
+    return this.walkers.some((o) => o !== wk && o.kind === 'person' && !o.away && !isInside(o) && Math.hypot(o.x - x, o.y - y) < this.bodyR(wk) + this.bodyR(o) + sp);
+  }
+
+  /**
+   * Where a person ends up after a step toward (nx, ny): the same, or slid round the person in the way so that bodies stay
+   * a foot apart; null when there is no room and they must wait. Moving away from someone too close is always allowed.
+   */
+  private avoid(wk: Walker, nx: number, ny: number): Pt | null {
+    const space = this.spaceFor(wk), r = this.bodyR(wk);
+    let px = nx, py = ny;
+    for (let pass = 0; pass < 3; pass++) {
+      let moved = false;
+      for (const o of this.walkers) {
+        if (o === wk || o.kind !== 'person' || o.away || isInside(o) || this.mayTouch(wk, o)) continue;
+        const minD = r + this.bodyR(o) + space;
+        const dxn = px - o.x, dyn = py - o.y, dn = Math.hypot(dxn, dyn);
+        if (dn >= minD) continue;
+        if (dn >= Math.hypot(wk.x - o.x, wk.y - o.y)) {
+          // Not getting closer, but already inside the space: drift outward as they go, so the gap opens back up.
+          if (dn < minD && dn > 1e-6) {
+            const push = Math.min(minD - dn, 0.04) * 0.5;
+            px += (dxn / dn) * push;
+            py += (dyn / dn) * push;
+            moved = true;
+          }
+          continue;
+        }
+        let ux = dn > 1e-6 ? dxn / dn : -Math.sin(wk.heading), uy = dn > 1e-6 ? dyn / dn : Math.cos(wk.heading);
+        // Head on, pass on the right.
+        const cross = Math.cos(wk.heading) * uy - Math.sin(wk.heading) * ux;
+        if (Math.abs(cross) < 0.25) {
+          const a = -0.5, c = Math.cos(a), s2 = Math.sin(a);
+          [ux, uy] = [ux * c - uy * s2, ux * s2 + uy * c];
+        }
+        px = o.x + ux * minD;
+        py = o.y + uy * minD;
+        moved = true;
+      }
+      if (!moved) break;
+    }
+    for (const o of this.walkers) {
+      if (o === wk || o.kind !== 'person' || o.away || isInside(o) || this.mayTouch(wk, o)) continue;
+      const d = Math.hypot(px - o.x, py - o.y);
+      if (d < r + this.bodyR(o) + space - 1e-6 && d < Math.hypot(wk.x - o.x, wk.y - o.y)) return null;
+    }
+    // Slid into a wall, a bed or a plant: there is no way round that side, so wait.
+    if ((px !== nx || py !== ny) && this.world.blocked[idx(this.world, ...cellOf(this.world, px, py))]) return null;
+    return [px, py];
+  }
+
+  /**
+   * The clear space this person keeps from others: a foot, but squeezed down to a couple of inches the longer they have been
+   * held up, so that two people meeting in a lane too narrow for a foot between them still get past each other without
+   * touching, instead of waiting for ever.
+   */
+  private spaceFor(wk: Walker): number {
+    const full = this.cfg.people.spaceFt, floor = 0.2;
+    const eased = 1 - wk.heldTotal / (this.cfg.people.giveUpS * 0.5);
+    return Math.max(Math.min(full, floor), full * Math.min(1, Math.max(0, eased)));
+  }
+
+  /**
+   * A safety net under everything else: two people who have ended up closer than they should be (someone walked up to a
+   * pair who had stopped, or an errand ended beside them) ease apart, the one with nothing to do moving first, never into a
+   * wall, a bed or a plant, and never when they are hugging or seated together.
+   */
+  private separate(dt: number) {
+    const ps = this.walkers.filter((w) => w.kind === 'person' && !w.away && !isInside(w));
+    const step = 2.5 * dt;
+    const free = (x: number, y: number) => !this.world.blocked[idx(this.world, ...cellOf(this.world, x, y))];
+    for (let i = 0; i < ps.length; i++) {
+      for (let j = i + 1; j < ps.length; j++) {
+        const a = ps[i], b = ps[j];
+        if (this.mayTouch(a, b)) continue;
+        const minD = this.bodyR(a) + this.bodyR(b) + Math.min(this.spaceFor(a), this.spaceFor(b));
+        let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+        if (d >= minD) continue;
+        if (d < 1e-6) { dx = Math.cos(a.heading); dy = Math.sin(a.heading); d = 1; }
+        const ux = dx / d, uy = dy / d, move = Math.min(step, minD - d);
+        // Whoever is busy stays where they are; whoever is free gives way. If both are busy or both free, both give way.
+        const busy = (w: Walker) => !!w.act && w.act.phase !== 'to';
+        const aMoves = !busy(a) || busy(b), bMoves = !busy(b) || busy(a);
+        const share = aMoves && bMoves ? 0.5 : 1;
+        if (aMoves && free(a.x - ux * move * share, a.y - uy * move * share)) { a.x -= ux * move * share; a.y -= uy * move * share; }
+        if (bMoves && free(b.x + ux * move * share, b.y + uy * move * share)) { b.x += ux * move * share; b.y += uy * move * share; }
+      }
+    }
+  }
+
+  /** Held up: after a while, try another route; and when it goes on, give up the errand altogether. */
+  private heldUp(wk: Walker, dt: number) {
+    wk.blockedS += dt;
+    wk.heldTotal += dt;
+    if (wk.heldTotal >= this.cfg.people.giveUpS) return this.giveUp(wk);
+    if (wk.blockedS > this.cfg.people.blockedReplanS) {
+      wk.blockedS = 0;
+      wk.route = [];
+      wk.pauseLeft = this.rng() * 0.6;
+    }
+  }
+
+  /** Check every few seconds that someone on the move is getting somewhere; if not, it counts toward giving up. */
+  private checkHeadway(wk: Walker, dt: number) {
+    wk.probeT += dt;
+    if (wk.probeT < 3) return;
+    const moved = Math.hypot(wk.x - wk.probeX, wk.y - wk.probeY);
+    if (moved < 0.8) wk.heldTotal += 3;
+    else wk.heldTotal = Math.max(0, wk.heldTotal - 3);
+    wk.probeX = wk.x;
+    wk.probeY = wk.y;
+    wk.probeT = 0;
+    if (wk.heldTotal >= this.cfg.people.giveUpS) this.giveUp(wk);
+  }
+
+  /** Stuck with no way through: drop the errand (put the basket down, leave the meeting) and wander off to somewhere else. */
+  private giveUp(wk: Walker) {
+    wk.heldTotal = 0;
+    wk.blockedS = 0;
+    wk.probeT = 0;
+    wk.route = [];
+    const night = !!wk.visit?.night;
+    if (night) {
+      // Going in for the night: they are in.
+      const door = this.world.doors.find((d) => d.id === wk.visit!.door);
+      if (door) {
+        wk.visit = { door: door.id, phase: 'inside', left: Infinity, night: true };
+        wk.x = door.stand[0];
+        wk.y = door.stand[1];
+        wk.speed = 0;
+        return;
+      }
+    }
+    if (wk.act) this.endAct(wk);
+    if (wk.visit && wk.visit.phase === 'to') wk.visit = null;
+    wk.basket = null;
+    wk.pauseLeft = 1 + this.rng() * 2;
+    wk.speed = 0;
+    const p = this.nearestFree(wk.x, wk.y);
+    if (p) [wk.x, wk.y] = p;
+  }
+
+  /** Two free people close enough to each other decide to meet: each walks to a spot facing the other. */
+  private startMeet(wk: Walker): boolean {
+    const m = this.cfg.people.meet;
+    if (wk.kind !== 'person' || wk.meetCool > 0 || this.night) return false;
+    const self = this.walkers.indexOf(wk);
+    const near = this.walkers
+      .map((o, i) => ({ o, i, d: Math.hypot(o.x - wk.x, o.y - wk.y) }))
+      .filter(({ o, i, d }) => i !== self && o.kind === 'person' && this.idle(o) && o.meetCool <= 0 && !isInside(o) && !o.away && d > m.talkFt && d <= m.rangeFt);
+    if (near.length === 0) return false;
+    const { o, i } = near[Math.floor(this.rng() * near.length)];
+    const mx = (wk.x + o.x) / 2, my = (wk.y + o.y) / 2;
+    const dx = o.x - wk.x, dy = o.y - wk.y, dl = Math.hypot(dx, dy) || 1;
+    const ux = dx / dl, uy = dy / dl;
+    const mid = this.nearestFree(mx, my);
+    if (!mid) return false;
+    const spotA = this.nearestFree(mid[0] - (ux * m.talkFt) / 2, mid[1] - (uy * m.talkFt) / 2);
+    const spotB = this.nearestFree(mid[0] + (ux * m.talkFt) / 2, mid[1] + (uy * m.talkFt) / 2);
+    if (!spotA || !spotB) return false;
+    const apart = Math.hypot(spotA[0] - spotB[0], spotA[1] - spotB[1]);
+    if (apart < this.bodyR(wk) + this.bodyR(o) + this.cfg.people.spaceFt) return false;
+    // Not where others are already standing about: a hug needs room to close in.
+    const room = m.talkFt + 1.5;
+    if (this.walkers.some((q) => q !== wk && q !== o && q.kind === 'person' && !q.away && !isInside(q) && (Math.hypot(q.x - mid[0], q.y - mid[1]) < room || Math.hypot(q.x - spotA[0], q.y - spotA[1]) < room * 0.7 || Math.hypot(q.x - spotB[0], q.y - spotB[1]) < room * 0.7))) return false;
+    const routeA = findRoute(this.world, [wk.x, wk.y], spotA), routeB = findRoute(this.world, [o.x, o.y], spotB);
+    if (!routeA || !routeB) return false;
+    const hug = this.rng() < m.hugChance;
+    const mk = (partner: number, spot: Pt): Act => ({ kind: 'meet', phase: 'to', partner, spot, hug, t: 0, left: 0, speaker: self, speakerLeft: 0 });
+    wk.act = mk(i, spotA);
+    o.act = mk(self, spotB);
+    for (const [w2, route] of [[wk, routeA], [o, routeB]] as [Walker, Pt[]][]) {
+      w2.route = route.slice(1);
+      w2.pauseLeft = 0;
+    }
+    if (routeA.length <= 1) this.arrive(wk);
+    if (routeB.length <= 1) this.arrive(o);
+    return true;
+  }
+
+  private faceToward(wk: Walker, x: number, y: number, dt: number) {
+    const want = Math.atan2(y - wk.y, x - wk.x);
+    let diff = want - wk.heading;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    const turn = this.cfg.people.turnRate * dt;
+    wk.heading += Math.max(-turn, Math.min(turn, diff));
+  }
+
+  /** Move two people toward or away from each other along the line between them until they are `gap` apart. */
+  private closeTo(a: Walker, b: Walker, gap: number, dt: number): boolean {
+    const m = this.cfg.people.meet;
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6;
+    const diff = d - gap;
+    if (Math.abs(diff) < 0.02) return true;
+    const step = Math.min(Math.abs(diff) / 2, (m.hugMoveFtS * dt) / 1);
+    const k = Math.sign(diff) * step;
+    const ux = dx / d, uy = dy / d;
+    const free = (who: Walker, other: Walker, x: number, y: number) => {
+      if (this.world.blocked[idx(this.world, ...cellOf(this.world, x, y))]) return false;
+      // Never into a third person: only toward them while still a foot clear, or away from them.
+      return this.walkers.every((o) => {
+        if (o === who || o === other || o.kind !== 'person' || o.away || isInside(o)) return true;
+        const minD = this.bodyR(who) + this.bodyR(o) + this.cfg.people.spaceFt;
+        const dn = Math.hypot(x - o.x, y - o.y);
+        return dn >= minD || dn >= Math.hypot(who.x - o.x, who.y - o.y);
+      });
+    };
+    if (free(a, b, a.x + ux * k, a.y + uy * k)) { a.x += ux * k; a.y += uy * k; }
+    if (free(b, a, b.x - ux * k, b.y - uy * k)) { b.x -= ux * k; b.y -= uy * k; }
+    return false;
+  }
+
+  /** Two people meeting: wait for each other, greet (a hug closes the distance), talk in turns, part. */
+  private stepMeet(wk: Walker, dt: number) {
+    const a = wk.act;
+    if (a?.kind !== 'meet') return;
+    const self = this.walkers.indexOf(wk);
+    const partner = this.walkers[a.partner];
+    const pa = partner?.act;
+    if (!partner || pa?.kind !== 'meet' || pa.partner !== self || isInside(partner)) return this.endAct(wk);
+    wk.speed = 0;
+    this.faceToward(wk, partner.x, partner.y, dt);
+    // The one with the lower number runs the meeting for both.
+    if (self > a.partner) return;
+    const m = this.cfg.people.meet;
+    const hugGap = this.bodyR(wk) + this.bodyR(partner) + m.hugFt;
+    if (a.phase === 'wait') {
+      if (pa.phase !== 'wait') return;
+      a.phase = pa.phase = 'greet';
+      a.t = pa.t = 0;
+      a.left = pa.left = a.hug ? this.between(m.hugS) : 0;
+      a.speakerLeft = pa.speakerLeft = 0;
+      return;
+    }
+    if (a.phase === 'greet') {
+      a.t += dt;
+      pa.t = a.t;
+      if (a.hug) {
+        // Close in, hold (timed from the moment they arrive), then ease apart to talking distance.
+        const arrived = Math.hypot(wk.x - partner.x, wk.y - partner.y) <= hugGap + 0.1;
+        const holding = a.speakerLeft < a.left && a.t < 8;
+        if (holding && arrived) a.speakerLeft += dt;
+        const ready = this.closeTo(wk, partner, holding ? hugGap : m.talkFt, dt);
+        const arms = holding ? (arrived ? 1 : 0.3) : 0;
+        wk.hug += Math.max(-dt * 2, Math.min(dt * 2, arms - wk.hug));
+        partner.hug = wk.hug;
+        // If something keeps them from closing in or easing apart, give up the hug and just talk.
+        if ((!holding && ready && wk.hug <= 0.02) || a.t > 14) {
+          wk.hug = partner.hug = 0;
+          a.phase = pa.phase = 'talk';
+          a.t = pa.t = 0;
+          a.speakerLeft = pa.speakerLeft = 0;
+          a.left = pa.left = this.between(m.talkS);
+        }
+      } else {
+        a.phase = pa.phase = 'talk';
+        a.t = pa.t = 0;
+        a.left = pa.left = this.between(m.talkS);
+      }
+      return;
+    }
+    // talk
+    a.t += dt;
+    pa.t = a.t;
+    a.speakerLeft -= dt;
+    if (a.speakerLeft <= 0) {
+      a.speaker = a.speaker === self ? a.partner : self;
+      a.speakerLeft = this.between(m.speakerS);
+    }
+    wk.talking = a.speaker === self;
+    partner.talking = a.speaker === a.partner;
+    if (a.t >= a.left) {
+      wk.talking = partner.talking = false;
+      this.endAct(partner);
+      this.endAct(wk);
+    }
+  }
+
+  // -------------------------------------------------------------------------------------------
   // Picking fruit: a basket, a plant, a few pieces, a different plant, and the basket carried in
   // -------------------------------------------------------------------------------------------
 
@@ -947,19 +1335,24 @@ export class LifeSim {
       const c = center(w, k % w.nx, Math.floor(k / w.nx));
       const d = Math.hypot(c[0] - plant.x, c[1] - plant.y);
       if (d < plant.radius + h.standMinFt || d > plant.radius + h.standMaxFt) continue;
+      if (this.crowded(c[0], c[1], wk) || this.claimed(c[0], c[1], wk)) continue;
       const near = Math.hypot(c[0] - wk.x, c[1] - wk.y);
       if (near < bestD) { bestD = near; best = c; }
     }
     return best;
   }
 
-  /** How many pieces to take from this plant before moving on, never more than the basket's room or the goal allows. */
+  /** How many picks to take from this plant before moving on, never more than the basket's room or the goal allows. */
   private chunkFor(wk: Walker): number {
     const a = wk.act, b = wk.basket;
     if (a?.kind !== 'harvest' || !b) return 0;
+    const plant = this.world.harvest.find((q) => q.id === a.plant);
+    if (!plant) return 0;
     const [lo, hi] = this.cfg.harvest.chunk;
     const want = lo + Math.floor(this.rng() * (hi - lo + 1));
-    return Math.max(1, Math.min(want, Math.min(b.cap, a.final) - b.items.length));
+    const bulk = pickBulkFt3(plant, this.cfg.harvest);
+    const left = Math.min(b.volume, a.final) - b.used;
+    return Math.max(1, Math.min(want, Math.ceil(left / bulk - 1e-9)));
   }
 
   private startHarvest(wk: Walker): boolean {
@@ -971,10 +1364,10 @@ export class LifeSim {
       if (!stand) continue;
       const route = findRoute(this.world, [wk.x, wk.y], stand);
       if (!route) continue;
-      const cap = Math.round(this.between(h.capacity));
-      const final = Math.max(3, Math.round(cap * this.between(h.fillShare)));
-      wk.basket = { cap, items: [] };
-      wk.act = { kind: 'harvest', phase: 'to', plant: plant.id, stand, chunk: 0, t: 0, fired: false, final, species: [plant.speciesId] };
+      const volume = h.basketVolumesFt3[Math.floor(this.rng() * h.basketVolumesFt3.length)];
+      const final = volume * this.between(h.fillShare);
+      wk.basket = { volume, used: 0, items: [] };
+      wk.act = { kind: 'harvest', phase: 'to', plant: plant.id, stand, chunk: 0, t: 0, cycle: false, fired: false, final, species: [plant.speciesId] };
       wk.route = route.slice(1);
       if (route.length <= 1) this.arrive(wk);
       return true;
@@ -982,20 +1375,25 @@ export class LifeSim {
     return false;
   }
 
-  /** A spot on the canopy within the picker's reach, on the side facing them and at a height they can get to. */
+  /**
+   * A spot on the canopy the picker's hand can reach: on the side facing them, no further from their shoulder than an arm
+   * stretches (about 0.4 of their height), and at a height from the waist up to a little above the shoulder.
+   */
   private pickPoint(wk: Walker, plant: HarvestPlant): [number, number, number] {
-    const h = this.cfg.harvest;
     const dx = wk.x - plant.x, dy = wk.y - plant.y;
     const dist = Math.hypot(dx, dy) || 1;
     const ux = dx / dist, uy = dy / dist;
-    const rho = plant.radius * (0.55 + 0.35 * this.rng());
-    // No further from the person than their arm reaches.
-    const reachRho = Math.max(0, dist - h.reachFt);
-    const r = Math.max(rho, Math.min(reachRho, plant.radius));
-    const top = Math.min(plant.height * 0.85, wk.heightFt * 1.12);
-    const z = Math.max(Math.min(plant.height * 0.25, top), top * (0.55 + 0.45 * this.rng()));
-    const jitter = (this.rng() - 0.5) * Math.min(1.2, plant.radius);
-    return [plant.x + ux * r - uy * jitter, plant.y + uy * r + ux * jitter, Math.max(0.5, z)];
+    const arm = wk.heightFt * 0.4;
+    const shoulderZ = wk.heightFt * 0.818;
+    const lowZ = Math.min(plant.height * 0.3, wk.heightFt * 0.55), highZ = Math.min(plant.height * 0.9, shoulderZ + arm * 0.35);
+    const z = Math.max(0.5, lowZ + (Math.max(lowZ, highZ) - lowZ) * this.rng());
+    // How far the horizontal reach can be at that height, then how deep into the canopy that allows.
+    const vertical = z - shoulderZ;
+    const horizontal = Math.sqrt(Math.max(0.04, (arm * 0.92) ** 2 - vertical * vertical));
+    const rho = Math.min(plant.radius * (0.55 + 0.35 * this.rng()), Math.max(0, dist - 0.2));
+    const r = Math.max(rho, dist - horizontal);
+    const jitter = (this.rng() - 0.5) * Math.min(0.8, plant.radius);
+    return [plant.x + ux * r - uy * jitter, plant.y + uy * r + ux * jitter, z];
   }
 
   private stepHarvest(wk: Walker, dt: number) {
@@ -1011,22 +1409,39 @@ export class LifeSim {
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
     const turn = this.cfg.people.turnRate * dt;
     wk.heading += Math.max(-turn, Math.min(turn, diff));
-    a.t += dt;
-    const len = h.pickEveryS;
-    wk.reach = Math.sin(Math.PI * Math.min(1, a.t / (0.62 * len)));
     const self = this.walkers.indexOf(wk);
-    const inAir = this.flights.filter((f) => f.walker === self).length;
-    const room = wk.basket.cap - wk.basket.items.length - inAir;
-    // The fruit comes off at the top of the reach.
-    if (!a.fired && a.t >= 0.35 * len && a.chunk > 0 && room > 0 && Math.abs(diff) < 0.6) {
-      a.fired = true;
-      a.chunk--;
-      this.flights.push({ walker: self, start: this.pickPoint(wk, plant), p: 0, color: plant.color, d: plant.diameterFt, aspect: plant.aspect });
+    const air = this.flights.filter((f) => f.walker === self);
+    const bulk = pickBulkFt3(plant, h);
+    // Room for one more pick, counting what is on its way.
+    const room = wk.basket.volume - wk.basket.used - air.reduce((t, f) => t + f.bulk, 0) - bulk + 1e-9;
+    if (!a.cycle) {
+      // Between picks: start the next, or move on once this plant is done or the basket has no room.
+      if (a.chunk > 0 && room >= 0) {
+        if (Math.abs(diff) < 0.6) {
+          a.cycle = true;
+          a.t = 0;
+          a.fired = false;
+          a.chunk--;
+          wk.aim = this.pickPoint(wk, plant);
+        }
+      } else if (air.length === 0) this.nextStop(wk);
+      return;
     }
-    if (a.t >= len) {
-      a.t -= len;
-      a.fired = false;
-      if ((a.chunk <= 0 || room <= 0) && inAir === 0) this.nextStop(wk);
+    // One pick: the hand goes out to the fruit, pulls it free (`pluckAt`), carries it to the basket and lets go (`releaseAt`),
+    // then comes back to rest. The fruit rides in the hand between the first two.
+    a.t += dt;
+    const u = Math.min(1, a.t / h.pickEveryS);
+    wk.pickU = u;
+    if (!a.fired && u >= h.pluckAt && wk.aim) {
+      a.fired = true;
+      this.flights.push({ walker: self, start: wk.aim, p: 0, color: plant.color, d: pickBallFt(plant, h), from: plant.diameterFt, bulk, aspect: plant.aspect });
+    }
+    const f = this.flights.find((q) => q.walker === self);
+    if (f) f.p = Math.min(1, Math.max(0, (u - h.pluckAt) / (h.releaseAt - h.pluckAt)));
+    if (u >= 1) {
+      a.cycle = false;
+      wk.aim = null;
+      wk.pickU = 0;
     }
   }
 
@@ -1034,8 +1449,9 @@ export class LifeSim {
   private nextStop(wk: Walker) {
     const a = wk.act, b = wk.basket;
     if (a?.kind !== 'harvest' || !b) return;
-    wk.reach = 0;
-    if (b.items.length >= Math.min(a.final, b.cap)) return this.finishHarvest(wk);
+    // As full as they wanted, or no room for another pick of the kind they were picking.
+    const here = this.world.harvest.find((q) => q.id === a.plant);
+    if (b.used >= a.final - 1e-9 || (here && b.used + pickBulkFt3(here, this.cfg.harvest) > b.volume + 1e-9)) return this.finishHarvest(wk);
     const options = this.world.harvest
       .filter((q) => !a.species.includes(q.speciesId))
       .map((q) => ({ q, d: Math.hypot(q.x - wk.x, q.y - wk.y) }))
@@ -1048,7 +1464,10 @@ export class LifeSim {
       a.stand = stand;
       a.phase = 'to';
       a.t = 0;
+      a.cycle = false;
       a.fired = false;
+      wk.aim = null;
+      wk.pickU = 0;
       a.species.push(q.speciesId);
       wk.route = route.slice(1);
       if (route.length <= 1) this.arrive(wk);
@@ -1062,7 +1481,8 @@ export class LifeSim {
     const self = this.walkers.indexOf(wk);
     this.flights = this.flights.filter((f) => f.walker !== self);
     wk.act = null;
-    wk.reach = 0;
+    wk.pickU = 0;
+    wk.aim = null;
     wk.route = [];
     wk.speed = 0;
     const doors = this.world.doors;
@@ -1085,18 +1505,18 @@ export class LifeSim {
     const self = this.walkers.indexOf(wk);
     this.flights = this.flights.filter((f) => f.walker !== self);
     wk.basket = null;
-    wk.reach = 0;
+    wk.pickU = 0;
+    wk.aim = null;
   }
 
-  /** Fruit in the air arrives in the basket. */
-  private stepFlights(dt: number) {
+  /** Fruit let go over the basket (the pick has carried it all the way) lands in it. */
+  private stepFlights(_dt: number) {
     if (this.flights.length === 0) return;
     const still: Flight[] = [];
     for (const f of this.flights) {
-      f.p += dt / this.cfg.harvest.flightS;
       const b = this.walkers[f.walker]?.basket;
       if (!b) continue;
-      if (f.p >= 1) b.items.push({ color: f.color, d: f.d, aspect: f.aspect });
+      if (f.p >= 1) { b.items.push({ color: f.color, d: f.d, aspect: f.aspect }); b.used += f.bulk; }
       else still.push(f);
     }
     this.flights = still;
@@ -1123,6 +1543,10 @@ export class LifeSim {
     }
     if (a?.kind === 'cake') this.seatTaken.delete(a.seat);
     if (a?.kind === 'harvest') this.dropBasket(wk);
+    if (a?.kind === 'meet') {
+      wk.hug = 0;
+      wk.meetCool = this.cfg.people.meet.cooldownS;
+    }
     wk.cheer = false;
     wk.lookUp = false;
     wk.act = null;
@@ -1145,6 +1569,7 @@ export class LifeSim {
     if (!a) return null;
     if (a.kind === 'watch') return a.spot;
     if (a.kind === 'harvest') return a.stand;
+    if (a.kind === 'meet') return a.spot;
     return this.findSeat(a.seat)?.approach ?? null; // a chair or a place at the cake
   }
 
@@ -1158,9 +1583,15 @@ export class LifeSim {
       a.phase = 'watch';
       return;
     }
+    if (a.kind === 'meet') {
+      a.phase = 'wait';
+      a.t = 0;
+      return;
+    }
     if (a.kind === 'harvest') {
       a.phase = 'pick';
       a.t = 0;
+      a.cycle = false;
       a.fired = false;
       a.chunk = this.chunkFor(wk);
       return;
@@ -1579,10 +2010,12 @@ export class LifeSim {
     for (const wk of this.walkers) {
       const turn = (wk.kind === 'person' ? this.cfg.people.turnRate : this.cfg.dogs.turnRate) * dt;
       if (wk.away) continue;
+      if (wk.meetCool > 0) wk.meetCool -= dt;
       if (wk.leader !== null) wk.replan -= dt;
       if (wk.act && wk.act.phase !== 'to') {
         if (wk.act.kind === 'dine') this.stepDine(wk, dt);
         else if (wk.act.kind === 'harvest') this.stepHarvest(wk, dt);
+        else if (wk.act.kind === 'meet') this.stepMeet(wk, dt);
         else if (wk.act.kind === 'cake') this.stepCake(wk);
         else this.stepWatch(wk, dt);
         continue;
@@ -1594,6 +2027,7 @@ export class LifeSim {
       if (wk.pauseLeft > 0) {
         wk.pauseLeft -= dt;
         wk.speed = 0;
+        wk.probeT = 0;
         continue;
       }
       if (wk.route.length === 0 || (wk.leader !== null && wk.replan <= 0)) {
@@ -1616,7 +2050,18 @@ export class LifeSim {
       wk.heading += Math.max(-turn, Math.min(turn, diff));
       const speed = wk.cruise * (Math.abs(diff) > 1.2 ? 0.4 : 1);
       const move = Math.min(dist, speed * dt);
-      const nx = wk.x + (dx / (dist || 1)) * move, ny = wk.y + (dy / (dist || 1)) * move;
+      let nx = wk.x + (dx / (dist || 1)) * move, ny = wk.y + (dy / (dist || 1)) * move;
+      // People keep clear of each other: step around someone in the way, or wait if there is no room.
+      if (wk.kind === 'person') {
+        const adj = this.avoid(wk, nx, ny);
+        if (!adj) {
+          wk.speed = 0;
+          this.heldUp(wk, dt);
+          continue;
+        }
+        [nx, ny] = adj;
+        wk.blockedS = 0;
+      }
       const [ci, cj] = cellOf(w, nx, ny);
       if (!w.blocked[idx(w, ci, cj)]) {
         wk.x = nx;
@@ -1626,7 +2071,8 @@ export class LifeSim {
         continue;
       }
       wk.speed = move / dt;
-      wk.gait += move * (wk.kind === 'person' ? 1.6 * (5.6 / wk.heightFt) ** 0.8 : 2.4);
+      wk.gait += move * (wk.kind === 'person' ? Math.PI / wk.stepFt : 2.4);
+      if (wk.kind === 'person') this.checkHeadway(wk, dt);
       if (dist - move < 0.25) wk.route.shift();
       if (wk.route.length === 0) {
         if (wk.act?.phase === 'to') {
@@ -1641,6 +2087,7 @@ export class LifeSim {
         wk.speed = 0;
       }
     }
+    this.separate(dt);
     this.clock += dt;
     this.stepFlights(dt);
     this.stepTables(dt);

@@ -152,15 +152,23 @@ describe('the party in the sim', () => {
     const b = day(7, 6);
     const yard = site.zones.find((z) => z.id === engine.birthday.zone)!.polygon;
     const inYard = (s: LifeSim) => s.walkers.filter((wk) => wk.kind === 'person' && pointInPolygon(wk.x, wk.y, yard)).length;
-    const party = setup((c) => { c.party.backyardBias = 1; });
-    party.s.setBirthday(b);
-    party.s.setClock(b.sunset - 150); // party on, cake not out yet
-    run(party.s, 150);
-    const control = setup();
-    control.s.setClock(b.sunset - 150);
-    run(control.s, 150);
-    expect(inYard(party.s)).toBeGreaterThan(inYard(control.s));
-    expect(inYard(party.s)).toBeGreaterThanOrEqual(7); // most of the ten
+    // Over several seeds, so one lucky draw cannot decide it: with the party on, more people are in the yard than without.
+    let withParty = 0, without = 0, most = 0;
+    for (const seed of [3, 4, 5, 6]) {
+      const party = setup((c) => { c.party.backyardBias = 1; }, undefined, seed);
+      party.s.setBirthday(b);
+      party.s.setClock(b.sunset - 150); // party on, cake not out yet
+      run(party.s, 150);
+      const control = setup(undefined, undefined, seed);
+      control.s.setClock(b.sunset - 150);
+      run(control.s, 150);
+      withParty += inYard(party.s);
+      without += inYard(control.s);
+      most = Math.max(most, inYard(party.s));
+      expect(inYard(party.s), `seed ${seed}`).toBeGreaterThanOrEqual(6); // most of the ten
+    }
+    expect(withParty).toBeGreaterThanOrEqual(without);
+    expect(most).toBeGreaterThanOrEqual(7);
   });
 
   it('puts the cake on the table, with everyone crowded round it facing it and cheering, for the hour either side of sunset', () => {

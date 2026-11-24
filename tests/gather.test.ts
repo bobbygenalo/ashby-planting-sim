@@ -155,7 +155,7 @@ describe('the evening movie', () => {
     s.setClock(13 * 60);
     run(s, 30);
     expect(s.movieOn).toBe(false);
-    expect(s.walkers.some((wk) => wk.act !== null)).toBe(false);
+    expect(s.walkers.some((wk) => wk.act?.kind === 'watch')).toBe(false); // nobody is watching a film at one in the afternoon
     const none = sim({ structures: structures.filter((st) => st.id !== 'garage') });
     expect(none.w.screen).toBeNull();
     none.s.setClock(21 * 60);

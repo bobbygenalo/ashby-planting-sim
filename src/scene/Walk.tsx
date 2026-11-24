@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useApp } from '../store/store';
 import { activeStructures } from '../engine/site';
 import { placedPlants } from '../engine/growth';
-import { buildPlayerWorld, createPlayer, eyeZ, headingToward, look, playerFits, stepPlayer, type PlayerState } from '../engine/player';
+import { buildPlayerWorld, createPlayer, dropIn, dropSpot, eyeZ, headingToward, look, stepPlayer, type PlayerState } from '../engine/player';
 import { readInput, takeLook } from './walkInput';
-
-/** Where the player was when they left the Walk view, so coming back resumes there. */
-let last: PlayerState | null = null;
+import { viewPose } from './viewPose';
 
 /** The first-person camera and the player's movement, inside the Canvas. Mounted only in the Walk view. */
 export function WalkRig({ viewId }: { viewId: string }) {
@@ -40,22 +38,24 @@ export function WalkRig({ viewId }: { viewId: string }) {
     return createPlayer(p[0], p[1], headingToward([p[0], p[1]], [t[0], t[1]]));
   }, [site, viewId]);
 
-  const state = useRef<PlayerState>(start);
-  useEffect(() => {
-    // Resume where the player left off, unless a change to the plan put them inside something.
-    const resume = last && playerFits(worldRef.current, last.x, last.y, last.z, last.onGround, cfg) ? last : start;
-    state.current = { ...resume, vx: 0, vy: 0, vz: 0, crouch: 0 };
-    return () => { last = state.current; };
-  }, [start, cfg]);
+  // Entering from another view: drop in where that view was looking, facing the way it faced, falling from a little above the
+  // ground onto the nearest open spot. With no view before it (a page opened straight into Walk), start at the street. This
+  // rig is made afresh each time the Walk view opens, so it is worked out once, here.
+  const state = useRef<PlayerState | null>(null);
+  if (state.current === null) {
+    const spot = viewPose.valid ? dropSpot(worldRef.current, viewPose.x, viewPose.y, cfg) : null;
+    state.current = spot ? dropIn(spot[0], spot[1], viewPose.heading, cfg) : start;
+  }
 
   const dir = useMemo(() => new THREE.Vector3(), []);
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
     const { dx, dy } = takeLook();
-    let s = state.current;
+    let s = state.current!;
     if (dx || dy) s = look(s, dx, dy, cfg);
     s = stepPlayer(s, readInput(), dt, worldRef.current, cfg);
     state.current = s;
+    if (import.meta.env.DEV) (window as unknown as { __walk?: PlayerState }).__walk = s; // for inspecting the player from the console
     // Site (x, y, z) is three.js (x, z, -y). The eyes are above the feet; the view faces along the heading and pitch.
     camera.position.set(s.x, eyeZ(s, cfg), -s.y);
     const cp = Math.cos(s.pitch);

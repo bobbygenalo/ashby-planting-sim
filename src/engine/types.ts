@@ -332,7 +332,28 @@ export interface PersonSpec {
   /** Age in years: under 6 follows an adult, 6 to 17 wanders on their own, 18 and over is an adult. */
   age: number;
   heightFt: number;
+  /** Placeholders until the real cast is known: they set the proportions and the hair. */
+  sex?: 'f' | 'm';
+  build?: 'slim' | 'average' | 'broad';
   speedFt: [number, number];
+}
+
+export interface MeetCfg {
+  /** The chance, when a free person chooses what to do and another is free within `rangeFt`, of going to meet them. */
+  bias: number;
+  rangeFt: number;
+  /** How far apart (feet between centers) they stand to talk, and the chance they hug when they meet. */
+  talkFt: number;
+  hugChance: number;
+  /** In a hug, bodies come to within this gap (feet), and hold it for `hugS` seconds; they close in at `hugMoveFtS`. */
+  hugFt: number;
+  hugS: [number, number];
+  hugMoveFtS: number;
+  /** How long they talk, and how long one speaks before the other takes a turn. */
+  talkS: [number, number];
+  speakerS: [number, number];
+  /** Nobody who has just met starts another meeting for this long. */
+  cooldownS: number;
 }
 
 export interface DiningCfg {
@@ -352,8 +373,8 @@ export interface DiningCfg {
   talkS: [number, number];
   /** How long one person talks before another takes over, in seconds. */
   speakerS: [number, number];
-  /** How far a seated person's hips drop below standing, in feet. */
-  sitDropFt: number;
+  /** The height of a chair's seat above the ground, in feet: a seated person's hips come to rest here, whatever their size. */
+  seatHeightFt: number;
   /** How far a chair is scooted back in once someone sits, as a share of its pull. */
   scootShare: number;
   /** The most a listener turns their head toward the speaker, in radians. */
@@ -491,22 +512,27 @@ export interface HarvestCfg {
   toMin: number;
   /** At most this many people picking at once. */
   maxPickers: number;
-  /** How many pieces a basket holds, as [least, most]; each picker brings one. */
-  capacity: [number, number];
+  /** The volumes of the baskets people bring, in cubic feet (0.3 is about 8.5 litres, 0.65 about 18); each picker brings one. How much fits is set by this and the size of the fruit. */
+  basketVolumesFt3: number[];
+  /** The share of a basket's volume that fruit fills once piled in (loose spheres pack to about 0.62). */
+  packing: number;
+  /** The most fruit a person takes in one pick, as a volume in cubic feet (about one medium apple): small fruit comes by the handful, big fruit one at a time. */
+  handfulFt3: number;
   /** How full the basket should be before they take it in, as a share of its capacity. */
   fillShare: [number, number];
-  /** How many pieces they take from one plant before they move to a different one, as [least, most]. */
+  /** How many picks they take from one plant before they move to a different one, as [least, most]. */
   chunk: [number, number];
-  /** Seconds between one piece and the next, and how long a piece takes to fly from the plant to the basket. */
+  /** Seconds for one pick, from the hand leaving rest to its return: it reaches the fruit, pulls it free at `pluckAt` of the way through, carries it to the basket and lets go at `releaseAt`, then comes back. */
   pickEveryS: number;
-  flightS: number;
+  pluckAt: number;
+  releaseAt: number;
   /** The arm reaches this far (feet) from where they stand; fruit higher than the person's reach is picked from lower down. */
   reachFt: number;
   /** They stand this far (feet) beyond the plant's canopy, and no further than `standMaxFt`. */
   standMinFt: number;
   standMaxFt: number;
-  /** A basket: radius and height in feet for a person of 5.6 ft, the wicker color, and the largest a piece of fruit looks in it. */
-  basket: { radiusFt: number; heightFt: number; color: string; itemMaxFt: number };
+  /** A basket is a flared bowl: the bottom is `flare` of the top's radius and it is `heightShare` of the top radius deep; its size comes from its volume. */
+  basket: { color: string; flare: number; heightShare: number };
 }
 
 export interface LifeCfg {
@@ -524,6 +550,16 @@ export interface LifeCfg {
   costs: { open: number; path: number; hard: number; lawn: number; gravel: number; mulch: number; bed: number };
   people: {
     max: number;
+    /** How many people there are to begin with: the first this many of the roster. */
+    defaultCount: number;
+    /** People keep this much clear space (feet, between bodies) when they pass each other, unless they are hugging. A body is `bodyRadiusShare` of the person's height in radius. Someone held up by another waits this long before choosing a new way. */
+    spaceFt: number;
+    bodyRadiusShare: number;
+    blockedReplanS: number;
+    /** Someone who has made no headway for this many seconds (held up by others, or going round in circles) gives up that errand and chooses another. */
+    giveUpS: number;
+    /** Two free people sometimes meet to talk, and sometimes hug first. */
+    meet: MeetCfg;
     pauseS: [number, number];
     pathBias: number;
     minTripFt: number;
@@ -790,6 +826,7 @@ export interface EngineConfig {
   holiday: HolidayCfg;
   vehicle: VehicleCfg;
   player: PlayerCfg;
+  anatomy: AnatomyCfg;
   foliage: FoliageCfg;
   trunk: TrunkCfg;
   /** Background colors by sun height: bright day, the glow around sunset, and night. */
@@ -1145,6 +1182,9 @@ export interface Prices {
 /** The first-person "Walk" view: a person you steer with WASD, run with Shift and jump with the space bar. */
 export interface PlayerCfg {
   eyeHeightFt: number;
+  /** Entering the Walk view from another view drops the person from this height (feet) onto the ground where that view was looking, or the nearest open ground within `dropSearchFt`. */
+  dropHeightFt: number;
+  dropSearchFt: number;
   /** Holding C crouches: the eyes drop to this height (to look into a raised bed), speed falls to this share of walking speed, and there is no running or jumping while crouched. */
   crouchEyeHeightFt: number;
   crouchSpeedShare: number;
@@ -1183,4 +1223,32 @@ export interface RaisedBedModuleCfg {
   snapFt: number;
   /** The shapes: `cells` are [column, row]. Turning and mirroring give the same shape, so only one orientation is listed. */
   shapes: { id: string; label: string; cells: [number, number][] }[];
+}
+
+/** What a person's body is made of, as shares of stature (see `engine/anatomy.ts`). */
+export interface AnatomyKey {
+  age: number;
+  /** Height of the hip joint, the ankle, and the length of the head (crown to chin), neck, upper arm, forearm, hand and foot. */
+  hipJoint: number; ankle: number; head: number; neck: number; upperArm: number; forearm: number; hand: number; foot: number;
+  /** Half the distance between the shoulder joints and between the hip joints. */
+  shoulderHalf: number; hipHalf: number;
+  /** Width and depth of the chest, waist and hips. */
+  chestW: number; chestD: number; waistW: number; waistD: number; hipW: number; hipD: number;
+}
+
+export interface AnatomyCfg {
+  note: string;
+  keys: AnatomyKey[];
+  /** Multipliers by sex for the fields they name, phasing in between the two ages in `sexFromAge`. */
+  sex: Record<'f' | 'm', Partial<Record<keyof AnatomyKey, number>>>;
+  sexFromAge: [number, number];
+  /** Width multipliers by build (chest, waist, hips and the limbs). */
+  build: Record<'slim' | 'average' | 'broad', number>;
+  /** Radii as shares of stature at each joint and the middle of each limb. */
+  radii: { thigh: number; knee: number; calf: number; ankle: number; upperArm: number; elbow: number; forearm: number; wrist: number; neck: number; footWidth: number; headWidth: number; headDepth: number };
+  /** The eyes sit this share of the head's length below its top. */
+  eyeFromTopShare: number;
+  /** The hip joint is this share of stature above the seat when sitting. */
+  seatHipAboveSeat: number;
+  gait: { froude: number; stepOverLeg: number; stepExponent: number; gravity: number; maxSwing: number; kneeFlex: number; armSwingShare: number; /** Sitting on a seat too high for the feet to reach, the thighs tilt down by up to this many radians. */ maxSitTilt: number };
 }

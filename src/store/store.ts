@@ -399,7 +399,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       shuffleOpen: false,
       growthStagesFor: null,
       setGrowthStagesFor: (id) => set({ growthStagesFor: id }),
-      lifeSettings: { people: 3, dogs: 2, bees: true },
+      lifeSettings: { people: Math.min(engine.life.people.max, engine.life.people.defaultCount), dogs: 2, bees: true },
       setLifeSettings: (patch) => set({ lifeSettings: { ...get().lifeSettings, ...patch } }),
       setShuffleOpen: (open) => set({ shuffleOpen: open }),
       measurePoints: [],

@@ -6,7 +6,6 @@ import materialsRaw from '../src/data/materials.json';
 import { distanceToPolygon, pointInPolygon } from '../src/engine/geometry';
 import { instanceSize, type PlacedPlant } from '../src/engine/growth';
 import { ADULT_AGE, buildLifeWorld, chooseHiveSpot, findRoute, hiveSpotIsGood, isInside, LifeSim, TODDLER_AGE_LIMIT, type LifeWorld, type LifeWorldInput } from '../src/engine/life';
-import { personProportions } from '../src/scene/forms';
 import { activeStructures, loadSite } from '../src/engine/site';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, SiteConfig, SpeciesLibrary } from '../src/engine/types';
 
@@ -337,14 +336,6 @@ describe('the cast of people', () => {
     expect(byAge.find((p) => p.age === 11)!.heightFt).toBeLessThan(byAge.find((p) => p.age === 14)!.heightFt);
     expect(byAge.find((p) => p.age === 14)!.heightFt).toBeLessThan(Math.min(...byAge.filter((p) => p.age >= ADULT_AGE).map((p) => p.heightFt)) + 0.5);
     expect(ages[0]).toBe(3);
-    const toddler = personProportions(3, 3), adult = personProportions(30, 5.6);
-    expect(toddler.headR * 2 / toddler.height).toBeGreaterThan(adult.headR * 2 / adult.height + 0.08); // a big head
-    expect(toddler.legH / toddler.height).toBeLessThan(adult.legH / adult.height); // short legs
-    for (const age of [3, 9, 11, 14, 30]) {
-      const f = personProportions(age, 5);
-      expect(f.legH + f.torsoH + f.headR * 2).toBeCloseTo(5, 6);
-      expect(f.torsoH).toBeGreaterThan(0);
-    }
   });
 
   it('has the toddler stay close to an adult, and the toddler walk slower than everyone else', () => {

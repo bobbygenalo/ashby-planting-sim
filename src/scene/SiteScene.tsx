@@ -1,8 +1,9 @@
 import { WalkRig } from './Walk';
+import { viewPose } from './viewPose';
 import { skyColor } from '../engine/sky';
 import { tiledSurface } from './surfaces';
 import { useEffect, useMemo } from 'react';
-import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { elementAt } from '../engine/hardscape';
 import { Html, Line, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
@@ -13,7 +14,7 @@ import { classify, type SunHoursResult } from '../engine/sunhours';
 import { localToUtc, doyToMonthDay } from '../engine/time';
 import { formatFeetInches } from '../engine/units';
 import type { ContextObjectCfg, Pt, StructureCfg } from '../engine/types';
-import { useApp } from '../store/store';
+import { appStore, useApp } from '../store/store';
 import { PlantLayer } from './Plants';
 import { CropLayer } from './Crops';
 import { HolidayLights } from './HolidayLights';
@@ -429,6 +430,44 @@ function Dimensions() {
   );
 }
 
+
+/**
+ * Remembers where the current camera is looking on the ground (the point at the middle of the view) and which way it faces,
+ * so that entering the Walk view drops the person there instead of at a fixed spot.
+ */
+function ViewPoseTracker() {
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  const up = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera }) => {
+    const st = appStore.getState();
+    if (st.site.views.find((v) => v.id === st.view)?.kind === 'walk') return;
+    const o = camera.position;
+    camera.getWorldDirection(dir);
+    // The ground under the middle of the view; with the camera level or looking up, a point a little way ahead of it.
+    let gx: number, gz: number;
+    if (dir.y < -0.05) {
+      const t = -o.y / dir.y;
+      gx = o.x + dir.x * Math.min(t, 600);
+      gz = o.z + dir.z * Math.min(t, 600);
+    } else {
+      gx = o.x + dir.x * 30;
+      gz = o.z + dir.z * 30;
+    }
+    // Which way it faces along the ground; looking straight down, the way the top of the screen points.
+    let hx = dir.x, hy = -dir.z;
+    if (Math.hypot(hx, hy) < 0.25) {
+      up.set(0, 1, 0).applyQuaternion(camera.quaternion);
+      hx = up.x;
+      hy = -up.z;
+    }
+    viewPose.valid = true;
+    viewPose.x = gx;
+    viewPose.y = -gz;
+    viewPose.heading = Math.atan2(hx, hy);
+  });
+  return null;
+}
+
 function Cameras() {
   const site = useApp((s) => s.site);
   const view = useApp((s) => s.view);
@@ -499,6 +538,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
     <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true }}>
       <Sky />
       <Cameras />
+      <ViewPoseTracker />
       <Sun target={target} />
       {/* Site coordinates: x across the lot, y toward the rear, z up. Rotating -90 deg about X maps them to three.js (x, z, -y). */}
       <group rotation={[-Math.PI / 2, 0, 0]}>

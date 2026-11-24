@@ -165,7 +165,12 @@ export function stepPlayer(s0: PlayerState, input: PlayerInput, dt: number, w: P
     s.vz -= cfg.gravityFtS2 * dt;
     s.z += s.vz * dt;
     const g2 = groundAt(w, s.x, s.y);
-    if (s.z <= g2 && s.vz <= 0) { s.z = g2; s.vz = 0; s.onGround = true; }
+    if (s.z <= g2 && s.vz <= 0) {
+      // A hard landing sends the knees down, and the person eases back up.
+      const impact = -s.vz;
+      if (impact > 13) s.crouch = Math.max(s.crouch, Math.min(1, (impact - 10) / 14)); // a hop lands softly, a fall of several feet does not
+      s.z = g2; s.vz = 0; s.onGround = true;
+    }
   }
   return s;
 }
@@ -173,4 +178,35 @@ export function stepPlayer(s0: PlayerState, input: PlayerInput, dt: number, w: P
 /** Where the eyes are above the ground: standing, lowered smoothly as the person crouches. */
 export function eyeZ(s: PlayerState, cfg: PlayerCfg): number {
   return s.z + cfg.eyeHeightFt + (cfg.crouchEyeHeightFt - cfg.eyeHeightFt) * s.crouch;
+}
+
+/**
+ * Where to land when dropped in at a spot: that spot if a person can stand there (inside the lot, clear of buildings, trunks,
+ * beds and walls), otherwise the nearest place that can be stood on, searched outward in rings of a foot, within
+ * `dropSearchFt`. Returns null when there is none.
+ */
+export function dropSpot(w: PlayerWorld, x: number, y: number, cfg: PlayerCfg): [number, number] | null {
+  const m = cfg.lotMarginFt;
+  const cx = Math.min(w.lot.width - m, Math.max(m, x)), cy = Math.min(w.lot.depth - m, Math.max(m, y));
+  if (playerFits(w, cx, cy, 0, true, cfg)) return [cx, cy];
+  const step = 1;
+  for (let r = step; r <= cfg.dropSearchFt; r += step) {
+    let best: [number, number] | null = null, bestD = Infinity;
+    const n = Math.max(8, Math.round((2 * Math.PI * r) / step));
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2;
+      const px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+      if (playerFits(w, px, py, 0, true, cfg)) {
+        const d = Math.hypot(px - x, py - y);
+        if (d < bestD) { bestD = d; best = [px, py]; }
+      }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
+/** A person falling in from above: at this height, at rest, in the air. */
+export function dropIn(x: number, y: number, heading: number, cfg: PlayerCfg): PlayerState {
+  return { ...createPlayer(x, y, heading), z: cfg.dropHeightFt, onGround: false };
 }

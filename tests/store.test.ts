@@ -1,6 +1,9 @@
+import engineRaw from '../src/data/engine.json';
 import { describe, expect, it } from 'vitest';
 import { makeCustomSpecies } from '../src/engine/library';
 import { makeAppStore } from '../src/store/store';
+
+const engine = engineRaw as unknown as { life: { people: { defaultCount: number } } };
 
 describe('view mode', () => {
   it('blocks plan mutations at the store level but allows viewing controls', () => {
@@ -485,13 +488,14 @@ describe('hardscape persistence, color and duplicate', () => {
 });
 
 describe('the life layer defaults', () => {
-  it('starts with people, dogs, the hive and the bees all on', () => {
+  it('starts with at least eight people, two dogs, the hive and the bees all on', () => {
     const s = makeAppStore('edit');
     expect(s.getState().layers.life).toBe(true);
-    expect(s.getState().lifeSettings).toEqual({ people: 3, dogs: 2, bees: true });
+    expect(s.getState().lifeSettings).toEqual({ people: engine.life.people.defaultCount, dogs: 2, bees: true });
     s.getState().setLifeSettings({ bees: false });
     expect(s.getState().lifeSettings.bees).toBe(false);
-    expect(s.getState().lifeSettings.people).toBe(3);
+    expect(s.getState().lifeSettings.people).toBeGreaterThanOrEqual(8);
+    expect(engine.life.people.defaultCount).toBeGreaterThanOrEqual(8);
   });
 });
 

@@ -4,7 +4,7 @@ import engineRaw from '../src/data/engine.json';
 import materialsRaw from '../src/data/materials.json';
 import speciesRaw from '../src/data/species.json';
 import { instanceSize, type PlacedPlant } from '../src/engine/growth';
-import { buildLifeWorld, isInside, LifeSim } from '../src/engine/life';
+import { basketDims, basketPicks, buildLifeWorld, isInside, LifeSim, pickBallFt, pickBulkFt3, pickVolumeFt3 } from '../src/engine/life';
 import { activeStructures, loadSite } from '../src/engine/site';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, SpeciesLibrary } from '../src/engine/types';
 
@@ -84,7 +84,7 @@ describe('picking into a basket', () => {
       s.walkers.forEach((wk, i) => {
         if (!wk.basket) return;
         maxItems = Math.max(maxItems, wk.basket.items.length);
-        if (wk.basket.items.length > wk.basket.cap) over++;
+        if (wk.basket.used > wk.basket.volume + 1e-9) over++;
         for (const it of wk.basket.items) expect(colors.has(it.color)).toBe(true);
         const hist = counts.get(i) ?? [];
         if (hist[hist.length - 1] !== wk.basket.items.length) hist.push(wk.basket.items.length);
@@ -98,23 +98,33 @@ describe('picking into a basket', () => {
     for (const hist of counts.values()) for (let k = 1; k < hist.length; k++) if (hist[k] > hist[k - 1]) expect(hist[k] - hist[k - 1]).toBe(1);
   });
 
-  it('flies a piece through the air for the configured time before it lands in the basket', () => {
+  it('carries each piece in the hand: it is taken at the fruit, then travels over the basket, in step with the hand', () => {
     const { s, cfg } = sim();
-    let seen = 0;
+    let seen = 0, rose = 0;
+    const lastP = new Map<number, number>();
     run(s, 80, () => {
       for (const f of s.flights) {
         seen++;
         expect(f.p).toBeGreaterThanOrEqual(0);
         expect(f.p).toBeLessThan(1);
         expect(f.start[2]).toBeGreaterThan(0.4);
+        const wk = s.walkers[f.walker];
+        // the fruit is in the hand only from the pluck to the release
+        expect(wk.pickU).toBeGreaterThanOrEqual(cfg.harvest.pluckAt - 1e-9);
+        expect(wk.pickU).toBeLessThanOrEqual(cfg.harvest.releaseAt + 1e-9);
+        const prev = lastP.get(f.walker);
+        if (prev !== undefined && f.p > prev) rose++;
+        lastP.set(f.walker, f.p);
       }
     });
     expect(seen).toBeGreaterThan(0);
-    expect(cfg.harvest.flightS).toBeGreaterThan(0.2);
+    expect(rose).toBeGreaterThan(5); // it moves steadily toward the basket
+    expect(cfg.harvest.pluckAt).toBeLessThan(cfg.harvest.releaseAt);
+    expect(cfg.harvest.pickEveryS).toBeGreaterThan(2); // a reach, a pull and a carry take a few seconds, not a pump
   });
 
   it('moves a picker on to a different kind of fruit before the basket is full, then takes the basket in', () => {
-    const { s } = sim({ tweak: (c) => { c.harvest.chunk = [3, 4]; c.harvest.capacity = [18, 20]; c.harvest.fillShare = [1, 1]; } });
+    const { s } = sim({ tweak: (c) => { c.harvest.chunk = [3, 4]; c.harvest.basketVolumesFt3 = [0.65]; c.harvest.fillShare = [1, 1]; } });
     const kinds = new Map<number, Set<string>>();
     let carrying = 0, wentIn = 0, emptyAfter = 0;
     const was = new Map<number, boolean>();
@@ -140,16 +150,28 @@ describe('picking into a basket', () => {
     expect(finals.size).toBeGreaterThan(3);
   });
 
-  it('shows the arm reaching up while picking, and not at other times', () => {
-    const { s } = sim();
-    let up = 0;
-    run(s, 100, () => {
-      for (const wk of s.walkers) {
-        if (wk.reach > 0.6) { up++; expect(wk.act?.kind).toBe('harvest'); }
-        if (!wk.act) expect(wk.reach).toBe(0);
-      }
+  it('picks in stages: the hand goes out to a fruit within arm\'s reach, and a pick runs from rest to rest', () => {
+    const { s, cfg } = sim();
+    let aimed = 0, starts = 0, ends = 0, wasU = new Map<number, number>();
+    run(s, 120, () => {
+      s.walkers.forEach((wk, i) => {
+        if (wk.aim) {
+          aimed++;
+          expect(wk.act?.kind).toBe('harvest');
+          // the fruit is within an arm's stretch of the shoulder (about 0.4 of height)
+          const d = Math.hypot(wk.aim[0] - wk.x, wk.aim[1] - wk.y, wk.aim[2] - wk.heightFt * 0.818);
+          expect(d, `reach ${d.toFixed(2)} ft`).toBeLessThan(wk.heightFt * 0.4 + 0.15);
+        } else expect(wk.pickU).toBe(0);
+        const prev = wasU.get(i) ?? 0;
+        if (prev === 0 && wk.pickU > 0) starts++;
+        if (prev > 0 && wk.pickU === 0) ends++;
+        wasU.set(i, wk.pickU);
+      });
     });
-    expect(up).toBeGreaterThan(10);
+    expect(aimed).toBeGreaterThan(30);
+    expect(starts).toBeGreaterThan(3);
+    expect(ends).toBeGreaterThanOrEqual(starts - 3);
+    void cfg;
   });
 });
 
@@ -197,5 +219,71 @@ describe('who picks, and when', () => {
     const a = sim({ seed: 11 }), b = sim({ seed: 11 });
     run(a.s, 60); run(b.s, 60);
     expect(a.s.walkers.map((w) => [w.x.toFixed(3), w.y.toFixed(3), w.basket?.items.length ?? -1])).toEqual(b.s.walkers.map((w) => [w.x.toFixed(3), w.y.toFixed(3), w.basket?.items.length ?? -1]));
+  });
+});
+
+describe('how much a basket holds', () => {
+  const cfg = engine.life.harvest;
+  const nov = world(placed(ORCHARD), 11);
+  const by = (id: string) => nov.harvest.find((h) => h.speciesId === id)!;
+
+  it('sizes a basket from its volume, and holds the volume it was given', () => {
+    for (const v of cfg.basketVolumesFt3) {
+      const d = basketDims(v, cfg);
+      expect(d.bottom).toBeCloseTo(d.top * cfg.basket.flare, 9);
+      expect(d.depth).toBeCloseTo(d.top * cfg.basket.heightShare, 9);
+      const frustum = (Math.PI * d.depth / 3) * (d.top ** 2 + d.top * d.bottom + d.bottom ** 2);
+      expect(frustum).toBeCloseTo(v, 9);
+    }
+    expect(basketDims(0.65, cfg).top).toBeGreaterThan(basketDims(0.3, cfg).top);
+    expect(basketDims(0.45, cfg).top * 2).toBeGreaterThan(0.8); // a sensible size: well over half a foot across
+    expect(basketDims(0.45, cfg).top * 2).toBeLessThan(1.8);
+  });
+
+  it('fits fewer big fruit than small: an apple takes a whole pick, kumquats come by the handful', () => {
+    const apple = by('malus-mutsu'), kumquat = by('citrus-kumquat');
+    expect(pickVolumeFt3(apple, cfg)).toBeGreaterThan(pickVolumeFt3(kumquat, cfg) * 0.99); // never less than a handful
+    expect(pickVolumeFt3(kumquat, cfg)).toBeCloseTo(cfg.handfulFt3, 9); // a small fruit: a handful
+    expect(pickBallFt(apple, cfg)).toBeGreaterThanOrEqual(pickBallFt(kumquat, cfg));
+    expect(pickBulkFt3(apple, cfg)).toBeCloseTo(pickVolumeFt3(apple, cfg) / cfg.packing, 9);
+  });
+
+  it('holds twice the picks in twice the volume, and never more than the volume allows', () => {
+    const apple = by('malus-mutsu');
+    const small = basketPicks(0.3, apple, cfg), big = basketPicks(0.6, apple, cfg);
+    expect(big).toBeGreaterThanOrEqual(small * 2 - 1);
+    expect(big).toBeLessThanOrEqual(small * 2 + 1);
+    for (const v of cfg.basketVolumesFt3) expect(basketPicks(v, apple, cfg) * pickBulkFt3(apple, cfg)).toBeLessThanOrEqual(v + 1e-9);
+    expect(basketPicks(0.3, apple, cfg)).toBeGreaterThan(8);
+    expect(basketPicks(0.65, by('citrus-kumquat'), cfg)).toBeLessThan(120); // a drawable number of balls
+  });
+
+  it('stops a picker when the basket is full, with what is in it matching the volume used', () => {
+    const { s, cfg: c } = sim({ tweak: (q) => { q.harvest.basketVolumesFt3 = [0.3]; q.harvest.fillShare = [1, 1]; q.harvest.chunk = [20, 20]; } });
+    let most = 0, usedMax = 0;
+    run(s, 300, () => {
+      for (const wk of s.walkers) {
+        if (!wk.basket) continue;
+        expect(wk.basket.volume).toBeCloseTo(0.3, 9);
+        expect(wk.basket.used).toBeLessThanOrEqual(0.3 + 1e-9);
+        most = Math.max(most, wk.basket.items.length);
+        usedMax = Math.max(usedMax, wk.basket.used);
+      }
+    });
+    expect(most).toBeGreaterThan(5);
+    expect(usedMax).toBeGreaterThan(0.3 - 0.02); // filled right to the brim, within one pick of full
+    void c;
+  });
+
+  it('fills a basket in step with the fruit: used volume is the sum of its picks', () => {
+    const { s, w } = sim();
+    run(s, 120, () => {
+      for (const wk of s.walkers) {
+        if (!wk.basket || wk.basket.items.length === 0) continue;
+        const plantFor = (color: string) => w.harvest.find((h) => h.color === color)!;
+        const total = wk.basket.items.reduce((t, it) => t + pickBulkFt3(plantFor(it.color), cfg), 0);
+        expect(wk.basket.used).toBeCloseTo(total, 6);
+      }
+    });
   });
 });

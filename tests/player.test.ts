@@ -3,7 +3,7 @@ import engineRaw from '../src/data/engine.json';
 import siteRaw from '../src/data/site.json';
 import materialsRaw from '../src/data/materials.json';
 import { activeStructures, loadSite } from '../src/engine/site';
-import { NO_INPUT, buildPlayerWorld, createPlayer, eyeZ, groundAt, headingToward, look, playerFits, stepPlayer, type PlayerInput, type PlayerState, type PlayerWorld } from '../src/engine/player';
+import { NO_INPUT, buildPlayerWorld, createPlayer, dropIn, dropSpot, eyeZ, groundAt, headingToward, look, playerFits, stepPlayer, type PlayerInput, type PlayerState, type PlayerWorld } from '../src/engine/player';
 import type { EngineConfig, HardscapeElement, Material } from '../src/engine/types';
 
 const engine = engineRaw as unknown as EngineConfig;
@@ -219,5 +219,74 @@ describe('crouching', () => {
     bedWorld.blocks.push(box(20, 20, 40, 40, 0.5));
     const on = run(createPlayer(30, 30, 0), { crouch: true }, 1, bedWorld);
     expect(eyeZ(on, cfg)).toBeCloseTo(on.z + cfg.crouchEyeHeightFt, 9);
+  });
+});
+
+describe('dropping in', () => {
+  const lotWorld = (): PlayerWorld => ({ lot: { width: 50, depth: 150 }, blocks: [], posts: [] });
+
+  it('lands on the very spot when it is open ground, and clamps a spot off the lot to just inside it', () => {
+    const w = lotWorld();
+    expect(dropSpot(w, 20, 70, cfg)).toEqual([20, 70]);
+    const edge = dropSpot(w, -30, 70, cfg)!;
+    expect(edge[0]).toBeCloseTo(cfg.lotMarginFt, 9);
+    expect(edge[1]).toBe(70);
+  });
+
+  it('moves a drop onto a roof, a wall, a bed or a trunk to the nearest open ground, and no further than it must', () => {
+    const w = lotWorld();
+    w.blocks.push(box(10, 50, 40, 90, 14)); // a building
+    w.blocks.push(box(2, 100, 8, 106, 1.5)); // a raised bed
+    w.posts.push({ x: 25, y: 120, r: 0.8, top: 20 });
+    const onRoof = dropSpot(w, 25, 70, cfg)!;
+    expect(playerFits(w, onRoof[0], onRoof[1], 0, true, cfg)).toBe(true);
+    // the middle of a 40 by 30 ft building is 15 ft from its nearest edge: about that far, not across the lot
+    expect(Math.hypot(onRoof[0] - 25, onRoof[1] - 70)).toBeGreaterThan(14);
+    expect(Math.hypot(onRoof[0] - 25, onRoof[1] - 70)).toBeLessThan(17.5);
+    const onBed = dropSpot(w, 5, 103, cfg)!;
+    expect(playerFits(w, onBed[0], onBed[1], 0, true, cfg)).toBe(true);
+    expect(Math.hypot(onBed[0] - 5, onBed[1] - 103)).toBeLessThan(5);
+    const atTrunk = dropSpot(w, 25, 120, cfg)!;
+    expect(Math.hypot(atTrunk[0] - 25, atTrunk[1] - 120)).toBeGreaterThanOrEqual(0.8 + cfg.radiusFt - 1e-6);
+  });
+
+  it('gives up with nothing when there is no open ground within the search distance', () => {
+    const w = lotWorld();
+    w.blocks.push(box(0, 0, 50, 150, 14));
+    expect(dropSpot(w, 25, 70, cfg)).toBeNull();
+  });
+
+  it('falls from the set height, lands on the ground in about a second, and dips at the knees on landing before standing up', () => {
+    const w = lotWorld();
+    let s = dropIn(25, 70, 0, cfg);
+    expect(s.z).toBe(cfg.dropHeightFt);
+    expect(s.onGround).toBe(false);
+    let t = 0, landedAt = -1, deepest = 0;
+    for (; t < 3; t += 1 / 60) {
+      s = stepPlayer(s, NO_INPUT, 1 / 60, w, cfg);
+      if (s.onGround && landedAt < 0) landedAt = t;
+      if (landedAt >= 0) deepest = Math.max(deepest, s.crouch);
+    }
+    expect(landedAt).toBeGreaterThan(0.8);
+    expect(landedAt).toBeLessThan(1.1); // sqrt(2 * 14 / 32.2) is about 0.93 s
+    expect(s.z).toBe(0);
+    expect(deepest).toBeGreaterThan(0.4); // a dip on landing
+    expect(s.crouch).toBe(0); // and back on their feet
+  });
+
+  it('keeps a soft hop from making any dip', () => {
+    const w = lotWorld();
+    let s = stepPlayer(createPlayer(25, 70, 0), { ...NO_INPUT, jump: true }, 1 / 60, w, cfg);
+    let deepest = 0;
+    for (let i = 0; i < 90; i++) { s = stepPlayer(s, NO_INPUT, 1 / 60, w, cfg); deepest = Math.max(deepest, s.crouch); }
+    expect(deepest).toBe(0);
+  });
+
+  it('lands on top of a raised bed when dropped over one in the air, and not inside a wall', () => {
+    const w = lotWorld();
+    w.blocks.push(box(20, 60, 30, 70, 1.5));
+    let s = dropIn(25, 65, 0, cfg);
+    for (let i = 0; i < 120; i++) s = stepPlayer(s, NO_INPUT, 1 / 60, w, cfg);
+    expect(s.z).toBeCloseTo(1.5, 6);
   });
 });

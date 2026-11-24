@@ -52,13 +52,14 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
     const female = who?.sex === 'f';
     const skin = SKIN[(variant >> 4) % SKIN.length];
     return {
-      shirt: SHIRTS[variant % SHIRTS.length], pants: PANTS[(variant >> 2) % PANTS.length], skin,
-      hair: HAIR[(variant >> 6) % HAIR.length], shoe: SHOES[(variant >> 3) % SHOES.length],
+      // The family's shirt color, and gray hair where the cast has it; otherwise left to the person's own variant.
+      shirt: who?.shirt ?? SHIRTS[variant % SHIRTS.length], pants: PANTS[(variant >> 2) % PANTS.length], skin,
+      hair: who?.hair ?? HAIR[(variant >> 6) % HAIR.length], shoe: SHOES[(variant >> 3) % SHOES.length],
       // Shorts leave the shins bare on about one person in four; some women have long hair.
       shorts: (variant >> 5) % 8 === 0 && b.height > 3.5,
       longHair: female && (variant >> 7) % 3 !== 0 && b.height > 3.5,
     };
-  }, [variant, who?.sex, b.height]);
+  }, [variant, who?.sex, who?.shirt, who?.hair, b.height]);
   const mats = useMemo(() => ({
     skin: new THREE.MeshStandardMaterial({ color: look.skin, roughness: 0.8 }),
     shirt: new THREE.MeshStandardMaterial({ color: look.shirt, roughness: 0.9 }),

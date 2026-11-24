@@ -463,7 +463,10 @@
           ]
         }
       ]
-    }
+    },
+    "groundLiftFt": 0.03,
+    "layerStepFt": 0.012,
+    "overlayGapFt": 0.02
   },
   "conflicts": {
     "overlapToleranceFt": 1.0,
@@ -906,7 +909,9 @@
             3.6
           ],
           "sex": "f",
-          "build": "average"
+          "build": "average",
+          "family": "green",
+          "shirt": "#2f9e44"
         },
         {
           "age": 30,
@@ -916,7 +921,9 @@
             3.6
           ],
           "sex": "m",
-          "build": "average"
+          "build": "average",
+          "family": "green",
+          "shirt": "#2f9e44"
         },
         {
           "age": 9,
@@ -926,7 +933,9 @@
             4.4
           ],
           "sex": "f",
-          "build": "average"
+          "build": "average",
+          "family": "green",
+          "shirt": "#2f9e44"
         },
         {
           "age": 30,
@@ -936,7 +945,9 @@
             3.6
           ],
           "sex": "f",
-          "build": "slim"
+          "build": "slim",
+          "family": "blue",
+          "shirt": "#2f6fd1"
         },
         {
           "age": 3,
@@ -946,17 +957,22 @@
             2.2
           ],
           "sex": "m",
-          "build": "average"
+          "build": "average",
+          "family": "blue",
+          "shirt": "#2f6fd1"
         },
         {
-          "age": 30,
+          "age": 62,
           "heightFt": 5.7,
           "speedFt": [
-            2.6,
-            3.6
+            2.2,
+            3.0
           ],
           "sex": "m",
-          "build": "average"
+          "build": "average",
+          "family": "purple",
+          "shirt": "#8e44ad",
+          "hair": "#a9a9ae"
         },
         {
           "age": 11,
@@ -966,7 +982,9 @@
             4.2
           ],
           "sex": "f",
-          "build": "average"
+          "build": "average",
+          "family": "green",
+          "shirt": "#2f9e44"
         },
         {
           "age": 30,
@@ -976,7 +994,9 @@
             3.6
           ],
           "sex": "m",
-          "build": "broad"
+          "build": "broad",
+          "family": "blue",
+          "shirt": "#2f6fd1"
         },
         {
           "age": 14,
@@ -986,17 +1006,22 @@
             3.8
           ],
           "sex": "m",
-          "build": "average"
+          "build": "average",
+          "family": "green",
+          "shirt": "#2f9e44"
         },
         {
-          "age": 30,
+          "age": 62,
           "heightFt": 5.4,
           "speedFt": [
-            2.6,
-            3.6
+            2.2,
+            3.0
           ],
           "sex": "f",
-          "build": "average"
+          "build": "average",
+          "family": "purple",
+          "shirt": "#8e44ad",
+          "hair": "#a9a9ae"
         },
         {
           "age": 9,
@@ -1006,27 +1031,35 @@
             4.4
           ],
           "sex": "m",
-          "build": "average"
+          "build": "average",
+          "family": "red",
+          "shirt": "#d63a2f"
         },
         {
-          "age": 30,
+          "age": 62,
           "heightFt": 5.6,
           "speedFt": [
-            2.6,
-            3.6
+            2.2,
+            3.0
           ],
           "sex": "f",
-          "build": "average"
+          "build": "average",
+          "family": "yellow",
+          "shirt": "#f2c230",
+          "hair": "#a9a9ae"
         },
         {
-          "age": 30,
+          "age": 62,
           "heightFt": 5.8,
           "speedFt": [
-            2.6,
-            3.6
+            2.2,
+            3.0
           ],
           "sex": "m",
-          "build": "average"
+          "build": "average",
+          "family": "yellow",
+          "shirt": "#f2c230",
+          "hair": "#a9a9ae"
         },
         {
           "age": 30,
@@ -1036,7 +1069,9 @@
             3.6
           ],
           "sex": "f",
-          "build": "slim"
+          "build": "slim",
+          "family": "red",
+          "shirt": "#d63a2f"
         },
         {
           "age": 30,
@@ -1045,8 +1080,10 @@
             2.6,
             3.6
           ],
-          "sex": "f",
-          "build": "broad"
+          "sex": "m",
+          "build": "broad",
+          "family": "red",
+          "shirt": "#d63a2f"
         }
       ],
       "toddlerFollowFt": [

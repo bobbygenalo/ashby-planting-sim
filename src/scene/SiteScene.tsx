@@ -1,5 +1,7 @@
 import { WalkRig } from './Walk';
+import { driftOffset } from '../engine/drift';
 import { viewPose } from './viewPose';
+import { depthBias, useOverlayBase } from './overlay';
 import { skyColor } from '../engine/sky';
 import { tiledSurface } from './surfaces';
 import { useEffect, useMemo } from 'react';
@@ -28,7 +30,7 @@ function shapeOf(poly: Pt[]) {
   return new THREE.Shape(poly.map(([x, y]) => new THREE.Vector2(x, y)));
 }
 
-function StructureMesh({ s }: { s: StructureCfg }) {
+function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
   const walls = useMemo(
     () => new THREE.ExtrudeGeometry(shapeOf(s.footprint), { depth: s.eaveHeight, bevelEnabled: false }),
     [s],
@@ -38,15 +40,17 @@ function StructureMesh({ s }: { s: StructureCfg }) {
   const proposed = s.status === 'proposed';
   return (
     <group>
+      {/* Where parts of a building meet, their faces can lie in one plane (a fin's roof and the slab above it): a roof wins over a
+          wall, a slab over a roof, and a later part over an earlier one, by a hair of depth, so the same one is always seen. */}
       <mesh geometry={walls} castShadow receiveShadow>
-        <meshStandardMaterial color={proposed ? '#cdd8e6' : '#e9e3d6'} roughness={0.9} />
+        <meshStandardMaterial color={proposed ? '#cdd8e6' : '#e9e3d6'} roughness={0.9} {...depthBias(0, rank)} />
       </mesh>
       <mesh geometry={roof} castShadow receiveShadow>
-        <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} />
+        <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} {...depthBias(1, rank)} />
       </mesh>
       {slab && (
         <mesh geometry={slab} castShadow receiveShadow>
-          <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} />
+          <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} {...depthBias(2, rank)} />
         </mesh>
       )}
     </group>
@@ -151,6 +155,7 @@ const CLASS_RGBA: [number, number, number, number][] = [
 ];
 
 function SunOverlay({ result }: { result: SunHoursResult }) {
+  const base = useOverlayBase();
   const classes = useApp((s) => s.engine.sun.classes);
   const texture = useMemo(() => {
     const data = new Uint8Array(result.nx * result.ny * 4);
@@ -168,7 +173,7 @@ function SunOverlay({ result }: { result: SunHoursResult }) {
   const w = result.nx * result.cellSize;
   const h = result.ny * result.cellSize;
   return (
-    <mesh position={[w / 2, h / 2, 0.08]} renderOrder={2}>
+    <mesh position={[w / 2, h / 2, base + 0.01]} renderOrder={2}>
       <planeGeometry args={[w, h]} />
       <meshBasicMaterial map={texture} transparent depthWrite={false} />
     </mesh>
@@ -223,6 +228,7 @@ function Sun({ target }: { target: THREE.Object3D }) {
 
 function Ground() {
   const site = useApp((s) => s.site);
+  const lotZ = useOverlayBase() + 0.02;
   const snap = useApp((s) => s.snap);
   const measureActive = useApp((s) => s.measureActive);
   const addMeasurePoint = useApp((s) => s.addMeasurePoint);
@@ -335,7 +341,7 @@ function Ground() {
         <meshStandardMaterial color="#a9b98f" map={groundTex} bumpMap={groundTex} bumpScale={0.6} roughness={1} />
       </mesh>
       <Line
-        points={[[0, 0, 0.1], [width, 0, 0.1], [width, depth, 0.1], [0, depth, 0.1], [0, 0, 0.1]]}
+        points={[[0, 0, lotZ], [width, 0, lotZ], [width, depth, lotZ], [0, depth, lotZ], [0, 0, lotZ]]}
         color="#222"
         lineWidth={2}
       />
@@ -345,15 +351,16 @@ function Ground() {
 
 function Setbacks() {
   const site = useApp((s) => s.site);
+  const zLine = useOverlayBase() + 0.03;
   const { width: w, depth: d } = site.lot;
   return (
     <>
       {site.setbacks.map((sb) => {
         const pts: [number, number, number][] =
-          sb.edge === 'left' ? [[sb.distance, 0, 0.12], [sb.distance, d, 0.12]]
-          : sb.edge === 'right' ? [[w - sb.distance, 0, 0.12], [w - sb.distance, d, 0.12]]
-          : sb.edge === 'rear' ? [[0, d - sb.distance, 0.12], [w, d - sb.distance, 0.12]]
-          : [[0, sb.distance, 0.12], [w, sb.distance, 0.12]];
+          sb.edge === 'left' ? [[sb.distance, 0, zLine], [sb.distance, d, zLine]]
+          : sb.edge === 'right' ? [[w - sb.distance, 0, zLine], [w - sb.distance, d, zLine]]
+          : sb.edge === 'rear' ? [[0, d - sb.distance, zLine], [w, d - sb.distance, zLine]]
+          : [[0, sb.distance, zLine], [w, sb.distance, zLine]];
         return <Line key={sb.id} points={pts} color="#c0392b" lineWidth={1.5} dashed dashSize={2} gapSize={1.5} />;
       })}
     </>
@@ -441,6 +448,7 @@ function ViewPoseTracker() {
   useFrame(({ camera }) => {
     const st = appStore.getState();
     if (st.site.views.find((v) => v.id === st.view)?.kind === 'walk') return;
+    if (import.meta.env.DEV) (window as unknown as { __cam?: THREE.Camera }).__cam = camera; // for inspecting the camera from the console
     const o = camera.position;
     camera.getWorldDirection(dir);
     // The ground under the middle of the view; with the camera level or looking up, a point a little way ahead of it.
@@ -464,6 +472,36 @@ function ViewPoseTracker() {
     viewPose.x = gx;
     viewPose.y = -gz;
     viewPose.heading = Math.atan2(hx, hy);
+  });
+  return null;
+}
+
+/**
+ * Slowly circles the camera round the property, counter-clockwise seen from above, for a view that has `drift`. It stops while
+ * the viewer has hold of the view (and for `resumeS` seconds after), while anything is selected, in hand to place, being
+ * dragged or measured, when the layer is off, and for anyone who has asked their system for less motion.
+ */
+function Drift({ degPerSecond, resumeS }: { degPerSecond: number; resumeS: number }) {
+  const controls = useThree((st) => st.controls) as unknown as (THREE.EventDispatcher & { target: THREE.Vector3; update: () => void }) | null;
+  const enabled = useApp((s) => s.layers.drift);
+  const busy = useApp((s) => !!(s.selectedId || s.selectedElementId || s.hiveSelected || s.placingSpeciesId || s.drawing || s.hsDrag || s.dragId || s.measureActive || s.quickFindOpen));
+  const held = useMemo(() => ({ down: false, last: -1e9 }), []);
+  const calm = useMemo(() => (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) || false, []);
+  useEffect(() => {
+    if (!controls) return;
+    const start = () => { held.down = true; };
+    const end = () => { held.down = false; held.last = performance.now(); };
+    controls.addEventListener('start' as never, start);
+    controls.addEventListener('end' as never, end);
+    return () => { controls.removeEventListener('start' as never, start); controls.removeEventListener('end' as never, end); };
+  }, [controls, held]);
+  useFrame(({ camera }, dt) => {
+    if (!controls || !enabled || busy || calm || held.down || performance.now() - held.last < resumeS * 1000) return;
+    const t = controls.target;
+    const o = driftOffset(camera.position.x - t.x, camera.position.z - t.z, degPerSecond, Math.min(dt, 0.1));
+    camera.position.x = t.x + o.x;
+    camera.position.z = t.z + o.z;
+    controls.update();
   });
   return null;
 }
@@ -521,8 +559,9 @@ function Cameras() {
   const tgt = SITE_TO_THREE(...(cfg.target ?? [cx, cy, 0]));
   return (
     <>
-      <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={48} near={0.5} far={2000} position={pos} />
+      <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={48} near={1} far={1500} position={pos} />
       <OrbitControls key={`ctl-${cfg.id}`} makeDefault enableDamping={false} target={tgt} maxPolarAngle={Math.PI / 2 - 0.02} />
+      {cfg.drift && <Drift key={`drift-${cfg.id}`} degPerSecond={cfg.drift.degPerSecond} resumeS={cfg.drift.resumeS} />}
     </>
   );
 }
@@ -532,6 +571,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
   const aduEnabled = useApp((s) => s.aduEnabled);
   const layers = useApp((s) => s.layers);
   const target = useMemo(() => new THREE.Object3D(), []);
+  const overlayBase = useOverlayBase();
   const structures = activeStructures(site, { aduEnabled });
 
   return (
@@ -544,10 +584,10 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
       <group rotation={[-Math.PI / 2, 0, 0]}>
         <Ground />
         {layers.easements &&
-          site.easements.map((e) => <FlatPoly key={e.id} poly={e.polygon} z={0.06} color="#f59e0b" opacity={0.55} />)}
+          site.easements.map((e) => <FlatPoly key={e.id} poly={e.polygon} z={overlayBase} color="#f59e0b" opacity={0.55} />)}
         {layers.setbacks && <Setbacks />}
-        {structures.map((s) => (
-          <StructureMesh key={s.id} s={s} />
+        {structures.map((s, i) => (
+          <StructureMesh key={s.id} s={s} rank={i} />
         ))}
         {layers.context &&
           site.contextObjects.map((o) =>

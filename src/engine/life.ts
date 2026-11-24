@@ -652,9 +652,12 @@ export interface Walker {
   act: Act | null;
   /** How far down into a chair they are, 0 standing to 1 seated. */
   sit: number;
-  /** From the roster, for the body: sex and build. */
+  /** From the roster, for the body and the clothes: sex, build, family, shirt and hair color. */
   sex?: 'f' | 'm';
   build?: 'slim' | 'average' | 'broad';
+  family?: string;
+  shirt?: string;
+  hair?: string;
   /** How long a step is at their walking speed, in feet: the legs swing to match how far they travel. */
   stepFt: number;
   /** A basket in hand while picking fruit, and on the walk indoors with it. */
@@ -792,6 +795,9 @@ export class LifeSim {
       if (spec) {
         made.sex = spec.sex;
         made.build = spec.build;
+        made.family = spec.family;
+        made.shirt = spec.shirt;
+        made.hair = spec.hair;
         made.stepFt = stepLengthFt(bodyOf(spec.age, spec.heightFt, this.anatomy, spec.sex, spec.build), made.cruise, this.anatomy);
       }
     }

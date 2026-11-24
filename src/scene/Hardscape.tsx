@@ -3,7 +3,7 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { polygonArea } from '../engine/geometry';
-import { elementColor, footprint, snapAnchors, snapPoint, type SnapResult } from '../engine/hardscape';
+import { elementColor, footprint, layeredThickness, snapAnchors, snapPoint, type SnapResult } from '../engine/hardscape';
 import { activeStructures } from '../engine/site';
 import { formatFeetInches } from '../engine/units';
 import type { HardscapeElement, Material, Pt } from '../engine/types';
@@ -35,7 +35,7 @@ export function useSnapper(excludeId?: string) {
   return (p: Pt): SnapResult => snapPoint(p, snap, anchors, engine.hardscape.snapToleranceFt);
 }
 
-function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | undefined; z: number }) {
+function ElementMesh({ el, mat, z, flatThick }: { el: HardscapeElement; mat: Material | undefined; z: number; flatThick?: number }) {
   const cfg = useApp((s) => s.engine.hardscape);
   const selectedId = useApp((s) => s.selectedElementId);
   const tool = useApp((s) => s.drawing || s.placingSpeciesId || s.measureActive);
@@ -47,7 +47,7 @@ function ElementMesh({ el, mat, z }: { el: HardscapeElement; mat: Material | und
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
   const poly = useMemo(() => footprint(el, cfg), [el, cfg]);
   // Flat surfaces stand a little proud of the ground, so a patio or a path shows an edge; walls, fences and decks are as tall as drawn.
-  const thick = el.height > 0 ? el.height : cfg.surfaceThicknessFt[el.type] ?? 0.03;
+  const thick = el.height > 0 ? el.height : flatThick ?? cfg.surfaceThicknessFt[el.type] ?? 0.03;
   const geo = useMemo(() => {
     const shape = new THREE.Shape(poly.map(([x, y]) => new THREE.Vector2(x, y)));
     return new THREE.ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false });
@@ -298,6 +298,7 @@ export function HardscapeLayer() {
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
   const byId = useMemo(() => new Map(materials.map((m) => [m.id, m])), [materials]);
   const selected = hardscape.find((e) => e.id === selectedId);
+  const flatThick = useMemo(() => layeredThickness(hardscape, cfg), [hardscape, cfg]);
 
   // End a drag wherever the pointer is released, and give the camera back.
   useEffect(() => {
@@ -315,7 +316,8 @@ export function HardscapeLayer() {
   return (
     <group>
       {hardscape.map((el) => (
-        <ElementMesh key={el.id} el={el} mat={byId.get(el.materialId)} z={0.03 + Math.max(0, cfg.drawOrder.indexOf(el.type)) * 0.006} />
+        // Flat surfaces start at the same lift and take their thickness from `layeredThickness`, so overlapping ones never share a depth.
+        <ElementMesh key={el.id} el={el} mat={byId.get(el.materialId)} flatThick={flatThick.get(el.id)} z={flatThick.has(el.id) ? cfg.groundLiftFt : cfg.groundLiftFt + Math.max(0, cfg.drawOrder.indexOf(el.type)) * 0.006} />
       ))}
       {selected && !selected.removed && (
         <>

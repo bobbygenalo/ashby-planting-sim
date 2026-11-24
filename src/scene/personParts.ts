@@ -23,20 +23,27 @@ export function loft(sections: Section[], segs = 14): THREE.BufferGeometry {
     }
   }
   const n = sections.length;
+  // Faces must wind so their normals point outward. A stack that climbs (a torso, a head) winds the opposite way to one that
+  // hangs down (a limb), so the order depends on which way the sections run; getting this wrong shows the inside of the solid
+  // and leaves the front of it looking hollow or see-through.
+  const climbs = sections[n - 1].z > sections[0].z;
+  const tri = (p: number, q: number, r: number) => (climbs ? idx.push(p, r, q) : idx.push(p, q, r));
   for (let i = 0; i < n - 1; i++) {
     for (let j = 0; j < segs; j++) {
       const a = i * segs + j, b = i * segs + ((j + 1) % segs), c = (i + 1) * segs + j, d = (i + 1) * segs + ((j + 1) % segs);
-      idx.push(a, c, b, b, c, d);
+      tri(a, c, b);
+      tri(b, c, d);
     }
   }
   // Close each end with a fan to the middle of its first and last section.
-  for (const [i, flip] of [[0, true], [n - 1, false]] as [number, boolean][]) {
+  for (const [i, first] of [[0, true], [n - 1, false]] as [number, boolean][]) {
     const s = sections[i];
     const c = pos.length / 3;
     pos.push(s.dx ?? 0, 0, s.z);
     for (let j = 0; j < segs; j++) {
       const a = i * segs + j, b = i * segs + ((j + 1) % segs);
-      idx.push(...(flip ? [c, a, b] : [c, b, a]));
+      if (first) tri(c, a, b);
+      else tri(c, b, a);
     }
   }
   const g = new THREE.BufferGeometry();

@@ -314,3 +314,35 @@ export function dropMappedColors(elements: HardscapeElement[], cfg: Pick<EngineC
     return rest;
   });
 }
+
+/**
+ * How thick each flat ground element is drawn (the depth it is extruded up from `groundLiftFt`), so that where flat elements
+ * overlap, the one drawn later always has its top above the one drawn earlier by at least `layerStepFt`. Two surfaces at the
+ * same height, or a hair apart, are drawn in a different order every time the camera moves (they flicker); this gives every
+ * overlapping pair a real gap instead. An element nothing overlaps keeps the thickness of its kind. Elements with a height of
+ * their own (decks, raised beds, walls, fences, furniture) are not in the result.
+ */
+export function layeredThickness(elements: HardscapeElement[], cfg: HsCfg): Map<string, number> {
+  const rank = (e: HardscapeElement) => Math.max(0, cfg.drawOrder.indexOf(e.type));
+  const flats = elements
+    .map((el, at) => ({ el, at }))
+    .filter(({ el }) => !(el.height > 0))
+    .sort((a, b) => rank(a.el) - rank(b.el) || a.at - b.at);
+  const out = new Map<string, number>();
+  const outlines = new Map<string, Pt[]>();
+  for (const { el } of flats) {
+    const poly = footprint(el, cfg);
+    outlines.set(el.id, poly);
+    let thick = cfg.surfaceThicknessFt[el.type] ?? 0.03;
+    for (const [id, t] of out) if (polygonsIntersect(poly, outlines.get(id)!)) thick = Math.max(thick, t + cfg.layerStepFt);
+    out.set(el.id, thick);
+  }
+  return out;
+}
+
+/** The height above the ground at which flat overlays are drawn: above the top of the tallest flat surface, by `overlayGapFt`. */
+export function overlayHeightFt(elements: HardscapeElement[], cfg: HsCfg): number {
+  let tallest = Math.max(0, ...Object.values(cfg.surfaceThicknessFt).filter((n): n is number => typeof n === 'number'));
+  for (const t of layeredThickness(elements, cfg).values()) tallest = Math.max(tallest, t);
+  return cfg.groundLiftFt + tallest + cfg.overlayGapFt;
+}

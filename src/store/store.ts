@@ -58,6 +58,8 @@ export interface Layers {
   crops: boolean;
   /** Show people, dogs and bees moving about the yard. */
   life: boolean;
+  /** The Orbit view slowly circles the property, counter-clockwise, until you take hold of it. */
+  drift: boolean;
   /** Placement heatmap and the top spots. */
   suggestions: boolean;
   /** Red rings on plants that have a conflict. */
@@ -389,7 +391,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: false, easements: false, context: true, bloom: true, fruit: true, detail: true, crops: true, life: true, suggestions: true, conflicts: true },
+      layers: { sunHours: true, dimensions: false, setbacks: false, easements: false, context: true, bloom: true, fruit: true, detail: true, crops: true, life: true, drift: true, suggestions: true, conflicts: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,

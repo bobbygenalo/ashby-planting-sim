@@ -923,7 +923,11 @@
         25,
         70,
         0
-      ]
+      ],
+      "drift": {
+        "degPerSecond": 2.4,
+        "resumeS": 6
+      }
     },
     {
       "id": "plan",

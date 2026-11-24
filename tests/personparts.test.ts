@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import engineRaw from '../src/data/engine.json';
 import { bodyOf } from '../src/engine/anatomy';
-import { hair, head, limb, loft, torso, unitSphere } from '../src/scene/personParts';
+import { hair, hand, head, limb, loft, shoe, thumb, torso, unitSphere } from '../src/scene/personParts';
 import type { EngineConfig } from '../src/engine/types';
 
 const engine = engineRaw as unknown as EngineConfig;
@@ -66,6 +66,50 @@ describe('the parts of a person have the size the body data gives them', () => {
       expect(pos.count).toBeGreaterThan(8);
       expect(g.getIndex()!.count % 3).toBe(0);
       for (let i = 0; i < nrm.count; i++) expect(Number.isFinite(nrm.getX(i) + nrm.getY(i) + nrm.getZ(i))).toBe(true);
+    }
+  });
+});
+
+/** The volume a closed mesh encloses by the divergence theorem: positive when its faces wind so the normals point outward. */
+function signedVolume(g: THREE.BufferGeometry): number {
+  const pos = g.getAttribute('position'), idx = g.getIndex()!;
+  const v = (i: number) => new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+  let vol = 0;
+  for (let k = 0; k < idx.count; k += 3) {
+    const a = v(idx.getX(k)), b = v(idx.getX(k + 1)), c = v(idx.getX(k + 2));
+    vol += a.dot(b.clone().cross(c)) / 6;
+  }
+  return vol;
+}
+
+describe('every part faces outward, so none looks hollow or see-through', () => {
+  it('winds each solid with its normals out, whichever way its sections run: up for a torso and a head, down for a limb', () => {
+    for (const r of roster) {
+      const b = bodyOf(r.age, r.heightFt, engine.anatomy, r.sex, r.build);
+      const parts: [string, THREE.BufferGeometry][] = [
+        ['torso', torso(b)], ['head', head(b)], ['hair', hair(b, false)], ['long hair', hair(b, true)],
+        ['thigh', limb(b.thighL, b.r.thigh, b.r.thigh * 0.92, b.r.knee)], ['shin', limb(b.shankL, b.r.knee, b.r.calf, b.r.ankle, 0.3)],
+        ['upper arm', limb(b.upperArmL, b.r.upperArm, b.r.upperArm, b.r.elbow)], ['forearm', limb(b.forearmL, b.r.elbow, b.r.forearm, b.r.wrist, 0.3)],
+        ['hand', hand(b)], ['thumb', thumb(b)], ['shoe', shoe(b)],
+      ];
+      for (const [name, g] of parts) expect(signedVolume(g), `${r.age} ${name}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('puts every side face\'s normal pointing away from the middle of its part', () => {
+    const b = bodyOf(30, 5.7, engine.anatomy, 'f');
+    for (const [name, g] of [['torso', torso(b)], ['head', head(b)], ['limb', limb(2, 0.2, 0.18, 0.12)]] as [string, THREE.BufferGeometry][]) {
+      const pos = g.getAttribute('position'), nrm = g.getAttribute('normal');
+      g.computeBoundingBox();
+      const mid = g.boundingBox!.getCenter(new THREE.Vector3());
+      let out = 0, total = 0;
+      for (let i = 0; i < pos.count; i++) {
+        const radial = new THREE.Vector3(pos.getX(i) - mid.x, pos.getY(i) - mid.y, 0);
+        if (radial.length() < 1e-4) continue;
+        total++;
+        if (radial.normalize().dot(new THREE.Vector3(nrm.getX(i), nrm.getY(i), 0)) > 0) out++;
+      }
+      expect(out / total, name).toBeGreaterThan(0.95);
     }
   });
 });

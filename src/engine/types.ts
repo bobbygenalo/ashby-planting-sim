@@ -77,6 +77,8 @@ export interface ViewCfg {
   kind: 'perspective' | 'plan' | 'walk';
   position?: Pt3;
   target?: Pt3;
+  /** The camera slowly circles the target, counter-clockwise seen from above, at this many degrees a second; it waits `resumeS` seconds after the viewer last touched the view. */
+  drift?: { degPerSecond: number; resumeS: number };
 }
 
 export type Measure =
@@ -335,6 +337,10 @@ export interface PersonSpec {
   /** Placeholders until the real cast is known: they set the proportions and the hair. */
   sex?: 'f' | 'm';
   build?: 'slim' | 'average' | 'broad';
+  /** The family they belong to, which sets the color of their shirt; and their hair color when it is not left to chance (gray). */
+  family?: string;
+  shirt?: string;
+  hair?: string;
   speedFt: [number, number];
 }
 
@@ -905,6 +911,11 @@ export interface EngineConfig {
     surfaceThicknessFt: Partial<Record<HardscapeType, number>>;
     /** How the lot's fences are built: posts, spacing, how far the posts and the cap rail stand proud. */
     fence: { postFt: number; postSpacingFt: number; postRiseFt: number; capFt: number; capOverhangFt: number };
+    /** Flat ground elements start this far above the ground, and where two overlap the later one stands at least `layerStepFt` above the earlier one, so their tops never share a depth and flicker. */
+    groundLiftFt: number;
+    layerStepFt: number;
+    /** Overlays drawn flat over the ground (the sun map, the easement, the placement heatmap, the lot lines) sit this far above the tallest flat surface, so none of them is cut by a patio or a bed. */
+    overlayGapFt: number;
     snapToleranceFt: number;
     rootZoneFactor: number;
     drawOrder: HardscapeType[];

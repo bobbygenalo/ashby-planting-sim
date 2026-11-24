@@ -12,6 +12,7 @@ const LAYERS = [
   ['detail', 'Leaves and flowers (detailed plants)'],
   ['crops', 'Raised-bed crops'],
   ['life', 'People, dogs and bees'],
+  ['drift', 'Slowly turn the Orbit view'],
   ['conflicts', 'Conflict rings'],
   ['suggestions', 'Placement heatmap'],
 ] as const;

@@ -3,6 +3,7 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { usePlaced } from '../store/derived';
 import { useApp } from '../store/store';
+import { useOverlayBase } from './overlay';
 
 // One hue, light to dark: a higher score is a darker green. Excluded cells are gray.
 const LOW: [number, number, number] = [232, 245, 224];
@@ -36,13 +37,14 @@ export function SuggestionLayer() {
     return tex;
   }, [suggestion]);
 
+  const base = useOverlayBase();
   if (!suggestion || !show || !texture) return null;
   const { grid, top } = suggestion.result;
   const species = library.species.find((s) => s.id === suggestion.speciesId);
   const w = grid.nx * grid.cell, h = grid.ny * grid.cell;
   return (
     <group>
-      <mesh position={[w / 2, h / 2, 0.11]} renderOrder={3}>
+      <mesh position={[w / 2, h / 2, base + 0.02]} renderOrder={3}>
         <planeGeometry args={[w, h]} />
         <meshBasicMaterial map={texture} transparent depthWrite={false} />
       </mesh>

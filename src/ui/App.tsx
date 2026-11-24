@@ -16,7 +16,7 @@ import { QuickFind } from './QuickFind';
 import { PlacingPanel } from './PlacingPanel';
 import { SelectionPanel } from './SelectionPanel';
 import { ShuffleBar } from './ShuffleControl';
-import { arrowDelta, isPlayPauseKey, viewForKey } from './shortcuts';
+import { arrowDelta, isFindKey, isPlayPauseKey, isWalkKey, viewForKey } from './shortcuts';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
 import { startCloudSync } from '../store/cloudSync';
@@ -105,12 +105,17 @@ function useShortcuts() {
         return;
       }
       const st = appStore.getState();
-      // / (or Cmd/Ctrl+K) opens quick find to search and place plants and hardscape; not in the Walk view or with a dialog open.
-      const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey;
-      const modK = (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k';
-      if ((slash || modK) && !document.querySelector('.dialog') && st.site.views.find((v) => v.id === st.view)?.kind !== 'walk') {
+      // / (or Cmd/Ctrl+K) opens quick find, in the Walk view too; not with a dialog open.
+      if (isFindKey(e) && !document.querySelector('.dialog')) {
         e.preventDefault();
         st.setQuickFind(true);
+        return;
+      }
+      // W, outside the Walk view, takes you into it (dropped where the view is looking); inside it W is walking forward.
+      const walkView = st.site.views.find((v) => v.kind === 'walk');
+      if (walkView && isWalkKey(e) && st.view !== walkView.id && !document.querySelector('.dialog') && !st.quickFindOpen) {
+        e.preventDefault();
+        st.setView(walkView.id);
         return;
       }
       // Number keys switch the camera view, unless a dialog is open.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import siteRaw from '../src/data/site.json';
-import { arrowDelta, isPlayPauseKey, viewForKey } from '../src/ui/shortcuts';
+import { arrowDelta, isFindKey, isPlayPauseKey, isWalkKey, viewForKey } from '../src/ui/shortcuts';
 
 const views = (siteRaw as { views: { id: string; label: string }[] }).views;
 const press = (key: string, extra: Partial<{ metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }> = {}) =>
@@ -57,5 +57,31 @@ describe('arrow keys', () => {
     expect(k('ArrowLeft', { metaKey: true })).toBeNull();
     expect(k('ArrowLeft', { ctrlKey: true })).toBeNull();
     expect(k('ArrowLeft', { altKey: true })).toBeNull();
+  });
+});
+
+describe('W takes you into the Walk view, and / finds in any view', () => {
+  const k = (key: string, extra: Partial<Parameters<typeof isWalkKey>[0]> = {}) => ({ key, metaKey: false, ctrlKey: false, altKey: false, shiftKey: false, ...extra });
+
+  it('treats W on its own, either case, as the walk key, and nothing else', () => {
+    expect(isWalkKey(k('w'))).toBe(true);
+    expect(isWalkKey(k('W'))).toBe(true);
+    expect(isWalkKey(k('w', { metaKey: true }))).toBe(false); // Cmd+W closes the tab
+    expect(isWalkKey(k('w', { ctrlKey: true }))).toBe(false);
+    expect(isWalkKey(k('w', { altKey: true }))).toBe(false);
+    expect(isWalkKey(k('W', { shiftKey: true }))).toBe(false);
+    expect(isWalkKey(k('w', { repeat: true }))).toBe(false); // holding W is walking, not re-entering
+    expect(isWalkKey(k('a'))).toBe(false);
+    expect(isWalkKey(k('8'))).toBe(false);
+  });
+
+  it('treats / on its own and Cmd or Ctrl+K as the find key', () => {
+    expect(isFindKey(k('/'))).toBe(true);
+    expect(isFindKey(k('k', { metaKey: true }))).toBe(true);
+    expect(isFindKey(k('K', { ctrlKey: true }))).toBe(true);
+    expect(isFindKey(k('k'))).toBe(false);
+    expect(isFindKey(k('/', { metaKey: true }))).toBe(false);
+    expect(isFindKey(k('/', { altKey: true }))).toBe(false);
+    expect(isFindKey(k('k', { metaKey: true, shiftKey: true }))).toBe(false);
   });
 });

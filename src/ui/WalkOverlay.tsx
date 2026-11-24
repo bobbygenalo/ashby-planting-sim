@@ -10,6 +10,8 @@ export function WalkOverlay() {
   const view = useApp((s) => s.view);
   const kind = useApp((s) => s.site.views.find((v) => v.id === s.view)?.kind);
   const active = kind === 'walk';
+  // With a plant or a shape in hand to place, the pad steps aside so a click reaches the ground you are looking at.
+  const inHand = useApp((s) => !!s.placingSpeciesId || !!s.drawing);
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
 
   useEffect(() => (active ? listenForWalkKeys() : undefined), [active, view]);
@@ -17,7 +19,7 @@ export function WalkOverlay() {
 
   return (
     <>
-      <div
+      {!inHand && <div
         className="walkpad"
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY }; }}
         onPointerMove={(e) => {
@@ -28,7 +30,7 @@ export function WalkOverlay() {
         }}
         onPointerUp={() => { drag.current = null; }}
         onPointerCancel={() => { drag.current = null; }}
-      />
+      />}
       <div className="walkhint" role="note">
         <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · hold <kbd>C</kbd> crouch · drag or arrows to look
       </div>

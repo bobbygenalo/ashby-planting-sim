@@ -34,7 +34,7 @@ export function CanvasToolbar() {
     <div className="canvasbar">
       <div className="viewbar" role="group" aria-label="Camera view">
         {s.site.views.map((v, i) => (
-          <button key={v.id} className={s.view === v.id ? 'on' : ''} aria-pressed={s.view === v.id} aria-keyshortcuts={String(i + 1)} title={`${v.label} (press ${i + 1})`} onClick={() => s.setView(v.id)}>
+          <button key={v.id} className={s.view === v.id ? 'on' : ''} aria-pressed={s.view === v.id} aria-keyshortcuts={String(i + 1)} title={v.kind === 'walk' ? `${v.label} (press ${i + 1}, or W from any other view)` : `${v.label} (press ${i + 1})`} onClick={() => s.setView(v.id)}>
             {v.label}<kbd className="key">{i + 1}</kbd>
           </button>
         ))}

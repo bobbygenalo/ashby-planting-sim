@@ -41,3 +41,16 @@ export function arrowDelta(e: KeyLike, step: number, shiftMultiplier: number): [
     default: return null;
   }
 }
+
+/** W on its own, outside the Walk view, takes you into it (inside the Walk view W walks forward). Held-down repeats and combinations are ignored. */
+export function isWalkKey(e: KeyLike): boolean {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return false;
+  return e.key === 'w' || e.key === 'W';
+}
+
+/** "/" on its own, or Cmd/Ctrl+K, opens quick find. */
+export function isFindKey(e: KeyLike): boolean {
+  if (e.altKey) return false;
+  if (e.key === '/' && !e.metaKey && !e.ctrlKey) return true;
+  return (e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'k';
+}

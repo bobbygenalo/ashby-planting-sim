@@ -182,6 +182,8 @@ export function generateConcept(ctx: ConceptContext, opts: ConceptOptions, rng: 
         if (poly.some(([x, y]) => x < 0 || y < 0 || x > lotW || y > lotD)) return false;
         if (ctx.structures.some((st) => polygonsIntersect(poly, st.footprint))) return false;
         if (fixed.some((f) => polygonsIntersect(poly, f))) return false;
+        // Never run through a plant, even a small one the router's discs let slip close to a fruit tree's stand.
+        if (plants.some((i) => distanceToPolygon(i.position[0], i.position[1], poly) < pp.plantEdgeFt * 0.5)) return false;
         return !areaPolys.some((a) => !hubPolyList.includes(a) && polygonsIntersect(poly, a));
       },
     });

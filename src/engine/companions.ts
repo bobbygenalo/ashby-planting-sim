@@ -52,9 +52,9 @@ export function pairNeed(a: Species, b: Species, allowance: number, cfg?: Compan
   const [tall, low] = a.matureHeight >= b.matureHeight ? [a, b] : [b, a];
   if (tall.id !== low.id && tall.matureHeight >= cfg.layerHeightRatio * low.matureHeight) {
     // At the foot of a tall plant, under its crown: only where it really shades (a tree or a big shrub) and only for a plant that
-    // likes shade. A low plant beside a low shrub stays out from under it.
+    // likes shade. A low plant beside a low shrub stays out from under it. Fruit trees keep clear ground for picking, so nothing is layered under them.
     const need = Math.min(apart, radius(tall) * cfg.coreFraction);
-    if (castsShade(tall, cfg) && low.sun !== 'full' && need < best.need) best = { need, kind: 'layered' };
+    if (!tall.fruit && castsShade(tall, cfg) && low.sun !== 'full' && need < best.need) best = { need, kind: 'layered' };
   } else if (a.id !== b.id && contrasts(a, b, cfg)) {
     const need = cfg.contrastSpacing * (ra + rb);
     if (need < best.need) best = { need, kind: 'contrast' };

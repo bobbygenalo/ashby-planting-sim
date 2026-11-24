@@ -101,14 +101,14 @@ describe('growth stages', () => {
 describe('roses for Los Angeles', () => {
   const roses = lib.species.filter((s) => s.botanical.startsWith('Rosa'));
 
-  it('has ten roses, each a complete row (bloom months, soil, roots, a detailed look) marked low confidence', () => {
+  it('has ten roses, each a complete row (bloom months, soil, roots, a detailed look) and none claiming to come from the owner sheet', () => {
     expect(roses.length).toBeGreaterThanOrEqual(10);
     for (const s of roses) {
       expect(Array.isArray(s.bloomMonths) && s.bloomMonths.length > 0, s.id).toBe(true);
       expect(s.soil.textures.length, s.id).toBeGreaterThan(0);
       expect(s.roots, s.id).toBeDefined();
       expect(s.look, s.id).toBeDefined();
-      expect(s.sheet?.confidence, s.id).toBe('Recall only');
+      expect(s.sheet, s.id).toBeUndefined(); // not from the owner's data sheet, so unverified
     }
   });
 

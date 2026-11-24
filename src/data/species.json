@@ -5846,7 +5846,9 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        1
+        12,
+        1,
+        2
       ],
       "matureHeight": 4,
       "matureWidth": 4,
@@ -5895,11 +5897,6 @@
         "minFoundationFt": 3,
         "minPavingFt": 2
       },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
-      },
       "crown": {
         "density": 0.8
       },
@@ -5933,7 +5930,9 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        1
+        12,
+        1,
+        2
       ],
       "matureHeight": 3,
       "matureWidth": 3,
@@ -5981,11 +5980,6 @@
         "minFoundationFt": 3,
         "minPavingFt": 2
       },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
-      },
       "crown": {
         "density": 0.8
       },
@@ -6019,7 +6013,9 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        1
+        12,
+        1,
+        2
       ],
       "matureHeight": 4,
       "matureWidth": 4,
@@ -6069,11 +6065,6 @@
         "minFoundationFt": 3,
         "minPavingFt": 2
       },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
-      },
       "crown": {
         "density": 0.8
       },
@@ -6107,7 +6098,9 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        1
+        12,
+        1,
+        2
       ],
       "matureHeight": 5,
       "matureWidth": 3,
@@ -6154,11 +6147,6 @@
         "minFoundationFt": 3,
         "minPavingFt": 2
       },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
-      },
       "crown": {
         "density": 0.7
       },
@@ -6192,7 +6180,9 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        1
+        12,
+        1,
+        2
       ],
       "matureHeight": 4,
       "matureWidth": 3,
@@ -6239,11 +6229,6 @@
         "minFoundationFt": 3,
         "minPavingFt": 2
       },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
-      },
       "crown": {
         "density": 0.7
       },
@@ -6277,7 +6262,9 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        1
+        12,
+        1,
+        2
       ],
       "matureHeight": 3,
       "matureWidth": 4,
@@ -6325,11 +6312,6 @@
         "minFoundationFt": 3,
         "minPavingFt": 2
       },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
-      },
       "crown": {
         "density": 0.8
       },
@@ -6363,7 +6345,9 @@
       "origin": "other",
       "evergreen": false,
       "leafOffMonths": [
-        1
+        12,
+        1,
+        2
       ],
       "matureHeight": 6,
       "matureWidth": 5,
@@ -6413,11 +6397,6 @@
         "behavior": "moderate",
         "minFoundationFt": 3,
         "minPavingFt": 2
-      },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
       },
       "crown": {
         "density": 0.8
@@ -6492,11 +6471,6 @@
         "minFoundationFt": 3,
         "minPavingFt": 2
       },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
-      },
       "crown": {
         "density": 0.8
       },
@@ -6569,11 +6543,6 @@
         "behavior": "moderate",
         "minFoundationFt": 3,
         "minPavingFt": 2
-      },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
       },
       "crown": {
         "density": 0.9
@@ -6654,11 +6623,6 @@
         "behavior": "shallow",
         "minFoundationFt": 4,
         "minPavingFt": 3
-      },
-      "sheet": {
-        "confidence": "Recall only",
-        "verified": null,
-        "toVerify": "All fields: size, water (WUCOLS), bloom months, hardiness in LA, soil. Rose size varies by rootstock and pruning."
       },
       "crown": {
         "density": 0.8

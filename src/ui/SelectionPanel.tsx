@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import type { SunHoursResult } from '../engine/sunhours';
 import { useApp } from '../store/store';
 import { HardscapeInspector } from './HardscapeInspector';
@@ -6,13 +5,11 @@ import { PlantInspector } from './PlantInspector';
 import { HiveInspector } from './HiveInspector';
 
 /**
- * Whatever is selected in the yard, a plant or a hardscape element, opens here as a card over the yard, against its
- * right edge (just left of the right panel) with its bottom resting above the time controls, whichever tab is showing.
+ * Whatever is selected in the yard, a plant, a hardscape element or the hive, is the right panel while it is selected:
+ * its details and controls replace the Design, Analyze and Outputs tabs (which are only hidden, so their state stays).
+ * Escape, or the close button, clears the selection and the tabs come back.
  */
-/** Space kept around the card, in pixels. */
-const GAP = 10;
-
-export function SelectionCard({ growing }: { growing: SunHoursResult | null }) {
+export function SelectionPanel({ growing }: { growing: SunHoursResult | null }) {
   const plantId = useApp((s) => s.selectedId);
   const elementId = useApp((s) => s.selectedElementId);
   const hiveSelected = useApp((s) => s.hiveSelected);
@@ -27,19 +24,7 @@ export function SelectionCard({ growing }: { growing: SunHoursResult | null }) {
     const e = s.hardscape.find((x) => x.id === s.selectedElementId);
     return e ? e.name ?? s.engine.hardscape.types[e.type].label : undefined;
   });
-  const ref = useRef<HTMLDivElement>(null);
-  const [lift, setLift] = useState(0);
   const label = hiveSelected ? 'Beehive' : plantId ? plantName : elementId ? elementName : undefined;
-  // Keep the card's bottom above the time controls, whatever their height (they wrap on a narrow yard).
-  useEffect(() => {
-    const dock = ref.current?.parentElement?.querySelector('.simdock');
-    if (!dock) return;
-    const measure = () => setLift(dock.getBoundingClientRect().height);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(dock);
-    return () => ro.disconnect();
-  }, [label]);
   if (!label) return null;
   const close = () => {
     select(null);
@@ -47,8 +32,8 @@ export function SelectionCard({ growing }: { growing: SunHoursResult | null }) {
     selectHive(false);
   };
   return (
-    <div className="selcard" ref={ref} role="dialog" aria-label={`Edit ${label}`} style={{ bottom: GAP + lift + GAP, maxHeight: `calc(100% - ${GAP + lift + GAP}px - 110px)` }}>
-      <button className="icon selcard-x" aria-label="Close" onClick={close}>✕</button>
+    <div className="selpanel" role="region" aria-label={`Edit ${label}`}>
+      <button className="icon selpanel-x" aria-label="Close (Esc)" title="Close (Esc)" onClick={close}>✕</button>
       {hiveSelected ? <HiveInspector /> : plantId ? <PlantInspector growing={growing} /> : <HardscapeInspector />}
     </div>
   );

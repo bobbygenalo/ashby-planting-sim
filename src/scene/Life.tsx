@@ -17,6 +17,7 @@ import { sunMapFor, useApp } from '../store/store';
 import { beeGeometry, personProportions } from './forms';
 import { chairPull } from './chairState';
 import { partyState } from './partyState';
+import { basketAt } from './harvestState';
 
 /** Nothing here should catch a click meant for the ground or a plant. */
 const noHit = { raycast: () => null } as const;
@@ -25,6 +26,9 @@ const SHIRTS = ['#c0392b', '#2e86c1', '#27ae60', '#f39c12', '#8e44ad', '#16a085'
 const PANTS = ['#2c3e50', '#4a4a4a', '#5d4037', '#1f3a5f', '#6b705c'];
 const SKIN = ['#f1c9a5', '#d9a577', '#b07a4f', '#8a5a3a', '#f5d7bd'];
 const COATS = ['#a0693a', '#2b2b2b', '#d8b46a', '#ececec', '#7a5a3c'];
+
+const tmpObj = new THREE.Object3D();
+const tmpColor = new THREE.Color();
 
 /** A person in site coordinates: facing +X, Z up, legs and arms swinging as they walk. Built to their age and height. They sit, talk and watch too. */
 function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; index: number }) {
@@ -36,7 +40,10 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
   const head = useRef<THREE.Group>(null);
   const dots = [useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null)];
   const hat = useRef<THREE.Group>(null);
+  const basketGroup = useRef<THREE.Group>(null);
+  const fruitInBasket = useRef<THREE.InstancedMesh>(null);
   const hatCfg = useApp((s) => s.engine.birthday.hat);
+  const bk = useApp((s) => s.engine.life.harvest.basket);
   const lookUpRad = useApp((s) => s.engine.life.fireworks.lookUpRad);
   const who = sim.current?.walkers[index];
   const variant = who?.variant ?? index;
@@ -65,15 +72,60 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
     knees[0].current?.rotation.set(0, sit * (Math.PI / 2), 0);
     knees[1].current?.rotation.set(0, sit * (Math.PI / 2), 0);
     // Arms swing as they walk; a speaker gestures with both hands, a seated listener rests theirs forward.
+    let armCarry = -0.7;
     const gesture = w.talking ? -0.9 - Math.sin(t * 5.5) * 0.35 : 0;
     const rest = sit * -0.5;
     if (w.cheer) {
       // Arms up and waving round the cake.
       arms[0].current?.rotation.set(0, -2.7 + Math.sin(t * 6 + index) * 0.45, 0);
       arms[1].current?.rotation.set(0, -2.7 + Math.sin(t * 6 + index + 1.9) * 0.45, 0);
+    } else if (w.basket) {
+      // Picking or carrying: one arm holds the basket out in front, the other reaches up to the fruit and back.
+      const carry = w.act?.kind === 'harvest' ? -0.95 : -0.7 + swing * 0.12;
+      const reaching = -(0.25 + 1.75 * w.reach) + swing * 0.5 * (1 - w.reach);
+      arms[0].current?.rotation.set(0, reaching, 0);
+      arms[1].current?.rotation.set(0, carry, 0);
+      armCarry = carry;
     } else {
       arms[0].current?.rotation.set(0, -swing * 0.8 + gesture + rest, 0);
       arms[1].current?.rotation.set(0, swing * 0.8 + (w.talking ? -0.9 - Math.sin(t * 5.5 + 1.7) * 0.35 : 0) + rest, 0);
+    }
+    // The basket hangs from the carrying hand and stays upright; its fruit piles up as it fills.
+    const bg = basketGroup.current;
+    if (bg) {
+      bg.visible = !!w.basket && g.visible;
+      if (w.basket && g.visible) {
+        bg.rotation.set(0, -armCarry, 0);
+        const sc = f.height / 5.6;
+        // The hand: the arm's pivot, then the arm's length along its angle (forward is -sin, down is -cos).
+        const pivotZ = f.legH + f.torsoH - f.armR * 1.2;
+        const lx = -Math.sin(armCarry) * f.armL, lz = pivotZ - Math.cos(armCarry) * f.armL;
+        const ly = -f.shoulderY;
+        const cos = Math.cos(w.heading), sin = Math.sin(w.heading);
+        basketAt.set(index, [w.x + cos * lx - sin * ly, w.y + sin * lx + cos * ly, lz + bk.heightFt * sc * 0.15]);
+        const items = w.basket.items;
+        const mesh = fruitInBasket.current;
+        if (mesh) {
+          const n = Math.min(items.length, 40);
+          mesh.count = n;
+          const R = bk.radiusFt * sc, H = bk.heightFt * sc;
+          for (let i = 0; i < n; i++) {
+            const it = items[i];
+            const layer = Math.floor(i / 6), k = i % 6;
+            const a = k * 1.047 + layer * 0.6, r = layer === 0 && k === 0 ? 0 : R * (layer === 0 ? 0.5 : 0.38);
+            const dsz = Math.min(it.d * 0.55, bk.itemMaxFt * sc * 1.2);
+            tmpObj.position.set(Math.cos(a) * r, Math.sin(a) * r, -H * 0.35 + layer * dsz * 0.62 + dsz * 0.4);
+            tmpObj.rotation.set(0, 0, 0);
+            tmpObj.scale.set(dsz, dsz, dsz * it.aspect);
+            tmpObj.updateMatrix();
+            mesh.setMatrixAt(i, tmpObj.matrix);
+            tmpColor.set(it.color);
+            mesh.setColorAt(i, tmpColor);
+          }
+          mesh.instanceMatrix.needsUpdate = true;
+          if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+        }
+      } else basketAt.delete(index);
     }
     // A party hat while the party is on.
     if (hat.current) hat.current.visible = !!sim.current?.party && g.visible;
@@ -117,6 +169,31 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
               <cylinderGeometry args={[f.armR, f.armR * 0.85, f.armL, 8]} />
               <meshStandardMaterial color={look.skin} />
             </mesh>
+            {side === -1 && (
+              <group ref={basketGroup} visible={false} position={[0, 0, -f.armL]} scale={f.height / 5.6}>
+                {/* A wicker basket hanging from the hand: a flared bowl, a rim, a handle over the top, and its fruit. */}
+                <mesh {...noHit} position={[0, 0, -bk.heightFt * 0.5]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                  <cylinderGeometry args={[bk.radiusFt, bk.radiusFt * 0.75, bk.heightFt, 14, 1, true]} />
+                  <meshStandardMaterial color={bk.color} side={THREE.DoubleSide} roughness={1} />
+                </mesh>
+                <mesh {...noHit} position={[0, 0, -bk.heightFt]} rotation={[Math.PI / 2, 0, 0]}>
+                  <circleGeometry args={[bk.radiusFt * 0.75, 14]} />
+                  <meshStandardMaterial color={bk.color} side={THREE.DoubleSide} roughness={1} />
+                </mesh>
+                <mesh {...noHit} position={[0, 0, 0]}>
+                  <torusGeometry args={[bk.radiusFt, bk.heightFt * 0.07, 6, 18]} />
+                  <meshStandardMaterial color={bk.color} roughness={1} />
+                </mesh>
+                <mesh {...noHit} position={[0, 0, 0]} rotation={[0, 0, 0]}>
+                  <torusGeometry args={[bk.radiusFt * 0.98, bk.heightFt * 0.05, 5, 14, Math.PI]} />
+                  <meshStandardMaterial color={bk.color} roughness={1} />
+                </mesh>
+                <instancedMesh ref={fruitInBasket} args={[undefined, undefined, 40]} {...noHit} castShadow frustumCulled={false}>
+                  <sphereGeometry args={[0.5, 10, 8]} />
+                  <meshStandardMaterial roughness={0.6} />
+                </instancedMesh>
+              </group>
+            )}
           </group>
         ))}
         <group ref={head} position={[0, 0, f.legH + f.torsoH]}>
@@ -148,6 +225,43 @@ function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; i
         ))}
       </group>
     </group>
+  );
+}
+
+
+/** Fruit in the air from a plant to a basket: a small arc, shrinking from the size it hangs at to the size it sits in the basket. */
+function FruitFlights({ sim }: { sim: React.MutableRefObject<LifeSim | null> }) {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const bk = useApp((s) => s.engine.life.harvest.basket);
+  useFrame(() => {
+    const m = mesh.current, sm = sim.current;
+    if (!m || !sm) return;
+    let n = 0;
+    for (const f of sm.flights) {
+      const to = basketAt.get(f.walker);
+      if (!to || n >= 48) continue;
+      const e = f.p * f.p * (3 - 2 * f.p);
+      const x = f.start[0] + (to[0] - f.start[0]) * e, y = f.start[1] + (to[1] - f.start[1]) * e;
+      const z = f.start[2] + (to[2] - f.start[2]) * e + Math.sin(Math.PI * f.p) * 0.5;
+      const size = f.d + (Math.min(f.d * 0.55, bk.itemMaxFt * 1.2) - f.d) * e;
+      tmpObj.position.set(x, y, z);
+      tmpObj.rotation.set(0, 0, 0);
+      tmpObj.scale.set(size, size, size * f.aspect);
+      tmpObj.updateMatrix();
+      m.setMatrixAt(n, tmpObj.matrix);
+      tmpColor.set(f.color);
+      m.setColorAt(n, tmpColor);
+      n++;
+    }
+    m.count = n;
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  });
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, 48]} {...noHit} castShadow frustumCulled={false}>
+      <sphereGeometry args={[0.5, 10, 8]} />
+      <meshStandardMaterial roughness={0.6} />
+    </instancedMesh>
   );
 }
 
@@ -957,6 +1071,7 @@ export function LifeLayer() {
       {Array.from({ length: dogs }, (_, i) => <Dog key={`d${i}`} sim={sim} index={people + i} />)}
       {presents.length > 0 && <Presents list={presents} />}
       {balloons.length > 0 && <Balloons list={balloons} />}
+      <FruitFlights sim={sim} />
       <Birds crit={crit} />
       <Hummingbirds crit={crit} />
       <Butterflies crit={crit} />

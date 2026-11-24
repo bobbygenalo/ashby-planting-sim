@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useApp } from '../store/store';
 import { activeStructures } from '../engine/site';
 import { placedPlants } from '../engine/growth';
-import { buildPlayerWorld, createPlayer, headingToward, look, playerFits, stepPlayer, type PlayerState } from '../engine/player';
+import { buildPlayerWorld, createPlayer, eyeZ, headingToward, look, playerFits, stepPlayer, type PlayerState } from '../engine/player';
 import { readInput, takeLook } from './walkInput';
 
 /** Where the player was when they left the Walk view, so coming back resumes there. */
@@ -44,7 +44,7 @@ export function WalkRig({ viewId }: { viewId: string }) {
   useEffect(() => {
     // Resume where the player left off, unless a change to the plan put them inside something.
     const resume = last && playerFits(worldRef.current, last.x, last.y, last.z, last.onGround, cfg) ? last : start;
-    state.current = { ...resume, vx: 0, vy: 0, vz: 0 };
+    state.current = { ...resume, vx: 0, vy: 0, vz: 0, crouch: 0 };
     return () => { last = state.current; };
   }, [start, cfg]);
 
@@ -57,7 +57,7 @@ export function WalkRig({ viewId }: { viewId: string }) {
     s = stepPlayer(s, readInput(), dt, worldRef.current, cfg);
     state.current = s;
     // Site (x, y, z) is three.js (x, z, -y). The eyes are above the feet; the view faces along the heading and pitch.
-    camera.position.set(s.x, s.z + cfg.eyeHeightFt, -s.y);
+    camera.position.set(s.x, eyeZ(s, cfg), -s.y);
     const cp = Math.cos(s.pitch);
     dir.set(Math.sin(s.heading) * cp, Math.sin(s.pitch), -Math.cos(s.heading) * cp);
     camera.lookAt(camera.position.x + dir.x, camera.position.y + dir.y, camera.position.z + dir.z);

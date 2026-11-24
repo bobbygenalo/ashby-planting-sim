@@ -1,4 +1,5 @@
 import { distanceToSegment, pointInPolygon } from './geometry';
+import { PRODUCE_REACH } from './cropPlants';
 import { mulberry32 } from './shuffle';
 import type { CropCfg, Crop, CropPlan, Pt } from './types';
 
@@ -69,9 +70,9 @@ function edgeDistance(p: Pt, poly: Pt[]): number {
   return best;
 }
 
-export function cropPositions(poly: Pt[], spacing: number, cfg: CropCfg): Pt[] {
+export function cropPositions(poly: Pt[], spacing: number, cfg: CropCfg, inset = cfg.insetFt): Pt[] {
   const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]);
-  const [x0, x1, y0, y1] = [Math.min(...xs) + cfg.insetFt, Math.max(...xs) - cfg.insetFt, Math.min(...ys) + cfg.insetFt, Math.max(...ys) - cfg.insetFt];
+  const [x0, x1, y0, y1] = [Math.min(...xs) + inset, Math.max(...xs) - inset, Math.min(...ys) + inset, Math.max(...ys) - inset];
   if (x1 <= x0 || y1 <= y0) return [];
   let sp = Math.max(spacing, 0.1);
   for (let tries = 0; tries < 12; tries++) {
@@ -83,7 +84,7 @@ export function cropPositions(poly: Pt[], spacing: number, cfg: CropCfg): Pt[] {
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
         const p: Pt = [ox + i * sp, oy + j * sp];
         // Inside the bed and a margin from its walls, so nothing is rooted in a board at the notch of an L or U.
-        if (pointInPolygon(p[0], p[1], poly) && edgeDistance(p, poly) >= cfg.insetFt * 0.5) out.push(p);
+        if (pointInPolygon(p[0], p[1], poly) && edgeDistance(p, poly) >= inset * 0.5) out.push(p);
       }
       return out;
     }
@@ -99,4 +100,36 @@ export function produceOffsets(count: number, width: number, seed: number): [num
     const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * width * 0.4;
     return [Math.cos(a) * r, Math.sin(a) * r, 0.25 + rng() * 0.6];
   });
+}
+
+/**
+ * How wide one plant is as drawn, in feet: its canopy, or its produce with the display scale the scene uses, whichever is
+ * wider. A carrot's root is drawn about half a foot across, far wider than a real one, so it sets the limit.
+ */
+export function cropFootprintFt(crop: Crop, cfg: CropCfg): { canopy: number; produce: number } {
+  const pr = crop.produce;
+  const produce = pr ? Math.max(pr.sizeFt * cfg.produceDisplayScale, cfg.produceMinFt) * 2 * PRODUCE_REACH[pr.shape][1] : 0;
+  return { canopy: crop.widthFt, produce };
+}
+
+/**
+ * How far apart plants of a crop stand in a bed. Extension guides give a spacing for each crop (3 in for carrots at 16 to
+ * a square foot, 6 to 9 in for lettuce, 18 in for broccoli, and so on), kept here as `spacingFt`; but the plants are
+ * drawn larger than life, so they are never set closer than the drawn plants allow: the canopies may touch, and drawn
+ * produce keeps a gap of its own, so nothing is drawn on top of its neighbor.
+ */
+export function cropSpacingFt(crop: Crop, cfg: CropCfg): number {
+  const f = cropFootprintFt(crop, cfg);
+  return Math.max(crop.spacingFt, f.canopy * cfg.canopyShare, f.produce * cfg.produceGapShare);
+}
+
+/** How far plants of a crop stand from a bed's walls: at least the usual margin, and half their own drawn width, so none leans over a board. */
+export function cropInsetFt(crop: Crop, cfg: CropCfg): number {
+  const f = cropFootprintFt(crop, cfg);
+  return Math.max(cfg.insetFt, Math.min(Math.max(f.canopy, f.produce) / 2, cfg.insetFt * 2.5));
+}
+
+/** Where the plants of a crop stand in a bed: on a grid at its spacing, clear of the walls. */
+export function cropSpots(poly: Pt[], crop: Crop, cfg: CropCfg): Pt[] {
+  return cropPositions(poly, cropSpacingFt(crop, cfg), cfg, cropInsetFt(crop, cfg));
 }

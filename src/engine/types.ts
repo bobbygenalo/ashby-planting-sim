@@ -480,7 +480,37 @@ export interface CritterCfg {
   };
 }
 
+/** People picking ripe fruit into a basket. */
+export interface HarvestCfg {
+  /** The chance, each time a free person chooses what to do, of going to pick when something is ripe. */
+  bias: number;
+  /** Children this old and up pick. */
+  minAge: number;
+  /** Only in these hours (minutes of the day). */
+  fromMin: number;
+  toMin: number;
+  /** At most this many people picking at once. */
+  maxPickers: number;
+  /** How many pieces a basket holds, as [least, most]; each picker brings one. */
+  capacity: [number, number];
+  /** How full the basket should be before they take it in, as a share of its capacity. */
+  fillShare: [number, number];
+  /** How many pieces they take from one plant before they move to a different one, as [least, most]. */
+  chunk: [number, number];
+  /** Seconds between one piece and the next, and how long a piece takes to fly from the plant to the basket. */
+  pickEveryS: number;
+  flightS: number;
+  /** The arm reaches this far (feet) from where they stand; fruit higher than the person's reach is picked from lower down. */
+  reachFt: number;
+  /** They stand this far (feet) beyond the plant's canopy, and no further than `standMaxFt`. */
+  standMinFt: number;
+  standMaxFt: number;
+  /** A basket: radius and height in feet for a person of 5.6 ft, the wicker color, and the largest a piece of fruit looks in it. */
+  basket: { radiusFt: number; heightFt: number; color: string; itemMaxFt: number };
+}
+
 export interface LifeCfg {
+  harvest: HarvestCfg;
   /** At a birthday party: the chance, when choosing where to go next, of heading for the party yard; the chance of joining the cake when it comes out; and how much less often people go indoors. */
   party: { backyardBias: number; cakeBias: number; visitFactor: number; /** The balloons are tied up from this minute of a birthday (480 is 8 am) until night. */ balloonsFromMin: number };
   critters: CritterCfg;
@@ -1089,6 +1119,9 @@ export interface CropCfg {
   spentColor: string;
   spentBlend: number;
   insetFt: number;
+  /** Plants are laid out no closer than their drawn size allows: the canopy may touch, and produce keeps this share of its own width as a gap. */
+  canopyShare: number;
+  produceGapShare: number;
   maxPlants: number;
   produceDisplayScale: number;
   produceMinFt: number;
@@ -1112,6 +1145,11 @@ export interface Prices {
 /** The first-person "Walk" view: a person you steer with WASD, run with Shift and jump with the space bar. */
 export interface PlayerCfg {
   eyeHeightFt: number;
+  /** Holding C crouches: the eyes drop to this height (to look into a raised bed), speed falls to this share of walking speed, and there is no running or jumping while crouched. */
+  crouchEyeHeightFt: number;
+  crouchSpeedShare: number;
+  /** How quickly the crouch comes on and off, in changes of the whole movement per second. */
+  crouchRate: number;
   /** Speeds in feet per second. */
   walkFtS: number;
   runFtS: number;

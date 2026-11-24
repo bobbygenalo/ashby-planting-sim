@@ -4,7 +4,7 @@ import { CROPS } from '../data/cropLibrary';
 import soilRaw from '../data/soil.json';
 import { raisedBedSoilTop } from '../engine/soil';
 import { buildCropPlant } from '../engine/cropPlants';
-import { activeCrop, cropPositions, planOf } from '../engine/crops';
+import { activeCrop, cropSpots, planOf } from '../engine/crops';
 import { mulberry32 } from '../engine/shuffle';
 import { doyToMonthDay } from '../engine/time';
 import type { HardscapeElement } from '../engine/types';
@@ -42,7 +42,7 @@ function BedCrops({ bed, index, month }: { bed: HardscapeElement; index: number;
   const hs = useApp((s) => s.engine.hardscape);
   const poly = useMemo(() => footprint(bed, hs), [bed, hs]);
   const active = useMemo(() => activeCrop(planOf(bed, CROPS, index), CROPS, month, cfg), [bed, index, month, cfg]);
-  const spots = useMemo(() => (active ? cropPositions(poly, active.crop.spacingFt, cfg) : []), [active, poly, cfg]);
+  const spots = useMemo(() => (active ? cropSpots(poly, active.crop, cfg) : []), [active, poly, cfg]);
   const top = raisedBedSoilTop(bed.height, soilRaw.raisedBed.freeboardIn);
   const cropId = active?.crop.id;
 

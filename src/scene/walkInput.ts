@@ -5,7 +5,7 @@ const held = new Set<string>();
 let dragX = 0;
 let dragY = 0;
 
-const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ShiftRight', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ShiftRight', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC']);
 
 /** What the keyboard asks of the player right now. */
 export function readInput(): PlayerInput {
@@ -15,6 +15,7 @@ export function readInput(): PlayerInput {
     strafe: k('KeyD') - k('KeyA'),
     run: held.has('ShiftLeft') || held.has('ShiftRight'),
     jump: held.has('Space'),
+    crouch: held.has('KeyC'),
     turn: k('ArrowRight') - k('ArrowLeft'),
   };
 }

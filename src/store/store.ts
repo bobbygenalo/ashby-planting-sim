@@ -5,6 +5,7 @@ import type { Conflict } from '../engine/conflicts';
 import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engine/geometry';
 import { drivewayBlocks, dropMappedColors } from '../engine/hardscape';
 import { placeShape, reshapeBed, rotateBed, settleBed } from '../engine/bed';
+import type { QuickItem } from '../engine/quickfind';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
 import { activeStructures, loadSite } from '../engine/site';
 import { buildSunMap, type SunMap } from '../engine/placement';
@@ -146,6 +147,13 @@ export interface AppState {
   setTimelinePlaying: (p: boolean) => void;
   select: (id: string | null) => void;
   setPlacing: (id: string | null) => void;
+  /** The quick-find box (press / or Cmd/Ctrl+K): search plants and hardscape, arrows to move, Enter to start placing. */
+  /** How many of the plant in hand have been placed since it was picked up; placing carries on until Escape or Stop placing. */
+  placedRun: number;
+  quickFindOpen: boolean;
+  setQuickFind: (open: boolean) => void;
+  /** Put the chosen quick-find item in hand: a plant to click into the yard, or a hardscape shape to place or draw. Closes the box. */
+  chooseQuick: (item: QuickItem) => void;
   setPlaceContainer: (c: ContainerId) => void;
   materials: Material[];
   hardscape: HardscapeElement[];
@@ -423,6 +431,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       timelinePlaying: false,
       selectedId: null,
       placingSpeciesId: null,
+      placedRun: 0,
+      quickFindOpen: false,
       placeContainer: '5gal',
       hover: null,
       dragId: null,
@@ -446,7 +456,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
           ...opts,
         };
         record();
-        set({ instances: [...get().instances, inst], selectedId: id, selectedElementId: null });
+        // Placing carries on: the plant stays in hand until Escape or Stop placing, so the next click places another.
+        set({ instances: [...get().instances, inst], selectedId: id, selectedElementId: null, placedRun: get().placingSpeciesId === speciesId ? get().placedRun + 1 : get().placedRun });
         return id;
       },
       updateInstance: (id, patch, opts) => {
@@ -477,7 +488,16 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       select: (id) => set({ selectedId: id, selectedElementId: id ? null : get().selectedElementId, ...(id ? { hiveSelected: false } : {}) }),
       setPlacing: (id) => {
         get().commitDrawing();
-        set({ placingSpeciesId: get().mode === 'edit' ? id : null, measureActive: false, drawing: null });
+        // Picking something to place, and letting go of it, both clear the selection: each plant placed becomes the
+        // selection, and without this Escape would drop the plant in hand only to open the last one placed.
+        set({ placingSpeciesId: get().mode === 'edit' ? id : null, placedRun: 0, measureActive: false, drawing: null, selectedId: null, selectedElementId: null, hiveSelected: false });
+      },
+      setQuickFind: (open) => set({ quickFindOpen: open && get().mode === 'edit' }),
+      chooseQuick: (item) => {
+        if (get().mode !== 'edit') return;
+        if (item.kind === 'plant' && item.speciesId) get().setPlacing(item.speciesId);
+        else if (item.hardscape) get().startDrawing(item.hardscape.type, item.hardscape.shape);
+        set({ quickFindOpen: false });
       },
       setPlaceContainer: (c) => set({ placeContainer: c }),
       setHover: (p, kind) => set({ hover: p, hoverSnap: kind ?? 'grid' }),

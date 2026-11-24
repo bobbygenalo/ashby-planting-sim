@@ -24,7 +24,7 @@ export interface CropPlant {
 const HABIT: Record<Crop['form'], Habit> = { rosette: 'round', bush: 'round', upright: 'columnar', vine: 'columnar', mound: 'spreading' };
 
 /** How far each produce shape reaches from where it joins the plant, in multiples of its size, and half its thickness. */
-const REACH: Record<NonNullable<Crop['produce']>['shape'], [number, number]> = {
+export const PRODUCE_REACH: Record<NonNullable<Crop['produce']>['shape'], [number, number]> = {
   sphere: [0.9, 0.5], pepper: [1.7, 0.4], eggplant: [1.9, 0.43], zucchini: [2.3, 0.46], cucumber: [2.1, 0.31], pod: [2.4, 0.12], head: [0.7, 0.4], berry: [1, 0.46], carrot: [0.3, 0.5],
 };
 
@@ -81,7 +81,7 @@ export function buildCropPlant(crop: Crop, seed: number, branches: BranchCfg, fo
       }
       dir = norm(dir);
       // Nothing hangs or lies below the soil: lift it until its far end and its thickness clear the ground.
-      const [len, half] = REACH[pr.shape];
+      const [len, half] = PRODUCE_REACH[pr.shape];
       const lowest = Math.min(p[2], p[2] + dir[2] * len * size) - half * size * (1 - Math.abs(dir[2]));
       if (lowest < 0.01) p = [p[0], p[1], p[2] + (0.01 - lowest)];
       produce.push({ p, dir, size, roll: rng() * Math.PI * 2, shade: rng() });

@@ -7,6 +7,7 @@ import { sunHoursAt, type SunMap } from './placement';
 import { isBlooming, type PlacedPlant } from './growth';
 import { mulberry32 } from './shuffle';
 import { skyWatchSpots } from './fireworks';
+import { fruitState } from './fruit';
 import type { SedanSpot } from './vehicle';
 import type { EngineConfig, HardscapeElement, Material, Pt, SiteConfig, StructureCfg } from './types';
 
@@ -55,6 +56,21 @@ export interface BirdFood {
   height: number;
 }
 
+/** A plant with ripe fruit now that a person can pick: where it stands, how big it is, and what its fruit looks like. */
+export interface HarvestPlant {
+  id: string;
+  speciesId: string;
+  common: string;
+  x: number;
+  y: number;
+  radius: number;
+  height: number;
+  color: string;
+  /** How big a piece looks on the plant, in feet. */
+  diameterFt: number;
+  aspect: number;
+}
+
 /** A building's footprint and its highest point, so anything flying can be kept out of it. */
 export interface StructureTop {
   poly: Pt[];
@@ -95,6 +111,8 @@ export interface LifeWorld {
   wormSpots: WormSpot[];
   /** Plants with ripe fruit or berries now, which fruit-eating birds come for. */
   birdFood: BirdFood[];
+  /** Plants with ripe fruit now that people pick into baskets. */
+  harvest: HarvestPlant[];
   /** Buildings: footprints and roof heights, for wildlife that flies over them and never through them. */
   structureTops: StructureTop[];
   /** Open, reachable ground in the party yard (the back yard), where people gather on a birthday. */
@@ -168,7 +186,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [],
+    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], harvest: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [],
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -216,6 +234,14 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   w.blooms = input.plants
     .filter((p) => p.size.planted && isBlooming(p.species, input.month) && p.species.pollinator.groups.some((g) => g === 'honey bees' || g === 'native bees'))
     .map((p) => ({ x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3) }));
+  // Ripe fruit people can pick: the same state the fruit is drawn from, so what is picked is what is shown.
+  w.harvest = [];
+  for (const p of input.plants) {
+    const fs = fruitState(p.species, p.size, input.month, input.engine.fruit);
+    if (fs?.phase === 'ripe' && fs.count >= 3) {
+      w.harvest.push({ id: p.inst.id, speciesId: p.species.id, common: p.species.common, x: p.inst.position[0], y: p.inst.position[1], radius: Math.max(p.size.width / 2, 0.3), height: Math.max(p.size.height, 0.3), color: fs.color, diameterFt: fs.diameterFt, aspect: fs.aspect });
+    }
+  }
 
   const sunAt = (x: number, y: number) => (input.sunMap ? sunHoursAt(input.sunMap, x, y) : null);
   w.flowers = input.plants
@@ -544,7 +570,26 @@ export function findRoute(w: LifeWorld, from: Pt, to: Pt): Pt[] | null {
 export type Act =
   | { kind: 'dine'; seat: string; phase: 'to' | 'pull' | 'sit' | 'talk' | 'rise' | 'push'; t: number; left: number }
   | { kind: 'watch'; phase: 'to' | 'watch'; spot: Pt; /** The fireworks, not the film: face the sky beyond the back of the lot. */ sky?: boolean }
-  | { kind: 'cake'; seat: string; phase: 'to' | 'gather' };
+  | { kind: 'cake'; seat: string; phase: 'to' | 'gather' }
+  /** Picking ripe fruit into a basket: walk to a plant, pick a few pieces, move to a different plant, and go in with the basket. */
+  | { kind: 'harvest'; phase: 'to' | 'pick'; plant: string; stand: Pt; /** Pieces still to take from this plant. */ chunk: number; /** Seconds into the current piece. */ t: number; fired: boolean; /** The basket count they are aiming to carry in. */ final: number; /** Species already picked from. */ species: string[] };
+
+/** What a person carries when picking: fruit in the basket, and how many it holds. */
+export interface Basket {
+  cap: number;
+  items: { color: string; d: number; aspect: number }[];
+}
+
+/** One piece of fruit in the air between the plant and the basket. */
+export interface Flight {
+  walker: number;
+  start: [number, number, number];
+  /** 0 at the plant, 1 in the basket. */
+  p: number;
+  color: string;
+  d: number;
+  aspect: number;
+}
 
 export interface Walker {
   kind: 'person' | 'dog';
@@ -567,6 +612,10 @@ export interface Walker {
   act: Act | null;
   /** How far down into a chair they are, 0 standing to 1 seated. */
   sit: number;
+  /** A basket in hand while picking fruit, and on the walk indoors with it. */
+  basket: Basket | null;
+  /** How far the picking arm is raised toward the fruit, 0 to 1. */
+  reach: number;
   /** True while this person is the one speaking at their table. */
   talking: boolean;
   /** True while they are cheering and clapping around the cake. */
@@ -635,6 +684,8 @@ export class LifeSim {
   presentsOut = false;
   /** Balloons are tied up outside the doors from the morning of a birthday until night. */
   balloonsOut = false;
+  /** Fruit flying from a plant to a basket, drawn by the scene. */
+  flights: Flight[] = [];
   private clock = 0;
   private rng: () => number;
   private cfg: Cfg;
@@ -672,7 +723,7 @@ export class LifeSim {
       } else if (!person && this.counts.people > 0) leader = (n - this.counts.people) % this.counts.people;
       this.walkers.push({
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
-        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, talking: false, cheer: false, lookUp: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
+        pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, basket: null, reach: 0, talking: false, cheer: false, lookUp: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
         replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
       });
     }
@@ -691,7 +742,12 @@ export class LifeSim {
     for (const wk of this.walkers) {
       wk.route = [];
       // A seat, or the screen, that is gone ends what they were doing there; the rest carry on.
-      if (wk.act) {
+      if (wk.act?.kind === 'harvest') {
+        // The tree they were at has stopped bearing (or is gone): take what is in the basket in.
+        const a = wk.act;
+        if (!world.harvest.some((q) => q.id === a.plant)) this.finishHarvest(wk);
+        else if (a.phase === 'pick') continue; // at the plant, picking
+      } else if (wk.act) {
         const ok = wk.act.kind === 'watch' ? (wk.act.sky ? world.skySpots.length > 0 : !!world.screen) : !!this.findSeat(wk.act.seat);
         if (!ok) this.endAct(wk);
         else if (wk.act.phase !== 'to') continue; // seated or watching: already where they are
@@ -790,6 +846,7 @@ export class LifeSim {
       if (this.fireworksOn && this.rng() < this.fireworksCfg.attendBias && this.assignSky(wk)) return;
       if (this.movieOn && this.rng() < this.cfg.movie.joinBias && this.assignWatch(wk)) return;
       if (this.world.tables.length && this.rng() < this.cfg.dining.bias && this.startDinner(wk)) return;
+      if (this.harvestOk(wk) && this.rng() < this.cfg.harvest.bias && this.startHarvest(wk)) return;
     }
     if (wk.visit?.phase === 'to' && !this.world.doors.some((d) => d.id === wk.visit!.door)) wk.visit = null;
     const door = wk.visit?.phase === 'to' ? this.world.doors.find((d) => d.id === wk.visit!.door)! : this.pickDoor(wk);
@@ -850,6 +907,7 @@ export class LifeSim {
     wk.gait += move * 1.6 * (5.6 / wk.heightFt) ** 0.8;
     if (dist - move < 0.05) {
       if (v.phase === 'in') {
+        wk.basket = null; // set down indoors
         v.phase = 'inside';
         v.left = v.night ? Infinity : this.between(this.cfg.people.lingerS);
         wk.x = door.stand[0];
@@ -868,6 +926,181 @@ export class LifeSim {
   // -------------------------------------------------------------------------------------------
   // Gatherings: sitting down at the table, and the evening movie
   // -------------------------------------------------------------------------------------------
+
+  // -------------------------------------------------------------------------------------------
+  // Picking fruit: a basket, a plant, a few pieces, a different plant, and the basket carried in
+  // -------------------------------------------------------------------------------------------
+
+  /** Someone free, old enough, in daylight, with ripe fruit to pick and room for one more picker. */
+  private harvestOk(wk: Walker): boolean {
+    const h = this.cfg.harvest;
+    if (wk.kind !== 'person' || wk.age < h.minAge || this.night || this.world.harvest.length === 0) return false;
+    if (this.minutes < h.fromMin || this.minutes >= h.toMin || wk.basket) return false;
+    return this.walkers.filter((q) => q.act?.kind === 'harvest' || (q.basket && q.visit)).length < h.maxPickers;
+  }
+
+  /** The open ground nearest to this person within reach of a plant's fruit, or null when none can be reached. */
+  private harvestStand(wk: Walker, plant: HarvestPlant): Pt | null {
+    const w = this.world, h = this.cfg.harvest;
+    let best: Pt | null = null, bestD = Infinity;
+    for (const k of w.reachable) {
+      const c = center(w, k % w.nx, Math.floor(k / w.nx));
+      const d = Math.hypot(c[0] - plant.x, c[1] - plant.y);
+      if (d < plant.radius + h.standMinFt || d > plant.radius + h.standMaxFt) continue;
+      const near = Math.hypot(c[0] - wk.x, c[1] - wk.y);
+      if (near < bestD) { bestD = near; best = c; }
+    }
+    return best;
+  }
+
+  /** How many pieces to take from this plant before moving on, never more than the basket's room or the goal allows. */
+  private chunkFor(wk: Walker): number {
+    const a = wk.act, b = wk.basket;
+    if (a?.kind !== 'harvest' || !b) return 0;
+    const [lo, hi] = this.cfg.harvest.chunk;
+    const want = lo + Math.floor(this.rng() * (hi - lo + 1));
+    return Math.max(1, Math.min(want, Math.min(b.cap, a.final) - b.items.length));
+  }
+
+  private startHarvest(wk: Walker): boolean {
+    const h = this.cfg.harvest;
+    const options = this.world.harvest;
+    for (let tries = 0; tries < 6; tries++) {
+      const plant = options[Math.floor(this.rng() * options.length)];
+      const stand = this.harvestStand(wk, plant);
+      if (!stand) continue;
+      const route = findRoute(this.world, [wk.x, wk.y], stand);
+      if (!route) continue;
+      const cap = Math.round(this.between(h.capacity));
+      const final = Math.max(3, Math.round(cap * this.between(h.fillShare)));
+      wk.basket = { cap, items: [] };
+      wk.act = { kind: 'harvest', phase: 'to', plant: plant.id, stand, chunk: 0, t: 0, fired: false, final, species: [plant.speciesId] };
+      wk.route = route.slice(1);
+      if (route.length <= 1) this.arrive(wk);
+      return true;
+    }
+    return false;
+  }
+
+  /** A spot on the canopy within the picker's reach, on the side facing them and at a height they can get to. */
+  private pickPoint(wk: Walker, plant: HarvestPlant): [number, number, number] {
+    const h = this.cfg.harvest;
+    const dx = wk.x - plant.x, dy = wk.y - plant.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const ux = dx / dist, uy = dy / dist;
+    const rho = plant.radius * (0.55 + 0.35 * this.rng());
+    // No further from the person than their arm reaches.
+    const reachRho = Math.max(0, dist - h.reachFt);
+    const r = Math.max(rho, Math.min(reachRho, plant.radius));
+    const top = Math.min(plant.height * 0.85, wk.heightFt * 1.12);
+    const z = Math.max(Math.min(plant.height * 0.25, top), top * (0.55 + 0.45 * this.rng()));
+    const jitter = (this.rng() - 0.5) * Math.min(1.2, plant.radius);
+    return [plant.x + ux * r - uy * jitter, plant.y + uy * r + ux * jitter, Math.max(0.5, z)];
+  }
+
+  private stepHarvest(wk: Walker, dt: number) {
+    const a = wk.act;
+    if (a?.kind !== 'harvest' || !wk.basket) return;
+    const plant = this.world.harvest.find((q) => q.id === a.plant);
+    if (!plant) return this.finishHarvest(wk);
+    const h = this.cfg.harvest;
+    wk.speed = 0;
+    // Face the plant.
+    const want = Math.atan2(plant.y - wk.y, plant.x - wk.x);
+    let diff = want - wk.heading;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    const turn = this.cfg.people.turnRate * dt;
+    wk.heading += Math.max(-turn, Math.min(turn, diff));
+    a.t += dt;
+    const len = h.pickEveryS;
+    wk.reach = Math.sin(Math.PI * Math.min(1, a.t / (0.62 * len)));
+    const self = this.walkers.indexOf(wk);
+    const inAir = this.flights.filter((f) => f.walker === self).length;
+    const room = wk.basket.cap - wk.basket.items.length - inAir;
+    // The fruit comes off at the top of the reach.
+    if (!a.fired && a.t >= 0.35 * len && a.chunk > 0 && room > 0 && Math.abs(diff) < 0.6) {
+      a.fired = true;
+      a.chunk--;
+      this.flights.push({ walker: self, start: this.pickPoint(wk, plant), p: 0, color: plant.color, d: plant.diameterFt, aspect: plant.aspect });
+    }
+    if (a.t >= len) {
+      a.t -= len;
+      a.fired = false;
+      if ((a.chunk <= 0 || room <= 0) && inAir === 0) this.nextStop(wk);
+    }
+  }
+
+  /** Done with this plant: carry on to a different kind of fruit, or take the basket in once it is as full as they wanted. */
+  private nextStop(wk: Walker) {
+    const a = wk.act, b = wk.basket;
+    if (a?.kind !== 'harvest' || !b) return;
+    wk.reach = 0;
+    if (b.items.length >= Math.min(a.final, b.cap)) return this.finishHarvest(wk);
+    const options = this.world.harvest
+      .filter((q) => !a.species.includes(q.speciesId))
+      .map((q) => ({ q, d: Math.hypot(q.x - wk.x, q.y - wk.y) }))
+      .sort((p, r) => p.d - r.d);
+    for (const { q } of options) {
+      const stand = this.harvestStand(wk, q);
+      const route = stand ? findRoute(this.world, [wk.x, wk.y], stand) : null;
+      if (!stand || !route) continue;
+      a.plant = q.id;
+      a.stand = stand;
+      a.phase = 'to';
+      a.t = 0;
+      a.fired = false;
+      a.species.push(q.speciesId);
+      wk.route = route.slice(1);
+      if (route.length <= 1) this.arrive(wk);
+      return;
+    }
+    this.finishHarvest(wk); // nothing different left to pick
+  }
+
+  /** Walk the basket to the nearest door and go in; with no door to go in by, just put it down. */
+  private finishHarvest(wk: Walker) {
+    const self = this.walkers.indexOf(wk);
+    this.flights = this.flights.filter((f) => f.walker !== self);
+    wk.act = null;
+    wk.reach = 0;
+    wk.route = [];
+    wk.speed = 0;
+    const doors = this.world.doors;
+    if (!wk.basket || wk.basket.items.length === 0 || doors.length === 0) {
+      this.dropBasket(wk);
+      return;
+    }
+    const door = doors.reduce((best, d) => (Math.hypot(d.approach[0] - wk.x, d.approach[1] - wk.y) < Math.hypot(best.approach[0] - wk.x, best.approach[1] - wk.y) ? d : best));
+    const route = findRoute(this.world, [wk.x, wk.y], door.approach);
+    if (!route) {
+      this.dropBasket(wk);
+      return;
+    }
+    wk.visit = { door: door.id, phase: 'to', left: 0 };
+    wk.route = route.slice(1);
+    if (route.length <= 1) this.startEntering(wk);
+  }
+
+  private dropBasket(wk: Walker) {
+    const self = this.walkers.indexOf(wk);
+    this.flights = this.flights.filter((f) => f.walker !== self);
+    wk.basket = null;
+    wk.reach = 0;
+  }
+
+  /** Fruit in the air arrives in the basket. */
+  private stepFlights(dt: number) {
+    if (this.flights.length === 0) return;
+    const still: Flight[] = [];
+    for (const f of this.flights) {
+      f.p += dt / this.cfg.harvest.flightS;
+      const b = this.walkers[f.walker]?.basket;
+      if (!b) continue;
+      if (f.p >= 1) b.items.push({ color: f.color, d: f.d, aspect: f.aspect });
+      else still.push(f);
+    }
+    this.flights = still;
+  }
 
   private findSeat(id: string): WorldSeat | null {
     for (const t of this.world.tables) {
@@ -889,6 +1122,7 @@ export class LifeSim {
       this.chairs.set(a.seat, 0);
     }
     if (a?.kind === 'cake') this.seatTaken.delete(a.seat);
+    if (a?.kind === 'harvest') this.dropBasket(wk);
     wk.cheer = false;
     wk.lookUp = false;
     wk.act = null;
@@ -910,6 +1144,7 @@ export class LifeSim {
     const a = wk.act;
     if (!a) return null;
     if (a.kind === 'watch') return a.spot;
+    if (a.kind === 'harvest') return a.stand;
     return this.findSeat(a.seat)?.approach ?? null; // a chair or a place at the cake
   }
 
@@ -921,6 +1156,13 @@ export class LifeSim {
     wk.speed = 0;
     if (a.kind === 'watch') {
       a.phase = 'watch';
+      return;
+    }
+    if (a.kind === 'harvest') {
+      a.phase = 'pick';
+      a.t = 0;
+      a.fired = false;
+      a.chunk = this.chunkFor(wk);
       return;
     }
     if (a.kind === 'cake') {
@@ -1340,6 +1582,7 @@ export class LifeSim {
       if (wk.leader !== null) wk.replan -= dt;
       if (wk.act && wk.act.phase !== 'to') {
         if (wk.act.kind === 'dine') this.stepDine(wk, dt);
+        else if (wk.act.kind === 'harvest') this.stepHarvest(wk, dt);
         else if (wk.act.kind === 'cake') this.stepCake(wk);
         else this.stepWatch(wk, dt);
         continue;
@@ -1399,6 +1642,7 @@ export class LifeSim {
       }
     }
     this.clock += dt;
+    this.stepFlights(dt);
     this.stepTables(dt);
     this.stepBees(dt);
   }

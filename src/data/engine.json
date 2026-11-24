@@ -1538,6 +1538,36 @@
         "#ff9a3c"
       ],
       "lookUpRad": 0.55
+    },
+    "harvest": {
+      "bias": 0.18,
+      "minAge": 9,
+      "fromMin": 420,
+      "toMin": 1080,
+      "maxPickers": 3,
+      "capacity": [
+        12,
+        20
+      ],
+      "fillShare": [
+        0.55,
+        1.0
+      ],
+      "chunk": [
+        3,
+        7
+      ],
+      "pickEveryS": 1.7,
+      "flightS": 0.55,
+      "reachFt": 3.2,
+      "standMinFt": 0.4,
+      "standMaxFt": 3.5,
+      "basket": {
+        "radiusFt": 0.5,
+        "heightFt": 0.42,
+        "color": "#b88a4a",
+        "itemMaxFt": 0.2
+      }
     }
   },
   "branches": {
@@ -1591,7 +1621,9 @@
     "maxPlants": 90,
     "produceDisplayScale": 1.6,
     "produceMinFt": 0.12,
-    "soilDepthFt": 0.1
+    "soilDepthFt": 0.1,
+    "canopyShare": 1.0,
+    "produceGapShare": 1.25
   },
   "growthStages": {
     "years": [
@@ -1856,6 +1888,9 @@
     "pitchLimitRad": 1.35,
     "fovDeg": 72,
     "plantClearShare": 0.8,
-    "plantBlockShare": 0.5
+    "plantBlockShare": 0.5,
+    "crouchEyeHeightFt": 2.9,
+    "crouchSpeedShare": 0.45,
+    "crouchRate": 7
   }
 }

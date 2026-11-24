@@ -12,7 +12,9 @@ import { TopBar } from './TopBar';
 import { CanvasToolbar } from './CanvasToolbar';
 import { SimDock } from './SimDock';
 import { WalkOverlay } from './WalkOverlay';
-import { SelectionCard } from './SelectionCard';
+import { QuickFind } from './QuickFind';
+import { PlacingPanel } from './PlacingPanel';
+import { SelectionPanel } from './SelectionPanel';
 import { ShuffleBar } from './ShuffleControl';
 import { arrowDelta, isPlayPauseKey, viewForKey } from './shortcuts';
 import { PlanSheet } from './PlanSheet';
@@ -91,8 +93,26 @@ function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')) return;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')) {
+        // Escape in a field of the selection panel lets go of the field and clears the selection, so the tabs come back.
+        if (e.key === 'Escape' && el.closest('.selpanel') && !document.querySelector('.dialog')) {
+          el.blur();
+          const st0 = appStore.getState();
+          st0.select(null);
+          st0.selectElement(null);
+          st0.selectHive(false);
+        }
+        return;
+      }
       const st = appStore.getState();
+      // / (or Cmd/Ctrl+K) opens quick find to search and place plants and hardscape; not in the Walk view or with a dialog open.
+      const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey;
+      const modK = (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k';
+      if ((slash || modK) && !document.querySelector('.dialog') && st.site.views.find((v) => v.id === st.view)?.kind !== 'walk') {
+        e.preventDefault();
+        st.setQuickFind(true);
+        return;
+      }
       // Number keys switch the camera view, unless a dialog is open.
       const view = viewForKey(st.site.views, e);
       if (view && !document.querySelector('.dialog')) {
@@ -151,7 +171,9 @@ function useShortcuts() {
       } else if (e.key === 'Enter' && st.drawing) {
         st.finishDrawing();
       } else if (e.key === 'Escape') {
-        if (st.drawing) st.startDrawing(null);
+        // Quick find first, even when its field has lost the keyboard.
+        if (st.quickFindOpen) st.setQuickFind(false);
+        else if (st.drawing) st.startDrawing(null);
         else if (st.placingSpeciesId) st.setPlacing(null);
         else if (st.measureActive) st.setMeasureActive(false);
         else {
@@ -201,6 +223,16 @@ function Planner() {
       return !open;
     });
   };
+  // Quick find lives at the top of the right panel, so opening it shows the panel if it was hidden.
+  const mode = useApp((x) => x.mode);
+  const quickOpen = useApp((x) => x.quickFindOpen);
+  // With something in hand to place, the right panel shows that element's details in place of the section tabs.
+  const inHand = useApp((x) => !!x.placingSpeciesId || !!x.drawing);
+  const placingView = inHand && !quickOpen;
+  // A selected plant, element or the hive is the right panel too, unless find or placing has it.
+  const hasSelection = useApp((x) => !!x.selectedId || !!x.selectedElementId || x.hiveSelected);
+  const selectionView = hasSelection && !inHand && !quickOpen;
+  useEffect(() => { if (quickOpen) setPanelOpen(true); }, [quickOpen]);
   const group = groupOf(tab);
   const go = (next: Tab) => {
     if (next !== 'hardscape') appStore.getState().commitDrawing();
@@ -217,9 +249,11 @@ function Planner() {
         <CanvasToolbar />
         <ShuffleBar />
         <SimDock />
-        <SelectionCard growing={sun.growing} />
       </main>
-      <aside className="right">
+      <aside className={`right ${quickOpen ? 'quick-open' : ''} ${placingView ? 'placing-open' : ''} ${selectionView ? 'selection-open' : ''}`}>
+        <QuickFind />
+        <PlacingPanel />
+        <SelectionPanel growing={sun.growing} />
         <nav className="rightnav" aria-label="Planner sections">
           <div className="segmented" role="tablist">
             {GROUPS.map((g) => (
@@ -233,6 +267,11 @@ function Planner() {
               {group.tabs.map(([id, label]) => (
                 <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => go(id)}>{label}{id === 'layout' && conflictCount > 0 ? ` (${conflictCount})` : ''}</button>
               ))}
+              {group.id === 'design' && (
+                <button className="icon find" aria-label="Find a plant or hardscape to place" title="Find a plant or hardscape to place (press /)" aria-keyshortcuts="/" disabled={mode !== 'edit'} onClick={() => appStore.getState().setQuickFind(true)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+                </button>
+              )}
             </div>
           )}
         </nav>

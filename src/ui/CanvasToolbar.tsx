@@ -40,6 +40,7 @@ export function CanvasToolbar() {
         ))}
       </div>
       <div className="toolbar-right">
+      <button disabled={!edit} onClick={() => s.setQuickFind(true)} title="Find a plant or hardscape to place (press /)" aria-keyshortcuts="/">Find<kbd className="key">/</kbd></button>
       <div className="layers" ref={box}>
         <button aria-expanded={open} onClick={() => setOpen(!open)}>Layers ▾</button>
         {open && (

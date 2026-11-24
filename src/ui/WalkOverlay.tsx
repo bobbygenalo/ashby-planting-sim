@@ -30,7 +30,7 @@ export function WalkOverlay() {
         onPointerCancel={() => { drag.current = null; }}
       />
       <div className="walkhint" role="note">
-        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · drag or arrows to look
+        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · hold <kbd>C</kbd> crouch · drag or arrows to look
       </div>
     </>
   );

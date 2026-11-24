@@ -19,6 +19,8 @@ export interface PlayerState {
   heading: number;
   pitch: number;
   onGround: boolean;
+  /** How far down in a crouch, 0 standing to 1 fully crouched. */
+  crouch: number;
 }
 
 export interface PlayerInput {
@@ -27,11 +29,13 @@ export interface PlayerInput {
   strafe: number;
   run: boolean;
   jump: boolean;
+  /** Held to crouch. */
+  crouch: boolean;
   /** -1 left to 1 right, from the arrow keys. */
   turn: number;
 }
 
-export const NO_INPUT: PlayerInput = { forward: 0, strafe: 0, run: false, jump: false, turn: 0 };
+export const NO_INPUT: PlayerInput = { forward: 0, strafe: 0, run: false, jump: false, crouch: false, turn: 0 };
 
 interface Block { poly: Pt[]; top: number }
 interface Post { x: number; y: number; r: number; top: number }
@@ -107,7 +111,7 @@ export function playerFits(w: PlayerWorld, x: number, y: number, z: number, onGr
 }
 
 export function createPlayer(x: number, y: number, heading: number): PlayerState {
-  return { x, y, z: 0, vx: 0, vy: 0, vz: 0, heading, pitch: 0, onGround: true };
+  return { x, y, z: 0, vx: 0, vy: 0, vz: 0, heading, pitch: 0, onGround: true, crouch: 0 };
 }
 
 /** The heading that faces from one point toward another. */
@@ -131,7 +135,11 @@ export function stepPlayer(s0: PlayerState, input: PlayerInput, dt: number, w: P
   let wy = cos * input.forward - sin * input.strafe;
   const mag = Math.hypot(wx, wy);
   if (mag > 1) { wx /= mag; wy /= mag; }
-  const speed = input.run ? cfg.runFtS : cfg.walkFtS;
+  // Crouching comes on and off smoothly, only on the ground; a crouched person walks slowly and cannot run or jump.
+  const crouchTarget = input.crouch && s.onGround ? 1 : s.onGround ? 0 : s.crouch;
+  s.crouch += Math.max(-cfg.crouchRate * dt, Math.min(cfg.crouchRate * dt, crouchTarget - s.crouch));
+  const base = input.run && s.crouch < 0.2 ? cfg.runFtS : cfg.walkFtS;
+  const speed = base * (1 - (1 - cfg.crouchSpeedShare) * s.crouch);
   const acc = (s.onGround ? cfg.groundAccel : cfg.airAccel) * dt;
   // Change the velocity toward the wish by at most `acc`, as one vector so a diagonal is no quicker than straight on.
   const dvx = wx * speed - s.vx, dvy = wy * speed - s.vy;
@@ -139,7 +147,7 @@ export function stepPlayer(s0: PlayerState, input: PlayerInput, dt: number, w: P
   if (dv <= acc) { s.vx += dvx; s.vy += dvy; } else { s.vx += (dvx / dv) * acc; s.vy += (dvy / dv) * acc; }
 
   // Jump from the ground.
-  if (input.jump && s.onGround) { s.vz = cfg.jumpFtS; s.onGround = false; }
+  if (input.jump && s.onGround && s.crouch < 0.3) { s.vz = cfg.jumpFtS; s.onGround = false; }
 
   // Move one axis at a time so a wall is slid along, not stuck to.
   const nx = s.x + s.vx * dt;
@@ -160,4 +168,9 @@ export function stepPlayer(s0: PlayerState, input: PlayerInput, dt: number, w: P
     if (s.z <= g2 && s.vz <= 0) { s.z = g2; s.vz = 0; s.onGround = true; }
   }
   return s;
+}
+
+/** Where the eyes are above the ground: standing, lowered smoothly as the person crouches. */
+export function eyeZ(s: PlayerState, cfg: PlayerCfg): number {
+  return s.z + cfg.eyeHeightFt + (cfg.crouchEyeHeightFt - cfg.eyeHeightFt) * s.crouch;
 }

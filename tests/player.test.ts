@@ -3,7 +3,7 @@ import engineRaw from '../src/data/engine.json';
 import siteRaw from '../src/data/site.json';
 import materialsRaw from '../src/data/materials.json';
 import { activeStructures, loadSite } from '../src/engine/site';
-import { NO_INPUT, buildPlayerWorld, createPlayer, groundAt, headingToward, look, playerFits, stepPlayer, type PlayerInput, type PlayerState, type PlayerWorld } from '../src/engine/player';
+import { NO_INPUT, buildPlayerWorld, createPlayer, eyeZ, groundAt, headingToward, look, playerFits, stepPlayer, type PlayerInput, type PlayerState, type PlayerWorld } from '../src/engine/player';
 import type { EngineConfig, HardscapeElement, Material } from '../src/engine/types';
 
 const engine = engineRaw as unknown as EngineConfig;
@@ -175,5 +175,49 @@ describe('the world from the plan', () => {
     expect(w.blocks.some((b) => b.top === 1.5)).toBe(true);
     expect(w.blocks.some((b) => b.top === 4)).toBe(false);
     expect(w.posts.some((p) => p.x === 30 && p.y === 60)).toBe(true);
+  });
+});
+
+describe('crouching', () => {
+  it('lowers the eyes to the crouch height while C is held, smoothly, and stands back up when it is let go', () => {
+    const w = empty();
+    let s = createPlayer(25, 20, 0);
+    expect(eyeZ(s, cfg)).toBe(cfg.eyeHeightFt);
+    s = stepPlayer(s, { ...NO_INPUT, crouch: true }, 1 / 60, w, cfg);
+    expect(s.crouch).toBeGreaterThan(0);
+    expect(s.crouch).toBeLessThan(1); // not instant
+    s = run(s, { crouch: true }, 1, w);
+    expect(s.crouch).toBe(1);
+    expect(eyeZ(s, cfg)).toBeCloseTo(cfg.crouchEyeHeightFt, 9);
+    expect(cfg.crouchEyeHeightFt).toBeLessThan(cfg.eyeHeightFt - 2); // low enough to look across a raised bed
+    s = run(s, {}, 1, w);
+    expect(s.crouch).toBe(0);
+    expect(eyeZ(s, cfg)).toBe(cfg.eyeHeightFt);
+  });
+
+  it('walks slowly while crouched, ignores running, and cannot jump', () => {
+    const w = empty();
+    const walk = run(createPlayer(25, 20, 0), { forward: 1 }, 2, w);
+    let c = run(createPlayer(25, 20, 0), { crouch: true }, 1, w);
+    const y0 = c.y;
+    c = run(c, { crouch: true, forward: 1, run: true }, 2, w);
+    const crouched = c.y - y0;
+    expect(crouched).toBeLessThan((walk.y - 20) * 0.7);
+    expect(crouched).toBeGreaterThan(0);
+    const j = run(c, { crouch: true, jump: true }, 0.3, w);
+    expect(j.z).toBe(0);
+    expect(j.onGround).toBe(true);
+  });
+
+  it('cannot start a crouch in the air, and a crouch under a low bed edge still moves the eyes with the ground', () => {
+    const w = empty();
+    let s = stepPlayer(createPlayer(25, 20, 0), { ...NO_INPUT, jump: true }, 1 / 60, w, cfg);
+    s = stepPlayer(s, { ...NO_INPUT, crouch: true }, 1 / 60, w, cfg);
+    expect(s.onGround).toBe(false);
+    expect(s.crouch).toBe(0);
+    const bedWorld = empty();
+    bedWorld.blocks.push(box(20, 20, 40, 40, 0.5));
+    const on = run(createPlayer(30, 30, 0), { crouch: true }, 1, bedWorld);
+    expect(eyeZ(on, cfg)).toBeCloseTo(on.z + cfg.crouchEyeHeightFt, 9);
   });
 });

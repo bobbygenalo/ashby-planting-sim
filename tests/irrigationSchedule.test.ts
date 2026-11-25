@@ -7,7 +7,7 @@ import { polygonArea } from '../src/engine/geometry';
 import { placedPlants } from '../src/engine/growth';
 import { footprint } from '../src/engine/hardscape';
 import { planIrrigation } from '../src/engine/irrigation';
-import { buildSchedule, nextRun, runsAt, runsOnDay, weekdayFor } from '../src/engine/irrigationSchedule';
+import { buildSchedule, nextRun, runsAt, runsOnDay, waterByYear, weekdayFor } from '../src/engine/irrigationSchedule';
 import { emptyScenarioData } from '../src/engine/scenario';
 import { doyToMonthDay } from '../src/engine/time';
 import { activeStructures, loadSite } from '../src/engine/site';
@@ -133,5 +133,43 @@ describe('two accesses water at the same time', () => {
       }
     }
     expect(both).toBeGreaterThan(0);
+  });
+});
+describe('water over the years', () => {
+  const fruit = [inst('vaccinium-sunshine-blue', 30, 76), inst('malus-mutsu', 38, 76), inst('citrus-satsuma', 30, 90)];
+  const input = (extra: HardscapeElement[], useRain = false) => {
+    const base = emptyScenarioData(site);
+    const elements = [...base.hardscape, ...extra];
+    return {
+      plantsAt: (y: number) => placedPlants(fruit, base.palette, lib.species, y * 12, engine.growth),
+      lawns: elements.filter((e) => e.type === 'lawn'), hydrozones: [], autoIrrigation: {}, zones: site.zones, water, growth: engine.growth,
+      hardscapeCfg: engine.hardscape, useRain, cfg,
+      beds: elements.filter((e) => e.type === 'raisedBed' && !e.removed && !e.existing).map((e) => { const points = footprint(e, engine.hardscape); return { points, areaSf: polygonArea(points) }; }),
+    };
+  };
+
+  it('matches the schedule total for the year it is built at', () => {
+    for (const month of [0, 60, 120]) {
+      const b = build(fruit, [], false, false, month);
+      const [r] = waterByYear({ ...input([]), years: [month / 12] });
+      expect(r.gallons).toBeCloseTo(b.schedule.totalAnnualGal, 3);
+    }
+  });
+
+  it('grows with the plants and then levels off at maturity', () => {
+    const per = waterByYear({ ...input([]), years: Array.from({ length: 31 }, (_, i) => i) });
+    expect(per[5].gallons).toBeGreaterThan(per[0].gallons * 5);
+    expect(per[30].gallons).toBeCloseTo(per[20].gallons, 6);
+    for (let y = 2; y <= 30; y++) expect(per[y].gallons).toBeGreaterThanOrEqual(per[y - 1].gallons - 1e-6);
+  });
+
+  it('computes a mature apple tree by hand: ETo x plant factor x 0.62 x canopy area / drip efficiency', () => {
+    const base = emptyScenarioData(site);
+    const apple = [inst('malus-mutsu', 30, 76)];
+    const per = waterByYear({ ...input([]), plantsAt: (y) => placedPlants(apple, base.palette, lib.species, y * 12, engine.growth), years: [30] });
+    const pf = engine.growth.wucolsPlantFactor.moderate;
+    const eto = water.eto.monthly.reduce((a, b) => a + b, 0);
+    const area = Math.PI * 7.5 ** 2;
+    expect(per[0].gallons).toBeCloseTo((eto * pf * water.formula.conversion * area) / water.irrigation.drip.efficiency, 3);
   });
 });

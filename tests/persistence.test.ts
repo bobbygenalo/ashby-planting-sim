@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import siteRaw from '../src/data/site.json';
 import { WORKSPACE_KEY, loadWorkspace, saveWorkspace, type KeyValueStorage } from '../src/engine/scenario';
 import { makeAppStore } from '../src/store/store';
 
@@ -34,7 +35,7 @@ describe('autosave and restore (SC-2)', () => {
     expect(second.getState().soilProfiles.back_yard.texture).toBe('clay');
     second.getState().switchScenario(second.getState().scenarios[0].id);
     expect(second.getState().instances.map((i) => i.speciesId)).toEqual(['salvia-clevelandii']);
-    expect(second.getState().hardscape.length).toBe(2);
+    expect(second.getState().hardscape.length).toBe((siteRaw as unknown as { hardscape: unknown[] }).hardscape.length + 1);
   });
 
   it('a damaged save is ignored and the app starts fresh rather than breaking', () => {

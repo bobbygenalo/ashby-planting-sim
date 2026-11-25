@@ -150,15 +150,16 @@
           29.3384
         ]
       ],
-      "eaveHeight": 9.0,
-      "ridgeHeight": 10.0,
+      "eaveHeight": 9.25,
+      "ridgeHeight": 10.4,
       "roofForm": "shed",
       "lowSide": "south",
-      "note": "Covered entry on the west half of the south front, under a lower roof (about 9 ft at the front edge, rising to the main roof's eave) with the slatted screen and the front door.",
+      "note": "Covered entry on the west half of the south front, under a lower roof (about 9 ft at the front edge, rising to the main roof's eave) with the slatted screen and the front door. Heights read from the south and west elevations: the roof's underside at the front edge is 9'-3\" above grade (the slat screen's 7'-11 1/2\" above the porch floor reaches it) and the top of the roof deck at the back is about 10'-5\". Drawn open: a roof on posts over the porch slab, with no walls (the porch's back wall is the main body's front wall).",
       "group": "house",
       "groupName": "House (E) SFH",
       "status": "existing",
-      "toggleable": false
+      "toggleable": false,
+      "open": true
     },
     {
       "id": "house-westwing",
@@ -384,11 +385,17 @@
       "lowSide": "west",
       "status": "proposed",
       "toggleable": true,
-      "note": "Rear wing over grids 01 to 02. Shed roof sloping down to the west: 10'-5\" at the west gutter, 13'-1 1/4\" at the east edge (roof plan), measured from finished floor, plus 0.8 ft for the floor above grade.",
+      "note": "Rear wing over grids 01 to 02. Shed roof sloping down to the west: 10'-5\" at the west gutter, 13'-1 1/4\" at the east edge (roof plan), measured from finished floor, plus 0.8 ft for the floor above grade. Its south-facing wall is vertical Hardie (fiber-cement) board; the other walls are stucco.",
       "groupName": "ADU (proposed)",
       "roofThickness": 0.6,
       "windows": [
-        { "side": "east", "insetFt": 0.8, "belowRoofFt": 0.4, "heightFt": 2.4, "mullionFt": 4.5 }
+        {
+          "side": "east",
+          "insetFt": 0.8,
+          "belowRoofFt": 0.4,
+          "heightFt": 2.4,
+          "mullionFt": 4.5
+        }
       ],
       "roofFootprint": [
         [
@@ -407,7 +414,10 @@
           8.9583,
           146.4688
         ]
-      ]
+      ],
+      "finish": {
+        "south": "hardie"
+      }
     },
     {
       "id": "adu-link",
@@ -485,12 +495,21 @@
       "lowSide": "west",
       "status": "proposed",
       "toggleable": true,
-      "note": "Front wing over grids 02 to 04. Shed roof sloping down to the west: 9'-4\" at the west gutter, 13'-1 1/8\" at the east edge, plus 0.8 ft. The roof reaches 2'-5 1/4\" south of the front wall over the entry landing (printed width 25'-6 1/2\" includes it).",
+      "note": "Front wing over grids 02 to 04. Shed roof sloping down to the west: 9'-4\" at the west gutter, 13'-1 1/8\" at the east edge, plus 0.8 ft. The roof reaches 2'-5 1/4\" south of the front wall over the entry landing (printed width 25'-6 1/2\" includes it). Its south-facing wall is vertical Hardie (fiber-cement) board; the other walls are stucco.",
       "groupName": "ADU (proposed)",
       "roofThickness": 0.6,
       "windows": [
-        { "side": "east", "insetFt": 0.8, "belowRoofFt": 0.4, "heightFt": 2.4, "mullionFt": 4.5 }
-      ]
+        {
+          "side": "east",
+          "insetFt": 0.8,
+          "belowRoofFt": 0.4,
+          "heightFt": 2.4,
+          "mullionFt": 4.5
+        }
+      ],
+      "finish": {
+        "south": "hardie"
+      }
     },
     {
       "id": "adu-fin-great-w",
@@ -655,6 +674,155 @@
       "existing": true,
       "keepClear": true,
       "note": "From the owner's garage plan: a 16'-0\" apron for 10'-0\" in front of the garage, then a taper out to 26'-0\" from the garage front wall, starting about 1'-3\" in from the west lot line. The narrow part (about 7.5 ft wide) is estimated from the taper's slope."
+    },
+    {
+      "id": "porch-floor",
+      "type": "patio",
+      "name": "Front porch floor (E)",
+      "points": [
+        [
+          9.9438,
+          25.0384
+        ],
+        [
+          27.0,
+          25.0384
+        ],
+        [
+          27.0,
+          29.3384
+        ],
+        [
+          9.9438,
+          29.3384
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 1.25,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "note": "Painted concrete porch floor, 1'-3\" above grade (the ground floor height); its extent is the porch footprint of the roof plan."
+    },
+    {
+      "id": "stoop-west",
+      "type": "patio",
+      "name": "Front stoop, west slab (E)",
+      "points": [
+        [
+          11.8,
+          21.2
+        ],
+        [
+          22.8,
+          21.2
+        ],
+        [
+          22.8,
+          25.0384
+        ],
+        [
+          11.8,
+          25.0384
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 0.75,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "estimate": true,
+      "note": "Read from the owner's photographs: a poured concrete landing one step below the porch floor, in front of the porch, in two slabs with a joint between. Size and height are estimates."
+    },
+    {
+      "id": "stoop-east",
+      "type": "patio",
+      "name": "Front stoop, east slab (E)",
+      "points": [
+        [
+          22.8,
+          21.2
+        ],
+        [
+          30.0,
+          21.2
+        ],
+        [
+          30.0,
+          25.0384
+        ],
+        [
+          22.8,
+          25.0384
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 0.75,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "estimate": true,
+      "note": "The second slab of the front landing, running a little past the porch corner. Estimated from the photographs."
+    },
+    {
+      "id": "adu-landing",
+      "type": "patio",
+      "name": "ADU entry landing (E)",
+      "points": [
+        [
+          33.9583,
+          119.3646
+        ],
+        [
+          46.1875,
+          119.3646
+        ],
+        [
+          46.1875,
+          123.3646
+        ],
+        [
+          33.9583,
+          123.3646
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 0.7,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "estimate": true,
+      "note": "The printed 12'-2 3/4\" by 4'-0\" entry landing in front of the great room's sliding door (door 01A), set against the east fin; its depth and the 0.7 ft height (level with the door's sill) are read from the south-east view. Its west end is 12'-2 3/4\" from the east fin."
+    },
+    {
+      "id": "adu-step-north",
+      "type": "patio",
+      "name": "ADU courtyard step (E)",
+      "points": [
+        [
+          36.5,
+          135.5729
+        ],
+        [
+          44.2,
+          135.5729
+        ],
+        [
+          44.2,
+          137.1
+        ],
+        [
+          36.5,
+          137.1
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 0.5,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "estimate": true,
+      "note": "A low concrete step in front of the great room's north sliding door, read from the north-east view; its size is an estimate."
     }
   ],
   "contextObjects": [
@@ -777,6 +945,33 @@
       "trunkHeight": 7,
       "density": 0.75,
       "placeholder": true
+    },
+    {
+      "id": "porch-slats",
+      "kind": "screen",
+      "name": "Porch slat screen",
+      "line": [
+        [
+          10.6,
+          25.4
+        ],
+        [
+          20.4,
+          25.4
+        ]
+      ],
+      "height": 9.21,
+      "baseHeight": 1.25,
+      "thickness": 0.3,
+      "slatFt": 0.125,
+      "endPostFt": 0.38,
+      "density": 0.75,
+      "color": "#d3992b",
+      "placeholder": false,
+      "note": "The vertical wood slat screen across the front of the porch, from the corner post at the west end to the post at the east end: 25 2x4s (1.5 by 3.5 in) turned 45 degrees like louvers, evenly spaced between the two posts with about 1.7 in clear between faces (about 1 in along the screen), from the porch floor to the porch roof (the south elevation gives 7'-11 1/2\" above the floor, so the top is 9.21 ft above grade, just under the porch roof's 9'-3\" underside). Count, spacing and angle follow the owner's instruction; the west post sits where the drawing puts the porch's west edge (about x 10.6); the east post is at x 20.4, where 25 slats fit with at least 1 in clear along the screen between a post at the drawing's west edge and one read from the photographs (the drawing ends its screen at x 18.5, short of the built one). Estimates.",
+      "slatWidthFt": 0.2917,
+      "slatAngleDeg": 45,
+      "slatCount": 25
     }
   ],
   "easements": [
@@ -1213,7 +1408,10 @@
         "id": "hose-bib-front",
         "label": "Front yard water access, middle of the front of the house",
         "short": "front",
-        "point": [28.55, 25.04],
+        "point": [
+          28.55,
+          25.04
+        ],
         "estimate": true,
         "note": "Placed by the owner's instruction at the middle of the house's street-facing wall (x midway between the house's west and east edges, on the front wall). A hose bib and valve manifold there; the real fixture is not read from a plan."
       },
@@ -1221,7 +1419,10 @@
         "id": "hose-bib-back",
         "label": "Back yard water access, middle of the back of the garage",
         "short": "back",
-        "point": [12.0, 103.47],
+        "point": [
+          12.0,
+          103.47
+        ],
         "estimate": true,
         "note": "Placed by the owner's instruction at the middle of the garage's rear wall (the wall facing the ADU). A hose bib and valve manifold there; the real fixture is not read from a plan."
       }
@@ -1233,22 +1434,27 @@
       "label": "House, front door",
       "building": "house",
       "point": [
-        18.5,
-        25.04
+        24.2,
+        21.2
       ],
       "outward": [
         0,
         -1
       ],
       "estimate": true,
-      "note": "Assumed under the porch; the roof plan does not show the door."
+      "note": "At the front edge of the stoop, in front of the real front door (on the porch's back wall, x 22.7 to 25.7, see `openings`); people walk to the stoop and go in. Assumed; the roof plan does not show the door.",
+      "entry": [
+        24.2,
+        29.3384
+      ],
+      "opening": "front-door"
     },
     {
       "id": "house-rear",
-      "label": "House, back door",
+      "label": "House, back door (sliding door 12)",
       "building": "house",
       "point": [
-        32.0,
+        35.0,
         66.23
       ],
       "outward": [
@@ -1256,7 +1462,8 @@
         1
       ],
       "estimate": true,
-      "note": "Assumed on the rear wing's north wall, facing the garage."
+      "note": "The three-panel sliding door in the rear wing's north wall (12 in the north elevation), which opens onto the back yard; x read from the drawing. The other back door (10) opens onto the driveway's taper in the cut-out, which paths and plants keep clear of, so it is drawn but not used as a door for people.",
+      "opening": "rear-slider"
     },
     {
       "id": "garage-front",
@@ -1271,22 +1478,28 @@
         -1
       ],
       "estimate": true,
-      "note": "Assumed at the middle of the street-side wall, where the garage door is."
+      "note": "Assumed at the middle of the street-side wall, where the garage door is.",
+      "opening": "garage-door"
     },
     {
       "id": "adu-front",
       "label": "ADU, front door",
       "building": "adu",
       "point": [
-        36.1,
-        123.3646
+        39.7,
+        119.36
       ],
       "outward": [
         0,
         -1
       ],
       "estimate": true,
-      "note": "On the entry landing (door 01A) in the great room's south wall; its exact position along the wall is estimated."
+      "note": "At the front edge of the entry landing, in front of the sliding glass door 01A in the great room's south wall (the landing is 4 ft deep, so the spot is 4 ft from the wall); the door's position along the wall is read from the owner's isometric view.",
+      "entry": [
+        39.7,
+        123.3646
+      ],
+      "opening": "adu-gr-slider"
     }
   ],
   "residents": [
@@ -1364,6 +1577,584 @@
       "name": "Beth",
       "month": 12,
       "day": 2
+    }
+  ],
+  "openings": [
+    {
+      "id": "porch-wall",
+      "kind": "panel",
+      "label": "Porch back wall, painted stucco",
+      "at": [
+        18.4719,
+        29.3384
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 17.0562,
+      "heightFt": 8.75,
+      "sillFt": 1.25,
+      "color": "#9aa08a",
+      "estimate": true,
+      "note": "The porch's back wall is painted sage green in the photographs, not the cream of the rest of the house.",
+      "building": "house"
+    },
+    {
+      "id": "porch-return",
+      "kind": "panel",
+      "label": "Porch east return wall",
+      "at": [
+        27.0,
+        27.19
+      ],
+      "facing": [
+        -1,
+        0
+      ],
+      "widthFt": 4.3,
+      "heightFt": 8.75,
+      "sillFt": 1.25,
+      "color": "#a3a595",
+      "estimate": true,
+      "building": "house"
+    },
+    {
+      "id": "front-door",
+      "kind": "door",
+      "label": "Front door (01)",
+      "at": [
+        24.2,
+        29.3384
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 3.1,
+      "heightFt": 6.75,
+      "sillFt": 1.25,
+      "frameFt": 0.2,
+      "frameColor": "#f4f2ee",
+      "color": "#b9701f",
+      "estimate": true,
+      "note": "From the south elevation: 3.1 ft wide with its casing and 6'-9\" tall (its top 8'-0\" above grade), about 0.9 ft from the porch's east return wall.",
+      "building": "house"
+    },
+    {
+      "id": "porch-window",
+      "kind": "window",
+      "label": "Porch window (01 and the part behind the slats)",
+      "at": [
+        16.45,
+        29.3384
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 9.93,
+      "heightFt": 4.03,
+      "sillFt": 4.0,
+      "frameFt": 0.18,
+      "frameColor": "#f4f2ee",
+      "mullions": 3,
+      "estimate": true,
+      "note": "The south elevation dimensions window 01, 4'-0\" tall with its sill 2'-9\" above the floor (4'-0\" above grade), at x 18.8 to 21.4. The photographs show a wider window behind the slat screen, running west to about x 11.5; it is drawn as one window of that height, split by mullions.",
+      "building": "house"
+    },
+    {
+      "id": "porch-sconce-high",
+      "kind": "sconce",
+      "label": "Porch light (LF-5), upper",
+      "at": [
+        22.03,
+        29.3384
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 0.67,
+      "heightFt": 0.67,
+      "sillFt": 7.22,
+      "color": "#f6f2e8",
+      "estimate": true,
+      "building": "house"
+    },
+    {
+      "id": "porch-sconce-low",
+      "kind": "sconce",
+      "label": "Porch light (LF-5), lower",
+      "at": [
+        22.03,
+        29.3384
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 0.67,
+      "heightFt": 0.67,
+      "sillFt": 5.97,
+      "color": "#f6f2e8",
+      "estimate": true,
+      "building": "house"
+    },
+    {
+      "id": "gable-window",
+      "kind": "window",
+      "label": "Front gable window (08)",
+      "at": [
+        40.1,
+        25.0384
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 6.04,
+      "heightFt": 4.02,
+      "sillFt": 4.0,
+      "frameFt": 0.15,
+      "frameColor": "#1b1f26",
+      "trimFt": 0.3,
+      "trimColor": "#c8923a",
+      "mullions": 1,
+      "estimate": true,
+      "note": "From the south elevation: two casements 6.0 ft wide, 4'-0 1/4\" tall, sill 2'-9\" above the floor (4'-0\" above grade); its position is read from the drawing against the gable's peak and walls (good to about 0.5 ft) and agrees with the spot the owner marked on a screenshot. The wood trim is from the photographs.",
+      "building": "house"
+    },
+    {
+      "id": "rear-slider",
+      "kind": "window",
+      "label": "Rear sliding door (12), three panels",
+      "at": [
+        35.0,
+        66.2292
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 9.3,
+      "heightFt": 6.74,
+      "sillFt": 1.25,
+      "frameFt": 0.2,
+      "frameColor": "#2a2d33",
+      "mullions": 2,
+      "estimate": true,
+      "note": "From the north elevation: a three-panel sliding door about 9.3 ft wide with its casing, from the floor to 8'-0\" above grade, in the rear wing's north wall; x read from the drawing (good to about 0.5 ft).",
+      "building": "house",
+      "slider": true
+    },
+    {
+      "id": "rear-sconce-east",
+      "kind": "sconce",
+      "label": "Rear light (LF-5), east of the slider",
+      "at": [
+        40.34,
+        66.2292
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 0.55,
+      "heightFt": 0.55,
+      "sillFt": 6.1,
+      "color": "#f6f2e8",
+      "estimate": true,
+      "note": "5'-0\" above the floor, 0'-10\" from the slider's casing in the drawing.",
+      "building": "house"
+    },
+    {
+      "id": "rear-sconce-west",
+      "kind": "sconce",
+      "label": "Rear light (LF-5), west of the slider",
+      "at": [
+        29.57,
+        66.2292
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 0.55,
+      "heightFt": 0.55,
+      "sillFt": 6.1,
+      "color": "#f6f2e8",
+      "estimate": true,
+      "building": "house"
+    },
+    {
+      "id": "rear-window",
+      "kind": "window",
+      "label": "Rear window (11)",
+      "at": [
+        23.76,
+        66.2292
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 5.8,
+      "heightFt": 3.8,
+      "sillFt": 3.75,
+      "frameFt": 0.15,
+      "frameColor": "#1b1f26",
+      "mullions": 1,
+      "estimate": true,
+      "note": "From the north elevation: two casements about 5.8 ft wide and 3.8 ft tall, sill 2'-6\" above the floor, west of the slider.",
+      "building": "house"
+    },
+    {
+      "id": "back-door",
+      "kind": "door",
+      "label": "Back door (10)",
+      "at": [
+        15.57,
+        58.4584
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 3.3,
+      "heightFt": 6.6,
+      "sillFt": 1.25,
+      "frameFt": 0.2,
+      "frameColor": "#f4f2ee",
+      "color": "#c9ccd0",
+      "estimate": true,
+      "note": "From the north elevation: a glazed door in the west wing's north wall, facing the cut-out and the garage, about 3.3 ft wide with its casing; its top is 7'-10\" above grade. It has a full-height glass pane with a margin of about 7 in all round (the kitchen door), which glows with the kitchen light at night; the painted door color is a guess.",
+      "building": "house",
+      "lite": true,
+      "liteMarginFt": 0.5833
+    },
+    {
+      "id": "back-sconce",
+      "kind": "sconce",
+      "label": "Back door light (LF-5)",
+      "at": [
+        13.2,
+        58.4584
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 0.55,
+      "heightFt": 0.55,
+      "sillFt": 6.1,
+      "color": "#f6f2e8",
+      "estimate": true,
+      "building": "house"
+    },
+    {
+      "id": "west-window",
+      "kind": "window",
+      "label": "West window (10)",
+      "at": [
+        9.9438,
+        45.27
+      ],
+      "facing": [
+        -1,
+        0
+      ],
+      "widthFt": 4.0,
+      "heightFt": 3.5,
+      "sillFt": 4.75,
+      "frameFt": 0.15,
+      "frameColor": "#1b1f26",
+      "mullions": 1,
+      "estimate": true,
+      "note": "From the west elevation: two casements 4.0 ft wide and 3'-6\" tall, sill 3'-6\" above the floor, in the main body's west wall; position read from the drawing against the ridge (good to about 0.5 ft).",
+      "building": "house"
+    },
+    {
+      "id": "electric-panel",
+      "kind": "panel",
+      "label": "Electrical panel (EQ-01)",
+      "at": [
+        9.9438,
+        55.85
+      ],
+      "facing": [
+        -1,
+        0
+      ],
+      "widthFt": 1.5,
+      "heightFt": 2.5,
+      "sillFt": 4.42,
+      "color": "#9ea3a6",
+      "estimate": true,
+      "note": "From the west elevation, on the west wing's west wall, 1.5 by 2.5 ft; its top is 7 ft above grade.",
+      "building": "house"
+    },
+    {
+      "id": "garage-door",
+      "kind": "garageDoor",
+      "label": "Garage door (G1, covered in plastic)",
+      "at": [
+        12.0,
+        83.3854
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 16.0,
+      "heightFt": 7.0,
+      "sillFt": 0.0,
+      "frameFt": 0.2,
+      "frameColor": "#f2f0ea",
+      "color": "#555a60",
+      "mullions": 3,
+      "rows": 4,
+      "estimate": true,
+      "note": "From the garage's south elevation: a sectional door 16'-0\" wide and 7'-0\" tall, centered on the wall, in four rows of four panels (it is under plastic sheeting in the photographs). The drawing shows a light (LF-5) in the gable above the door; the owner says there is none, so none is modeled.",
+      "building": "garage"
+    },
+    {
+      "id": "garage-back-door",
+      "kind": "door",
+      "label": "Garage back door (G2)",
+      "at": [
+        17.87,
+        103.46875
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 3.44,
+      "heightFt": 6.87,
+      "sillFt": 0.0,
+      "frameFt": 0.22,
+      "frameColor": "#f2f0ea",
+      "color": "#b7bcc2",
+      "lite": true,
+      "estimate": true,
+      "note": "From the garage's north elevation: a 3'-0\" by 6'-8\" door with a large glass pane and a 3.4 ft casing, in the wall facing the ADU, near its east end (about 3.3 ft from the east corner); x read from the drawing (good to about 0.3 ft).",
+      "building": "garage"
+    },
+    {
+      "id": "garage-light",
+      "kind": "sconce",
+      "label": "Garage back light (LF-5)",
+      "at": [
+        20.31,
+        103.46875
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 0.6,
+      "heightFt": 0.6,
+      "sillFt": 5.0,
+      "depthFt": 0.4,
+      "color": "#f6f2e8",
+      "estimate": true,
+      "note": "5'-0\" above the ground, east of the back door, near the east corner; it shows beyond the wall on the east elevation.",
+      "building": "garage"
+    },
+    {
+      "id": "garage-mini-split",
+      "kind": "unit",
+      "label": "Mini-split heat pump (outdoor unit)",
+      "at": [
+        4.65,
+        103.46875
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 3.0,
+      "heightFt": 2.2,
+      "sillFt": 0.2,
+      "depthFt": 1.0,
+      "color": "#e6e8ea",
+      "estimate": true,
+      "note": "Drawn dashed on the garage's north elevation near the west end of the wall, about 3 by 2.2 ft; its depth is a guess. Position read from the drawing.",
+      "building": "garage"
+    },
+    {
+      "id": "adu-gr-window",
+      "kind": "window",
+      "label": "Great room window, south wall",
+      "at": [
+        29.7,
+        123.3646
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 3.2,
+      "heightFt": 3.0,
+      "sillFt": 5.0,
+      "frameFt": 0.13,
+      "frameColor": "#23262b",
+      "mullions": 1,
+      "note": "Read from the owner's isometric view from the south-east (scaled from the wall lengths, good to about 0.5 ft): a two-pane window in the great room's south wall, west of its sliding door.",
+      "building": "adu",
+      "estimate": true
+    },
+    {
+      "id": "adu-gr-slider",
+      "kind": "window",
+      "label": "Great room sliding glass door (01A), south wall",
+      "at": [
+        39.7,
+        123.3646
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 6.9,
+      "heightFt": 7.3,
+      "sillFt": 0.7,
+      "frameFt": 0.16,
+      "frameColor": "#23262b",
+      "mullions": 1,
+      "note": "The two-panel sliding glass door onto the entry landing, about 6.9 ft wide with its casing and 7.3 ft tall (head at 8 ft, as the windows), starting about 3 ft short of the east fin.",
+      "building": "adu",
+      "estimate": true,
+      "slider": true
+    },
+    {
+      "id": "adu-gr-light",
+      "kind": "sconce",
+      "label": "Great room entry light (round), left of the entrance",
+      "at": [
+        34.8,
+        123.3646
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 0.55,
+      "heightFt": 0.55,
+      "sillFt": 5.8,
+      "depthFt": 0.3,
+      "color": "#f6f2e8",
+      "note": "The round light (LF-5) to the left of the sliding door (from outside, west of it), about 5 ft above the floor (5.8 ft above grade); the isometric views draw it between the window and the door.",
+      "building": "adu",
+      "estimate": true
+    },
+    {
+      "id": "adu-br-window",
+      "kind": "window",
+      "label": "Bedroom window, south wall",
+      "at": [
+        17.7,
+        135.0938
+      ],
+      "facing": [
+        0,
+        -1
+      ],
+      "widthFt": 6.3,
+      "heightFt": 4.5,
+      "sillFt": 4.4,
+      "frameFt": 0.15,
+      "frameColor": "#23262b",
+      "mullions": 1,
+      "note": "A wide two-pane window in the bedroom wing's south wall, about 6.3 by 4.5 ft with its sill 4.4 ft above grade, read from the south-east view.",
+      "building": "adu",
+      "estimate": true
+    },
+    {
+      "id": "adu-gr-north-slider",
+      "kind": "window",
+      "label": "Great room sliding glass door, north wall (courtyard)",
+      "at": [
+        40.35,
+        135.5729
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 7.7,
+      "heightFt": 7.3,
+      "sillFt": 0.7,
+      "frameFt": 0.16,
+      "frameColor": "#23262b",
+      "mullions": 1,
+      "note": "Read from the north-east view: a sliding glass door in the great room's north wall onto the courtyard, about 7.7 ft wide, with a low concrete step in front.",
+      "building": "adu",
+      "estimate": true,
+      "slider": true
+    },
+    {
+      "id": "adu-gr-north-light",
+      "kind": "sconce",
+      "label": "Courtyard light (round), great room north wall",
+      "at": [
+        45.2,
+        135.5729
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 0.55,
+      "heightFt": 0.55,
+      "sillFt": 5.8,
+      "depthFt": 0.3,
+      "color": "#f6f2e8",
+      "building": "adu",
+      "estimate": true
+    },
+    {
+      "id": "adu-link-window",
+      "kind": "window",
+      "label": "Link window, north wall",
+      "at": [
+        31.35,
+        146.4688
+      ],
+      "facing": [
+        0,
+        1
+      ],
+      "widthFt": 3.1,
+      "heightFt": 3.1,
+      "sillFt": 3.9,
+      "frameFt": 0.13,
+      "frameColor": "#23262b",
+      "mullions": 1,
+      "note": "A two-pane window in the link's north wall, read from the north-east view.",
+      "building": "adu",
+      "estimate": true
+    },
+    {
+      "id": "adu-link-light",
+      "kind": "sconce",
+      "label": "Courtyard light (round), link east wall",
+      "at": [
+        35.4062,
+        138.9
+      ],
+      "facing": [
+        1,
+        0
+      ],
+      "widthFt": 0.55,
+      "heightFt": 0.55,
+      "sillFt": 5.8,
+      "depthFt": 0.3,
+      "color": "#f6f2e8",
+      "building": "adu",
+      "estimate": true
     }
   ]
 }

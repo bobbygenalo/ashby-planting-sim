@@ -327,3 +327,52 @@ describe('assumptions panel (OUT-3)', () => {
     expect(all.find((i) => i.label.startsWith('Irrigation'))!.value).toContain('0.81');
   });
 });
+
+describe('watered area floor for young plants', () => {
+  const soilContainers = soilRaw.containers as unknown as SoilConfig['containers'];
+  const mk = (speciesId: string, container: PlantInstance['container']): PlantInstance => ({ id: `w-${speciesId}-${container}`, speciesId, position: [30, 90], plantedMonth: 0, container, existing: false });
+  const at = (list: PlantInstance[], month: number, containers?: SoilConfig['containers']) => demand(placed(list, month), { timelineMonth: month, containers });
+
+  it('waters a new plant over at least its root-ball area, not its tiny canopy', () => {
+    const apple = [mk('malus-mutsu', '5gal')];
+    const plain = at(apple, 0);
+    const floored = at(apple, 0, soilContainers);
+    const canopy = Math.PI * (placed(apple, 0)[0].size.width / 2) ** 2;
+    const ball = Math.PI * (((soilContainers['5gal'].ballDiaIn / 12) * water.wetting.ballDiameterFactor) / 2) ** 2;
+    expect(plain.rows[0].areaSf).toBeCloseTo(canopy, 6);
+    expect(floored.rows[0].areaSf).toBeCloseTo(ball, 6);
+    expect(floored.rows[0].areaSf).toBeGreaterThan(canopy * 3);
+    expect(floored.lot.annualGal).toBeGreaterThan(plain.lot.annualGal * 3);
+  });
+
+  it('uses a bigger floor for a bigger container', () => {
+    const small = at([mk('malus-mutsu', '1gal')], 0, soilContainers).rows[0].areaSf;
+    const mid = at([mk('malus-mutsu', '5gal')], 0, soilContainers).rows[0].areaSf;
+    const big = at([mk('malus-mutsu', '15gal')], 0, soilContainers).rows[0].areaSf;
+    expect(small).toBeLessThan(mid);
+    expect(mid).toBeLessThan(big);
+  });
+
+  it('changes nothing once the canopy is wider than the floor', () => {
+    const mature = at([mk('malus-mutsu', '5gal')], 360, soilContainers);
+    const plain = at([mk('malus-mutsu', '5gal')], 360);
+    expect(mature.lot.annualGal).toBeCloseTo(plain.lot.annualGal, 6);
+    expect(mature.rows[0].areaSf).toBeCloseTo(Math.PI * 7.5 ** 2, 6);
+  });
+
+  it('puts a young 5 gallon shrub near 4 gallons a week and a 15 gallon tree near 9 in the driest month', () => {
+    const jul = (container: PlantInstance['container'], id: string) => {
+      const row = at([mk(id, container)], 0, soilContainers).rows[0];
+      return row.monthlyGal[6] / (water.daysInMonth[6] / 7);
+    };
+    expect(jul('5gal', 'vaccinium-misty')).toBeGreaterThan(3);
+    expect(jul('5gal', 'vaccinium-misty')).toBeLessThan(9);
+    expect(jul('15gal', 'malus-mutsu')).toBeGreaterThan(6);
+    expect(jul('15gal', 'malus-mutsu')).toBeLessThan(20);
+  });
+
+  it('is flagged as an unverified assumption', () => {
+    expect(water.wetting.confidence).toBe('low');
+    expect(water.wetting.source).toMatch(/Assumption/);
+  });
+});

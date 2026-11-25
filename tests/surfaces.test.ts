@@ -26,9 +26,9 @@ describe('hardscape surfaces', () => {
   });
 
   it('has a painter for every pattern the type allows, and each pattern is used', () => {
-    expect(SURFACE_PATTERNS.length).toBe(12);
+    expect(SURFACE_PATTERNS.length).toBe(13);
     const used = new Set(mats.map((m) => m.surface?.pattern).filter(Boolean));
-    for (const p of SURFACE_PATTERNS) expect(used.has(p) || p === 'planks' || p === 'composite' || p === 'cmu' || p === 'boards', p).toBe(true);
+    for (const p of SURFACE_PATTERNS) expect(used.has(p) || p === 'planks' || p === 'composite' || p === 'cmu' || p === 'boards' || p === 'hardie', p).toBe(true);
   });
 
   it('stands flat surfaces a little proud of the ground, thicker for loose fill than for a slab', () => {

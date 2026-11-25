@@ -1,7 +1,7 @@
 import { pointInPolygon, polygonArea } from './geometry';
 import type { PlacedPlant } from './growth';
 import { footprint } from './hardscape';
-import type { EngineConfig, HardscapeElement, Hydrozone, Irrigation, PlantInstance, PlantType, Species, WaterConfig } from './types';
+import type { EngineConfig, HardscapeElement, Hydrozone, Irrigation, PlantInstance, PlantType, SoilConfig, Species, WaterConfig } from './types';
 
 export const WATER_ORDER = ['very low', 'low', 'moderate', 'high'] as const;
 export type WaterCategory = (typeof WATER_ORDER)[number];
@@ -80,6 +80,17 @@ export function canopyAreaSf(widthFt: number): number {
   return Math.PI * (widthFt / 2) ** 2;
 }
 
+/**
+ * The area a plant is watered over: its canopy, but never less than the soil round its planting container's root ball
+ * (`wetting.ballDiameterFactor` times the ball's diameter across). Without container data it is the canopy area.
+ */
+export function wateredAreaSf(widthFt: number, container: string, containers: SoilConfig['containers'] | undefined, wetting: WaterConfig['wetting']): number {
+  const canopy = canopyAreaSf(widthFt);
+  const ball = containers?.[container]?.ballDiaIn;
+  if (!ball) return canopy;
+  return Math.max(canopy, Math.PI * ((ball / 12) * wetting.ballDiameterFactor / 2) ** 2);
+}
+
 export interface DemandInput {
   plants: PlacedPlant[];
   lawns: HardscapeElement[];
@@ -91,6 +102,8 @@ export interface DemandInput {
   growth: EngineConfig['growth'];
   hardscapeCfg: EngineConfig['hardscape'];
   useRain: boolean;
+  /** Root ball sizes by container (`soil.containers`); with them a young plant is watered over at least its root-ball area. */
+  containers?: SoilConfig['containers'];
 }
 
 export interface DemandRow {
@@ -155,7 +168,7 @@ export function waterDemand(input: DemandInput): {
     const eff = water.irrigation[hz.irrigation].efficiency;
     const pf = plantFactorFor(p.species.wucols, growth);
     const mult = establishmentMultiplier(p.inst, p.species.type, input.timelineMonth, water);
-    const area = canopyAreaSf(p.size.width);
+    const area = wateredAreaSf(p.size.width, p.inst.container, input.containers, water.wetting);
     const monthly = monthlyGallons({ eto: water.eto.monthly, rain, plantFactor: pf, areaSf: area, efficiency: eff, multiplier: mult, conversion: water.formula.conversion });
     rows.push({
       id: p.inst.id, label: p.species.common, kind: 'plant', hydrozoneId: hz.id,

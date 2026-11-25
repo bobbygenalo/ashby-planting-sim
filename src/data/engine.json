@@ -1,6 +1,19 @@
 {
   "version": "engine/1",
   "referenceYear": 2026,
+  "interior": {
+    "startDeg": 7,
+    "fullDeg": -4,
+    "staggerDeg": 2.5,
+    "sleepFromMin": 1410,
+    "sleepToMin": 330,
+    "color": "#ffc474",
+    "emissive": 1.1,
+    "outdoorStartDeg": 3,
+    "outdoorFullDeg": -3,
+    "outdoorEmissive": 2.4,
+    "haloOpacity": 0.28
+  },
   "irrigation": {
     "source": "General residential drip and spray design practice. Every number here is guidance, not a manufacturer's figure.",
     "confidence": "unverified",
@@ -218,7 +231,9 @@
       2
     ],
     "treeCanopyRings": 12,
-    "arrowShiftMultiplier": 4
+    "arrowShiftMultiplier": 4,
+    "fit": { "margin": 1.6, "minRadiusFt": 4, "animateS": 0.55 },
+    "shadow": { "mapSize": 4096, "halfWidthFt": 110, "near": 80, "far": 460, "bias": -0.00012, "normalBias": 0.02 }
   },
   "growth": {
     "steepness": 8,
@@ -1192,6 +1207,7 @@
         60
       ],
       "doorApproachFt": 3,
+      "door": { "reachFt": 1.9, "swingS": 1.0, "closeDelayS": 1.0 },
       "defaultCount": 8,
       "spaceFt": 1.0,
       "bodyRadiusShare": 0.11,

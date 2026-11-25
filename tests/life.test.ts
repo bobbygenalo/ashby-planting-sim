@@ -375,15 +375,17 @@ describe('going into buildings', () => {
   it('has a door for the house, the garage and the ADU, each just outside its wall and reachable from the yard', () => {
     expect(w.doors.map((d) => d.building).sort()).toEqual(['adu', 'garage', 'house', 'house']);
     for (const d of w.doors) {
-      const parts = structures.filter((s) => (s.group ?? s.id) === d.building);
+      const parts = structures.filter((s) => (s.group ?? s.id) === d.building && !s.open);
       const dist = Math.min(...parts.map((s) => distanceToPolygon(d.stand[0], d.stand[1], s.footprint)));
       expect(dist, `${d.id} stands off its wall`).toBeGreaterThan(0.05);
+      // people go in at the doorway itself, on the wall (the front doors are reached over a stoop or landing, so the walk is longer)
       expect(dist, `${d.id} is at its wall`).toBeLessThan(0.6);
-      for (const s of structures) expect(pointInPolygon(d.stand[0], d.stand[1], s.footprint)).toBe(false);
+      // never inside a closed building (the open porch has no walls: its back wall is the doorway)
+      for (const s of structures.filter((st) => !st.open)) expect(pointInPolygon(d.stand[0], d.stand[1], s.footprint)).toBe(false);
       const [i, j] = [Math.floor(d.approach[0] / w.cell), Math.floor(d.approach[1] / w.cell)];
       expect(w.blocked[j * w.nx + i]).toBe(0);
       expect(w.reachable).toContain(j * w.nx + i);
-      expect(Math.hypot(d.approach[0] - d.stand[0], d.approach[1] - d.stand[1])).toBeLessThan(5);
+      expect(Math.hypot(d.approach[0] - d.stand[0], d.approach[1] - d.stand[1])).toBeLessThan(d.id === 'house-front' || d.id === 'adu-front' ? 14 : 5);
     }
   });
 

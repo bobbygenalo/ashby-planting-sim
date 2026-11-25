@@ -1,9 +1,12 @@
 import engineRaw from '../src/data/engine.json';
+import siteRaw from '../src/data/site.json';
 import { describe, expect, it } from 'vitest';
 import { makeCustomSpecies } from '../src/engine/library';
 import { makeAppStore } from '../src/store/store';
 
 const engine = engineRaw as unknown as { life: { people: { defaultCount: number } } };
+/** The existing hardscape every scenario starts with: the driveway, the porch floor and the stoop slabs. */
+const EXISTING = (siteRaw as unknown as { hardscape: { id: string }[] }).hardscape;
 
 describe('view mode', () => {
   it('blocks plan mutations at the store level but allows viewing controls', () => {
@@ -198,7 +201,7 @@ describe('scenarios (SC-1, SC-2)', () => {
     expect(s.getState().scenarios.length).toBe(1);
     expect(s.getState().scenarios[0].name).toBe('Scenario 1');
     expect(s.getState().activeScenarioId).toBe(s.getState().scenarios[0].id);
-    expect(s.getState().hardscape.map((e) => e.id)).toEqual(['driveway']);
+    expect(s.getState().hardscape.map((e) => e.id)).toEqual(EXISTING.map((e) => e.id));
     expect(Object.keys(s.getState().palette).length).toBe(18);
   });
 
@@ -232,12 +235,12 @@ describe('scenarios (SC-1, SC-2)', () => {
     const b = s.getState().createScenario(undefined, a)!;
     expect(s.getState().scenarios.find((x) => x.id === b)!.name).toBe('Scenario 1 copy');
     expect(s.getState().instances.length).toBe(1);
-    expect(s.getState().hardscape.length).toBe(2);
+    expect(s.getState().hardscape.length).toBe(EXISTING.length + 1);
     plant(s, 'phormium-tenax', [28, 110]);
-    s.getState().deleteElement(s.getState().hardscape[1].id);
+    s.getState().deleteElement(s.getState().hardscape[EXISTING.length].id);
     s.getState().switchScenario(a);
     expect(s.getState().instances.length).toBe(1);
-    expect(s.getState().hardscape.length).toBe(2); // the source is untouched by edits to the copy
+    expect(s.getState().hardscape.length).toBe(EXISTING.length + 1); // the source is untouched by edits to the copy
     // Duplicating a scenario that is not active works too.
     const c = s.getState().createScenario('From parked', b)!;
     expect(s.getState().scenarios.find((x) => x.id === c)!.name).toBe('From parked');

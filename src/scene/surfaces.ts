@@ -209,6 +209,28 @@ const PAINT: Record<SurfacePattern, Painter> = {
     }
   },
 
+  // Vertical fiber-cement (Hardie) board: smooth, painted, 6 in boards with a fine shadow gap at every joint and the faintest grain.
+  hardie(ctx, rnd) {
+    ctx.fillStyle = gray(236);
+    ctx.fillRect(0, 0, S, S);
+    const n = 8, w = S / n;
+    for (let i = 0; i < n; i++) {
+      const tone = 236 + (rnd() - 0.5) * 8;
+      ctx.fillStyle = gray(tone);
+      ctx.fillRect(i * w, 0, w, S);
+      ctx.fillStyle = gray(150);
+      ctx.fillRect(i * w, 0, 3, S); // the joint
+      ctx.fillStyle = gray(200);
+      ctx.fillRect(i * w + 3, 0, 2, S);
+      for (let k = 0; k < 18; k++) {
+        const x = i * w + 6 + rnd() * (w - 8);
+        ctx.strokeStyle = gray(rnd() < 0.5 ? tone - 22 : tone + 12, 0.1 + rnd() * 0.12);
+        ctx.lineWidth = 0.6;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + (rnd() - 0.5) * 1.5, S); ctx.stroke();
+      }
+    }
+  },
+
   // Fence boards: tall boards 5.3 in wide with gaps, vertical grain, each a slightly different tone.
   boards(ctx, rnd) {
     ctx.fillStyle = gray(70);

@@ -174,6 +174,8 @@ export interface LifeDoor {
   /** Just outside the wall, where they step in and out of sight. */
   stand: Pt;
   approach: Pt;
+  /** The drawn door that opens for people going through it. */
+  opening?: string;
 }
 
 export interface LifeWorldInput {
@@ -212,7 +214,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], harvest: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [], rims: [], beamCells: null, beamCost: null, beamOn: false,
+    plants: [], structures: input.structures.filter((s) => !s.open).map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], harvest: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [], rims: [], beamCells: null, beamCost: null, beamOn: false,
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -242,6 +244,25 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
     }
   }
 
+  // An open porch can be walked on, but its slat screen and posts cannot be walked through: each is a thin box.
+  const screens: Pt[][] = (input.site.contextObjects ?? []).flatMap((o): Pt[][] => {
+    if (o.kind === 'screen' && o.line && o.line.length > 1) {
+      const out: Pt[][] = [];
+      const t = Math.max(o.thickness ?? 0.3, o.endPostFt ?? 0.3) / 2;
+      for (let i = 0; i + 1 < o.line.length; i++) {
+        const [x1, y1] = o.line[i], [x2, y2] = o.line[i + 1];
+        const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+        const nx2 = (-(y2 - y1) / len) * t, ny2 = ((x2 - x1) / len) * t;
+        out.push([[x1 + nx2, y1 + ny2], [x2 + nx2, y2 + ny2], [x2 - nx2, y2 - ny2], [x1 - nx2, y1 - ny2]]);
+      }
+      return out;
+    }
+    if (o.kind === 'post' && o.position) {
+      const [x, y] = o.position, h = (o.postFt ?? 0.4) / 2;
+      return [[[x - h, y - h], [x + h, y - h], [x + h, y + h], [x - h, y + h]]];
+    }
+    return [];
+  });
   // Buildings, the lot edge, and every plant's canopy are off limits.
   for (const p of input.plants) {
     if (!p.size.planted) continue;
@@ -253,6 +274,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
       const k = idx(w, i, j);
       if (x < cfg.margins.lotFt || y < cfg.margins.lotFt || x > width - cfg.margins.lotFt || y > depth - cfg.margins.lotFt) blocked[k] = 1;
       if (!blocked[k] && w.structures.some((s) => pointInPolygon(x, y, s) || distanceToPolygon(x, y, s) < cfg.margins.structureFt)) blocked[k] = 1;
+      if (!blocked[k] && screens.some((s) => pointInPolygon(x, y, s) || distanceToPolygon(x, y, s) < cfg.margins.structureFt)) blocked[k] = 1;
       if (!blocked[k] && w.plants.some((p) => Math.hypot(p.x - x, p.y - y) < p.r + cfg.margins.plantFt)) blocked[k] = 1;
       if (!blocked[k] && input.sedan && (pointInPolygon(x, y, input.sedan.poly) || distanceToPolygon(x, y, input.sedan.poly) < input.engine.vehicle.marginFt)) blocked[k] = 1;
     }
@@ -372,7 +394,8 @@ function buildDoors(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeDoor[] {
         best = c;
       }
     }
-    if (best) out.push({ id: d.id, label: d.label, building: d.building, stand: [d.point[0] + d.outward[0] * 0.25, d.point[1] + d.outward[1] * 0.25], approach: best });
+    const at = d.entry ?? d.point;
+    if (best) out.push({ id: d.id, label: d.label, building: d.building, opening: d.opening, stand: [at[0] + d.outward[0] * 0.25, at[1] + d.outward[1] * 0.25], approach: best });
   }
   return out;
 }
@@ -711,7 +734,7 @@ export interface LeanSpot {
   face: number;
 }
 
-export type Pose = 'none' | 'phone' | 'snack' | 'folded' | 'spin' | 'tag' | 'puppet';
+export type Pose = 'none' | 'phone' | 'snack' | 'folded' | 'spin' | 'tag' | 'puppet' | 'door';
 
 export interface Walker {
   kind: 'person' | 'dog';
@@ -727,7 +750,7 @@ export interface Walker {
   /** A person a dog or a small child follows. */
   leader: number | null;
   /** Going into, inside, or coming out of a building. Hidden while `inside`. */
-  visit: { door: string; phase: 'to' | 'in' | 'inside' | 'out'; left: number; /** Gone in for the night: stays until morning. */ night?: boolean } | null;
+  visit: { door: string; phase: 'to' | 'in' | 'inside' | 'out'; left: number; /** Inside, time is up and they are waiting for the door to open before stepping out. */ opening?: boolean; /** Gone in for the night: stays until morning. */ night?: boolean } | null;
   /** Out of sight for the night in a plan with no door to go in by. */
   away: boolean;
   /** Sitting down to talk at a table, or standing to watch the movie. */
@@ -850,6 +873,8 @@ export class LifeSim {
   bees: BeeState[] = [];
   /** How far each chair is pulled out, by seat id, 0 (in) to 1 (fully out). Chairs not here are in. */
   chairs = new Map<string, number>();
+  /** How far each door is open, by sim door id, 0 (shut) to 1 (wide open), and how long it stays open after the last person. */
+  private doors = new Map<string, { open: number; hold: number }>();
   /** Seat id -> the walker sitting or heading there. */
   private seatTaken = new Map<string, number>();
   private tableTalk = new Map<string, { speaker: number; left: number }>();
@@ -976,8 +1001,10 @@ export class LifeSim {
     this.populate();
   }
 
-  private nearestFree(x: number, y: number): Pt | null {
+  /** The nearest walkable cell center; with `clearOf`, one that does not put that person's body inside another person's. */
+  private nearestFree(x: number, y: number, clearOf?: Walker): Pt | null {
     const w = this.world;
+    const others = clearOf ? this.walkers.filter((o) => o !== clearOf && o.kind === 'person' && !o.away && !isInside(o) && !this.mayTouch(clearOf, o)) : [];
     const [ci, cj] = cellOf(w, x, y);
     let best: Pt | null = null;
     let bestD = Infinity;
@@ -986,6 +1013,7 @@ export class LifeSim {
         for (let i = ci - r; i <= ci + r; i++) {
           if (i < 0 || j < 0 || i >= w.nx || j >= w.ny || w.blocked[idx(w, i, j)]) continue;
           const [px, py] = center(w, i, j);
+          if (clearOf && others.some((o) => Math.hypot(px - o.x, py - o.y) < this.bodyR(clearOf) + this.bodyR(o))) continue;
           const d = Math.hypot(px - x, py - y);
           if (d < bestD) {
             bestD = d;
@@ -1081,6 +1109,39 @@ export class LifeSim {
     if (route && wk.kind === 'person' && wk.leader === null && wk.age >= P.minAge && wk.age <= P.maxAge && this.rng() < P.skipChance) wk.skip = this.between(P.skipS);
   }
 
+  /** How far a door is open, 0 to 1. */
+  doorOpenness(id: string): number {
+    return this.doors.get(id)?.open ?? 0;
+  }
+
+  /** Whether someone needs this door open now: about to go in (at the door), waiting inside to come out, or just come out. */
+  private doorWanted(door: LifeDoor): boolean {
+    const D = this.cfg.people.door;
+    return this.walkers.some((w) => {
+      const v = w.visit;
+      if (!v || v.door !== door.id) return false;
+      const d = Math.hypot(w.x - door.stand[0], w.y - door.stand[1]);
+      if (v.phase === 'in') return d <= D.reachFt + 0.4;
+      if (v.phase === 'inside') return !!v.opening;
+      if (v.phase === 'out') return d <= D.reachFt + 0.6;
+      return false;
+    });
+  }
+
+  /** Doors swing open when someone is at them and close a moment after the last person has gone through. */
+  private stepDoors(dt: number) {
+    const D = this.cfg.people.door;
+    for (const door of this.world.doors) {
+      const st = this.doors.get(door.id) ?? { open: 0, hold: 0 };
+      this.doors.set(door.id, st);
+      if (this.doorWanted(door)) st.hold = D.closeDelayS;
+      else st.hold = Math.max(0, st.hold - dt);
+      const target = st.hold > 0 ? 1 : 0;
+      const step = dt / Math.max(0.05, D.swingS);
+      st.open = target > st.open ? Math.min(target, st.open + step) : Math.max(target, st.open - step);
+    }
+  }
+
   /** They have reached the spot outside a door: step in. */
   private startEntering(wk: Walker) {
     if (!wk.visit) return;
@@ -1104,8 +1165,14 @@ export class LifeSim {
       wk.speed = 0;
       wk.x = door.stand[0];
       wk.y = door.stand[1];
-      // Step out only when no one is standing in the doorway.
-      if (v.left <= 0 && !this.crowded(door.stand[0], door.stand[1], wk)) v.phase = 'out';
+      // Step out only when no one is standing in the doorway, and once the door has been opened for them (they open it from inside).
+      if (v.left <= 0 && !this.crowded(door.stand[0], door.stand[1], wk)) {
+        v.opening = true;
+        if (this.doorOpenness(door.id) >= 0.97) {
+          v.opening = false;
+          v.phase = 'out';
+        }
+      }
       return;
     }
     const goal = v.phase === 'in' ? door.stand : door.approach;
@@ -1113,6 +1180,20 @@ export class LifeSim {
     const dist = Math.hypot(dx, dy);
     const speed = wk.cruise * 0.7;
     let move = Math.min(dist, speed * dt);
+    // Going in: stop at arm's length from the door, reach for it, and go on only once it is open.
+    if (v.phase === 'in' && wk.kind === 'person') {
+      const reach = this.cfg.people.door.reachFt;
+      if (dist < reach + 0.4 && this.doorOpenness(door.id) < 0.97) wk.pose = 'door'; // the arm goes out as they come up to it
+      if (dist - move < reach && this.doorOpenness(door.id) < 0.97) {
+        move = Math.max(0, dist - reach);
+        if (dist - reach < 0.05) {
+          wk.pose = 'door';
+          wk.speed = 0;
+          if (dist > 1e-6) wk.heading = Math.atan2(dy, dx);
+          return;
+        }
+      }
+    }
     if (dist > 1e-6) {
       wk.heading = Math.atan2(dy, dx);
       const adj = wk.kind === 'person' ? this.avoid(wk, wk.x + (dx / dist) * move, wk.y + (dy / dist) * move) : [wk.x + (dx / dist) * move, wk.y + (dy / dist) * move] as Pt;
@@ -1261,8 +1342,20 @@ export class LifeSim {
         const busy = (w: Walker) => !!w.act && w.act.phase !== 'to';
         const aMoves = !busy(a) || busy(b), bMoves = !busy(b) || busy(a);
         const share = aMoves && bMoves ? 0.5 : 1;
-        if (aMoves && free(a.x - ux * move * share, a.y - uy * move * share)) { a.x -= ux * move * share; a.y -= uy * move * share; }
-        if (bMoves && free(b.x + ux * move * share, b.y + uy * move * share)) { b.x += ux * move * share; b.y += uy * move * share; }
+        // Straight apart when that ground is clear; in a lane too narrow for it (a wall or a fence on one side), slide along the
+        // lane instead, so two people pressed together still come apart rather than staying overlapped.
+        const nudge = (w: Walker, vx: number, vy: number) => {
+          const len = move * share;
+          for (const turn of [0, 0.9, -0.9, 1.57, -1.57]) {
+            const c = Math.cos(turn), sn = Math.sin(turn);
+            const nx = (vx * c - vy * sn) * len, ny = (vx * sn + vy * c) * len;
+            // never ease into a third person: a step that brings the body inside another's is not an option
+            const crowded = ps.some((o) => o !== w && !this.mayTouch(w, o) && Math.hypot(w.x + nx - o.x, w.y + ny - o.y) < Math.min(Math.hypot(w.x - o.x, w.y - o.y), this.bodyR(w) + this.bodyR(o)));
+            if (free(w.x + nx, w.y + ny) && !crowded) { w.x += nx; w.y += ny; return; }
+          }
+        };
+        if (aMoves) nudge(a, -ux, -uy);
+        if (bMoves) nudge(b, ux, uy);
       }
     }
   }
@@ -1315,7 +1408,8 @@ export class LifeSim {
     wk.basket = null;
     wk.pauseLeft = 1 + this.rng() * 2;
     wk.speed = 0;
-    const p = this.nearestFree(wk.x, wk.y);
+    // Snap to the middle of a walkable cell, but never into someone else's body: that was a pop of half a foot into the next person.
+    const p = this.nearestFree(wk.x, wk.y, wk);
     if (p) [wk.x, wk.y] = p;
   }
 
@@ -1767,13 +1861,19 @@ export class LifeSim {
     wk.route = [];
     wk.speed = 0;
     wk.poseT = 0;
+    // Perching and leaning put the body on a spot a step or two away; if somebody is standing there, give the idea up instead of
+    // popping into their body.
+    const taken = (x: number, y: number) => this.walkers.some((o) => o !== wk && o.kind === 'person' && !o.away && !isInside(o) && Math.hypot(o.x - x, o.y - y) < this.bodyR(wk) + this.bodyR(o) + 0.2);
     if (a.what === 'perch' && a.rim) {
+      if (taken(a.rim.x, a.rim.y)) return this.endAct(wk);
       wk.x = a.rim.x;
       wk.y = a.rim.y;
       wk.seatZ = a.rim.z;
     } else if (a.what === 'lean' && a.lean) {
-      wk.x = a.lean.wall[0] + Math.cos(a.lean.face) * 0.6;
-      wk.y = a.lean.wall[1] + Math.sin(a.lean.face) * 0.6;
+      const lx = a.lean.wall[0] + Math.cos(a.lean.face) * 0.6, ly = a.lean.wall[1] + Math.sin(a.lean.face) * 0.6;
+      if (taken(lx, ly)) return this.endAct(wk);
+      wk.x = lx;
+      wk.y = ly;
     } else if (a.what === 'sky') wk.heading += (this.rng() - 0.5) * 1.5;
   }
 
@@ -2179,7 +2279,7 @@ export class LifeSim {
     wk.pauseLeft = this.between(this.cfg.people.pauseS) * 0.5;
     const [i, j] = cellOf(this.world, wk.x, wk.y);
     if (this.world.blocked[idx(this.world, i, j)]) {
-      const p = this.nearestFree(wk.x, wk.y);
+      const p = this.nearestFree(wk.x, wk.y, wk);
       if (p) [wk.x, wk.y] = p;
     }
   }
@@ -2751,6 +2851,7 @@ export class LifeSim {
       }
     }
     this.separate(dt);
+    this.stepDoors(dt);
     this.stepProjector(dt);
     this.clock += dt;
     this.stepFlights(dt);

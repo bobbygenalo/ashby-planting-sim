@@ -1,6 +1,8 @@
+import { pointInPolygon } from './geometry';
+import type { PlacedPlant } from './growth';
 import type { Family, IrrigationCfg, IrrigationPlan, Valve } from './irrigation';
-import { monthlyGallons, WATER_ORDER, type DemandRow } from './water';
-import type { WaterConfig } from './types';
+import { monthlyGallons, waterDemand, WATER_ORDER, type DemandRow } from './water';
+import type { EngineConfig, HardscapeElement, Hydrozone, Irrigation, SoilConfig, WaterConfig } from './types';
 import { weekdayOf } from './vehicle';
 
 /** Water one valve gives in a month, and how that is split into runs. */
@@ -184,3 +186,48 @@ export function nextRun(
 }
 
 export type { Family };
+
+/** Applied gallons a year for raised-bed crops on a bed of this area (vegetable plant factor over drip efficiency). */
+export function bedWaterGallons(areaSf: number, water: WaterConfig, cfg: IrrigationCfg, useRain: boolean): number {
+  const rain = useRain ? water.rainfall.monthly.map((r) => r * water.rainfall.effectiveFraction) : null;
+  return sum(monthlyGallons({ eto: water.eto.monthly, rain, plantFactor: cfg.bed.plantFactor, areaSf, efficiency: water.irrigation.drip.efficiency, conversion: water.formula.conversion }));
+}
+
+export interface WaterByYearInput {
+  /** Years after planting to work out (0 is the day of planting). */
+  years: number[];
+  /** The plants as they stand at a year after planting. */
+  plantsAt: (year: number) => PlacedPlant[];
+  lawns: HardscapeElement[];
+  hydrozones: Hydrozone[];
+  autoIrrigation: Record<string, Irrigation>;
+  zones: { id: string; name: string; polygon: [number, number][] }[];
+  water: WaterConfig;
+  growth: EngineConfig['growth'];
+  hardscapeCfg: EngineConfig['hardscape'];
+  useRain: boolean;
+  /** New raised beds: their outlines. Plants standing in one are watered as the bed's crops, not by their own canopy. */
+  beds: { points: [number, number][]; areaSf: number }[];
+  cfg: IrrigationCfg;
+  /** Root ball sizes by container, so young plants are watered over at least their root-ball area. */
+  containers?: SoilConfig['containers'];
+}
+
+/**
+ * Applied gallons a year at each of several ages of the planting: the plants and lawn by the MWELO method at the size
+ * they have then, less the plants that stand in a raised bed, plus the beds' crops. It counts the same water as
+ * `buildSchedule().totalAnnualGal` does for the year being shown. Plants hold their size of that year all year.
+ */
+export function waterByYear(inp: WaterByYearInput): { year: number; gallons: number }[] {
+  const bedGal = inp.beds.reduce((a, b) => a + bedWaterGallons(b.areaSf, inp.water, inp.cfg, inp.useRain), 0);
+  return inp.years.map((year) => {
+    const plants = inp.plantsAt(year);
+    const d = waterDemand({
+      plants, lawns: inp.lawns, hydrozones: inp.hydrozones, autoIrrigation: inp.autoIrrigation, zones: inp.zones, timelineMonth: year * 12,
+      water: inp.water, growth: inp.growth, hardscapeCfg: inp.hardscapeCfg, useRain: inp.useRain, containers: inp.containers,
+    });
+    const inBed = new Set(plants.filter((p) => inp.beds.some((b) => pointInPolygon(p.inst.position[0], p.inst.position[1], b.points))).map((p) => p.inst.id));
+    const gallons = d.rows.reduce((a, r) => a + (inBed.has(r.id) ? 0 : r.annualGal), 0) + bedGal;
+    return { year, gallons };
+  });
+}

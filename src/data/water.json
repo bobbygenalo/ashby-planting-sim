@@ -150,6 +150,11 @@
    "multiplier": 1.5
   }
  },
+ "wetting": {
+  "ballDiameterFactor": 3.5,
+  "source": "Assumption, unverified. A plant is watered over at least the soil around its root ball: 3.5 times the ball diameter across (a 5 gallon ball is about 11 in, so about 3.2 ft across, 8 sq ft; a 15 gallon one 4.7 ft, 17 sq ft), so a young plant is not watered by its tiny canopy area alone. With the first-year boost that comes to roughly 4 gallons a week for a 5 gallon shrub and 9 for a 15 gallon tree in summer, in line with common nursery guidance. Once the canopy is wider than this the canopy area is used.",
+  "confidence": "low"
+ },
  "establishmentSource": "Assumption. The brief asks for a configurable period by plant type; these defaults are not from MWELO.",
  "lawn": {
   "plantFactor": 0.8,

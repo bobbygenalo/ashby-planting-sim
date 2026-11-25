@@ -1,3 +1,4 @@
+import { PlantPhoto } from './PlantPhoto';
 import { defaultPlantPrice, materialUnitPrice } from '../engine/pricing';
 import { elementColor } from '../engine/hardscape';
 import { formatFeetInches } from '../engine/units';
@@ -48,6 +49,7 @@ function PlantDetail({ sp }: { sp: Species }) {
         {sp.invasive && <span className="pill warn">invasive</span>}
         {sp.toxic && <span className="pill warn">toxic</span>}
       </div>
+      <PlantPhoto sp={sp} />
       <table className="kv"><tbody>
         <tr><td>Size</td><td>{formatFeetInches(sp.matureHeight, 2)} tall × {formatFeetInches(sp.matureWidth, 2)} wide at maturity, reached in about {sp.yearsToMaturity} year{sp.yearsToMaturity === 1 ? '' : 's'}</td></tr>
         <tr><td>Kind</td><td>{sp.type}, {sp.habit}, {sp.evergreen ? 'evergreen' : `deciduous (bare ${monthsLabel(sp.leafOffMonths)})`}</td></tr>

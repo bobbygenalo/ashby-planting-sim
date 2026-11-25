@@ -164,7 +164,7 @@ describe('forgetting the beam', () => {
 
 describe('kids make shadow puppets', () => {
   it('a kid sometimes steps into the beam, near the wall, hands up, and the shadow gets wider; grown-ups do not', () => {
-    const { s, sc } = make((c) => { c.movie.shadow.puppet.bias = 1; c.movie.shadow.reactS = [1, 1]; }, 15, 5);
+    const { s, sc } = make((c) => { c.movie.shadow.puppet.bias = 1; c.movie.shadow.reactS = [1, 1]; }, 15, 15);
     let kidPuppets = 0, adultPuppets = 0, maxCover = 0;
     const rect = { y0: sc.y - sc.width / 2, y1: sc.y + sc.width / 2, z0: sc.bottom, z1: sc.bottom + sc.height };
     run(s, 300, () => {
@@ -182,7 +182,7 @@ describe('kids make shadow puppets', () => {
   });
 
   it('a puppeteer is waved at after four seconds like anyone else, and, being a kid, takes a while to give it up', () => {
-    const { s } = make((c) => { c.movie.shadow.puppet.bias = 1; c.movie.shadow.kidReactS = [7, 7]; c.movie.shadow.puppet.sec = [100, 100]; }, 15, 5);
+    const { s } = make((c) => { c.movie.shadow.puppet.bias = 1; c.movie.shadow.kidReactS = [7, 7]; c.movie.shadow.puppet.sec = [100, 100]; }, 15, 15);
     let waved = false, left = -1, started = -1, who = -1;
     run(s, 200, (t) => {
       const ps = people(s);

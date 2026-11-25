@@ -85,6 +85,14 @@
           "count": 9,
           "stalkFt": 1.1
         }
+      },
+      "photo": {
+        "file": "plants/salvia-leucantha.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Salvia_leucantha_(Mexican_Bush_Sage).jpg",
+        "author": "Netherzone",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -171,6 +179,14 @@
           "color": "#fbd0e4",
           "centerColor": "#fde68a"
         }
+      },
+      "photo": {
+        "file": "plants/oenothera-lindheimeri.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:(MHNT)_Oenothera_lindheimeri.jpg",
+        "author": "Didier Descouens",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -258,6 +274,14 @@
           "unit": "petal",
           "stalkFt": 0.8
         }
+      },
+      "photo": {
+        "file": "plants/achillea-millefolium.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Achillea_millefolium_(bright).jpg",
+        "author": "SAplants",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -328,6 +352,14 @@
           "count": 12,
           "stalkFt": 0.6
         }
+      },
+      "photo": {
+        "file": "plants/lomandra-longifolia.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Lomandra_longifolia.jpg",
+        "author": "Eric in SF",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -412,6 +444,14 @@
           "count": 1500,
           "centerColor": "#fff3a0"
         }
+      },
+      "photo": {
+        "file": "plants/bougainvillea.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Bougainvillea_closeup.jpg",
+        "author": "Clint Budd",
+        "license": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+        "match": "genus"
       }
     },
     {
@@ -505,6 +545,14 @@
           "unit": "petal",
           "stalkFt": 0.3
         }
+      },
+      "photo": {
+        "file": "plants/lantana-montevidensis.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Starr_070221-4728_Lantana_montevidensis.jpg",
+        "author": "Forest & Kim Starr",
+        "license": "CC BY 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+        "match": "species"
       }
     },
     {
@@ -585,6 +633,14 @@
           "color": "#f9a8d4",
           "centerColor": "#be185d"
         }
+      },
+      "photo": {
+        "file": "plants/coleonema-pulchellum.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Coleonema_pulchellum_2c.JPG",
+        "author": "Consultaplantas",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -664,6 +720,14 @@
           "color": "#f9a8d4",
           "centerColor": "#be185d"
         }
+      },
+      "photo": {
+        "file": "plants/coleonema-sunset-gold.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Coleonema_pulchellum_2c.JPG",
+        "author": "Consultaplantas",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -748,6 +812,14 @@
           "count": 600,
           "centerColor": "#fde68a"
         }
+      },
+      "photo": {
+        "file": "plants/polygala-myrtifolia.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Polygala_myrtifolia02.jpg",
+        "author": "Paul venter",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -909,6 +981,14 @@
           "count": 800,
           "centerColor": "#9d174d"
         }
+      },
+      "photo": {
+        "file": "plants/loropetalum-chinense.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Loropetalum-chinensis-rubrum.jpg",
+        "author": "Unknown",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "species"
       }
     },
     {
@@ -982,6 +1062,14 @@
           "heads": 3,
           "stalkFt": 2.5
         }
+      },
+      "photo": {
+        "file": "plants/phormium-tenax.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Phormium_tenax_Piha02.jpg",
+        "author": "Kahuroa",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "species"
       }
     },
     {
@@ -1060,6 +1148,14 @@
           "unit": "tube",
           "stalkFt": 1
         }
+      },
+      "photo": {
+        "file": "plants/agapanthus-africanus.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Agapanthus_Postbloom.jpg",
+        "author": "Victorrocha",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -1142,6 +1238,14 @@
           "unit": "tube",
           "stalkFt": 0.4
         }
+      },
+      "photo": {
+        "file": "plants/tulbaghia-violacea.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Tulbaghia_(Society_Garlic).jpg",
+        "author": "No machine-readable author provided. CatherineMunro assumed (based on copyright claims).",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "match": "species"
       }
     },
     {
@@ -1230,6 +1334,14 @@
           "unit": "petal",
           "stalkFt": 0.1
         }
+      },
+      "photo": {
+        "file": "plants/phyla-nodiflora.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Phyla_nodiflora_3_(Corse).JPG",
+        "author": "Ghislain118 http://www.fleurs-des-montagnes.net",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -1300,6 +1412,14 @@
           "count": 15,
           "stalkFt": 0.4
         }
+      },
+      "photo": {
+        "file": "plants/juncus-patens.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Juncus_patens_-_Regional_Parks_Botanic_Garden,_Berkeley,_CA_-_DSC04582.JPG",
+        "author": "Daderot",
+        "license": "CC0",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "match": "species"
       }
     },
     {
@@ -1472,6 +1592,14 @@
           "unit": "tube",
           "stalkFt": 0.8
         }
+      },
+      "photo": {
+        "file": "plants/salvia-clevelandii.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Salvia_clevelandii_-_jim_sage_-_desc-flowers_-_status-rare.jpg",
+        "author": "Unknown",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "match": "species"
       }
     },
     {
@@ -1553,6 +1681,14 @@
           "count": 8,
           "stalkFt": 0.5
         }
+      },
+      "photo": {
+        "file": "plants/epilobium-canum.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Zauschneria_flowers-500px.jpg",
+        "author": "Stan Shebs",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -1635,6 +1771,14 @@
           "unit": "petal",
           "stalkFt": 0.5
         }
+      },
+      "photo": {
+        "file": "plants/eriogonum-fasciculatum.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Eriogonum_fasciculatum_5.jpg",
+        "author": "Stan Shebs",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -1791,6 +1935,14 @@
           "color": "#60a5fa",
           "centerColor": "#dbeafe"
         }
+      },
+      "photo": {
+        "file": "plants/rosmarinus-officinalis.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Rosemary_in_bloom.JPG",
+        "author": "Margalob",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -1942,6 +2094,14 @@
           "count": 10,
           "stalkFt": 0.5
         }
+      },
+      "photo": {
+        "file": "plants/nepeta-faassenii.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Nepeta_faassenii6.jpg",
+        "author": "KENPEI",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "match": "species"
       }
     },
     {
@@ -2007,6 +2167,14 @@
           "count": 30,
           "stalkFt": 1.6
         }
+      },
+      "photo": {
+        "file": "plants/muhlenbergia-rigens.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Muhlenbergia_rigens_form.jpg",
+        "author": "Stan Shebs",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -2081,6 +2249,14 @@
           "count": 8,
           "stalkFt": 0.8
         }
+      },
+      "photo": {
+        "file": "plants/salvia-bees-bliss.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Salvia_with_bee_2.jpg",
+        "author": "Friends of Garner",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -2148,6 +2324,14 @@
           "stalkFt": 1,
           "heads": 4
         }
+      },
+      "photo": {
+        "file": "plants/salvia-spathacea.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Hummingbird_sage.jpg",
+        "author": "Taken by Antandrus",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "species"
       }
     },
     {
@@ -2224,6 +2408,14 @@
           "count": 1200,
           "centerColor": "#a21caf"
         }
+      },
+      "photo": {
+        "file": "plants/cercis-occidentalis.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Cercis_occidentalis_branch.jpg",
+        "author": "Stan Shebs",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -2308,6 +2500,14 @@
           "color": "#fbfbf4",
           "centerColor": "#e6dca0"
         }
+      },
+      "photo": {
+        "file": "plants/heteromeles-arbutifolia.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:018_Black_Mountain_Road_Views_(8)_-_Heteromeles_Arbutifolia,_AKA_Toyon_(1).jpg",
+        "author": "The Fun Chronicles",
+        "license": "CC0",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "match": "species"
       }
     },
     {
@@ -2386,6 +2586,14 @@
           "count": 1300,
           "centerColor": "#f5d6e6"
         }
+      },
+      "photo": {
+        "file": "plants/lagerstroemia-indica.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Extremosa_(Lagerstroemia_indica)_em_um_fim_de_tarde_em_Bag%C3%A9-RS_-_55013179934.jpg",
+        "author": "Gabriel Collares",
+        "license": "CC BY 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+        "match": "species"
       }
     },
     {
@@ -2448,6 +2656,14 @@
         ],
         "tipRosette": 14,
         "trunkColor": "#6a5a4a"
+      },
+      "photo": {
+        "file": "plants/aeonium-zwartkop.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Madeira,_Palheiro_Gardens_-_Aeonium_arboreum_(Marokko)_IMG_2310.JPG",
+        "author": "Hedwig Storch",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -2636,6 +2852,14 @@
           "color": "#ffffff",
           "centerColor": "#f2d55c"
         }
+      },
+      "photo": {
+        "file": "plants/citrus-satsuma.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Citrus_reticulata_%27Owari%27.jpg",
+        "author": "James Steakley",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "cultivar"
       }
     },
     {
@@ -2734,6 +2958,14 @@
         },
         "twigs": 900,
         "limbs": 7
+      },
+      "photo": {
+        "file": "plants/citrus-meyer-lemon.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Starr-211228-1487-Citrus_limon-Improved_Meyer_lemon_in_fruit-Hawea_Pl_Olinda-Maui_(52433791893).jpg",
+        "author": "Forest and Kim Starr",
+        "license": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+        "match": "cultivar"
       }
     },
     {
@@ -2882,6 +3114,14 @@
           "count": 6,
           "stalkFt": 0.5
         }
+      },
+      "photo": {
+        "file": "plants/salvia-greggii.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Salvia_greggii_kz2.jpg",
+        "author": "Krzysztof Ziarnek, Kenraiz",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -2963,6 +3203,14 @@
           "unit": "petal",
           "stalkFt": 0.25
         }
+      },
+      "photo": {
+        "file": "plants/verbena-lilacina.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Verbena_lilacina_de_la_mina.jpg",
+        "author": "Stickpen",
+        "license": "CC0",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "match": "cultivar"
       }
     },
     {
@@ -3035,6 +3283,14 @@
           "count": 8,
           "stalkFt": 0.9
         }
+      },
+      "photo": {
+        "file": "plants/penstemon-margarita-bop.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Penstemon_%27Margarita_BOP%27.jpg",
+        "author": "Stickpen",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "cultivar"
       }
     },
     {
@@ -3101,6 +3357,14 @@
           "count": 8,
           "stalkFt": 1
         }
+      },
+      "photo": {
+        "file": "plants/heuchera-maxima.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Heuchera_maxima_4.jpg",
+        "author": "Stan Shebs",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -3173,6 +3437,14 @@
           "count": 250,
           "centerColor": "#f59e0b"
         }
+      },
+      "photo": {
+        "file": "plants/diplacus-aurantiacus.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Mimulus_aurantiacus-2.jpg",
+        "author": "Eugene Zelenko",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -3249,6 +3521,14 @@
           "unit": "tube",
           "stalkFt": 0.9
         }
+      },
+      "photo": {
+        "file": "plants/salvia-mellifera.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Salvia_mellifera_flowers_2003-03-12.jpg",
+        "author": "No machine-readable author provided. Curtis Clark assumed (based on copyright claims).",
+        "license": "CC BY-SA 2.5",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+        "match": "species"
       }
     },
     {
@@ -3324,6 +3604,14 @@
           "count": 40,
           "centerColor": "#f59e0b"
         }
+      },
+      "photo": {
+        "file": "plants/eschscholzia-californica.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Kaldari_Eschscholzia_californica_01.jpg",
+        "author": "Kaldari",
+        "license": "CC0",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "match": "species"
       }
     },
     {
@@ -3409,6 +3697,14 @@
           "unit": "petal",
           "stalkFt": 0.4
         }
+      },
+      "photo": {
+        "file": "plants/asclepias-fascicularis.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Asclepias_fascicularis.jpg",
+        "author": "Eric Hunt",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -3493,6 +3789,14 @@
           "color": "#d9f99d",
           "centerColor": "#a3e635"
         }
+      },
+      "photo": {
+        "file": "plants/frangula-eve-case.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Frangula_californica_%27Eve_Case%27_kz1.jpg",
+        "author": "Krzysztof Ziarnek, Kenraiz",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -3554,6 +3858,14 @@
           "count": 14,
           "stalkFt": 0.5
         }
+      },
+      "photo": {
+        "file": "plants/festuca-glauca.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Festuca_glauca_Elijah_Blue_0zz.jpg",
+        "author": "Photo by David J. Stang",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -3703,6 +4015,14 @@
           "color": "#fde68a",
           "centerColor": "#f59e0b"
         }
+      },
+      "photo": {
+        "file": "plants/dymondia-margaretae.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Dymondiamargaretae.jpg",
+        "author": "Stickpen",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "species"
       }
     },
     {
@@ -3854,6 +4174,14 @@
           "count": 300,
           "centerColor": "#f5d0fe"
         }
+      },
+      "photo": {
+        "file": "plants/cuphea-hyssopifolia.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Cuphea_hyssopifolia.jpg",
+        "author": "Melburnian",
+        "license": "CC BY 2.5",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+        "match": "species"
       }
     },
     {
@@ -3929,6 +4257,14 @@
           "count": 9,
           "stalkFt": 1
         }
+      },
+      "photo": {
+        "file": "plants/salvia-pozo-blue.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Pozo_Blue_Sage_(17989827759).jpg",
+        "author": "The Marmot",
+        "license": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+        "match": "cultivar"
       }
     },
     {
@@ -3995,6 +4331,14 @@
           "stalkFt": 1.4,
           "heads": 2
         }
+      },
+      "photo": {
+        "file": "plants/aloe-striata.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Gardenology.org-IMG_4403_hunt0904.jpg",
+        "author": "Raffi Kojian",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -4101,6 +4445,14 @@
           "color": "#fff3d0",
           "centerColor": "#e8c870"
         }
+      },
+      "photo": {
+        "file": "plants/diospyros-kaki-hachiya.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Hachiya_persimmons_-_Heart_of_the_City_Farmers%27_Market_-_San_Francisco.jpg",
+        "author": "Daderot",
+        "license": "CC0",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "match": "cultivar"
       }
     },
     {
@@ -4202,6 +4554,14 @@
         },
         "twigs": 900,
         "limbs": 6
+      },
+      "photo": {
+        "file": "plants/malus-mutsu.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Mutsu_apple.jpg",
+        "author": "Ed Yourdon from New York City, USA",
+        "license": "CC BY-SA 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+        "match": "cultivar"
       }
     },
     {
@@ -4407,6 +4767,14 @@
           "color": "#f4efd6",
           "centerColor": "#e6d9a0"
         }
+      },
+      "photo": {
+        "file": "plants/olea-arbequina.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Arbequina_Mallola72_12_febrer_2006_072.jpg",
+        "author": "Victor M. Vicente Selvas",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "cultivar"
       }
     },
     {
@@ -4554,6 +4922,14 @@
         },
         "twigs": 1100,
         "limbs": 6
+      },
+      "photo": {
+        "file": "plants/olea-frantoio.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Olivo_tipo_frantoio_carico_di_olive.jpg",
+        "author": "PROPOLI87",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -4638,6 +5014,14 @@
           "unit": "petal",
           "stalkFt": 0.8
         }
+      },
+      "photo": {
+        "file": "plants/eriogonum-grande-rubescens.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Eriogonumgranderube1.JPG",
+        "author": "Stickpen",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "species"
       }
     },
     {
@@ -4727,6 +5111,14 @@
           "color": "#f6dfe6",
           "centerColor": "#e8b9c8"
         }
+      },
+      "photo": {
+        "file": "plants/vaccinium-sunshine-blue.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Vaccinium_corymbosum(01).jpg",
+        "author": "Unknown",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "match": "species"
       }
     },
     {
@@ -4816,6 +5208,14 @@
           "color": "#faf1f3",
           "centerColor": "#e8b9c8"
         }
+      },
+      "photo": {
+        "file": "plants/vaccinium-misty.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Starr-110621-6313-Vaccinium_hybrid-Southern_highbush_cv_Misty_fruit-Hawea_Pl_Olinda-Maui_(25071029776).jpg",
+        "author": "Forest and Kim Starr",
+        "license": "CC BY 3.0 us",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
+        "match": "cultivar"
       }
     },
     {
@@ -4909,6 +5309,14 @@
           "color": "#fbf4f6",
           "centerColor": "#e8d05a"
         }
+      },
+      "photo": {
+        "file": "plants/rubus-arapaho.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Blackberry_(Rubus_fruticosus).jpg",
+        "author": "Ivar Leidus",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -4978,6 +5386,14 @@
           "unit": "petal",
           "stalkFt": 0.5
         }
+      },
+      "photo": {
+        "file": "plants/iris-douglasiana.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Iris_douglasiana_Salt_Point.jpg",
+        "author": "Eric Hunt",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -5030,6 +5446,14 @@
           "lengthFt": 1,
           "widthFt": 0.22
         }
+      },
+      "photo": {
+        "file": "plants/dryopteris-arguta.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Dryopterisarguta.jpg",
+        "author": "Gordon Leppig & Andrea J. Pickart",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "species"
       }
     },
     {
@@ -5082,6 +5506,14 @@
           "lengthFt": 1,
           "widthFt": 0.25
         }
+      },
+      "photo": {
+        "file": "plants/polystichum-munitum.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Polystichum_munitum_(Jami_Dwyer)_001.jpg",
+        "author": "Jami Dwyer",
+        "license": "CC BY-SA 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+        "match": "species"
       }
     },
     {
@@ -5163,6 +5595,14 @@
           "color": "#a0344a",
           "centerColor": "#f5c0c8"
         }
+      },
+      "photo": {
+        "file": "plants/ribes-viburnifolium.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Ribesviburnifolium.jpg",
+        "author": "Stickpen",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "species"
       }
     },
     {
@@ -5244,6 +5684,14 @@
           "color": "#f5d94a",
           "centerColor": "#f59e0b"
         }
+      },
+      "photo": {
+        "file": "plants/berberis-aquifolium.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Mahonia_aquifolium.jpg",
+        "author": "The original uploader was Meggar at English Wikipedia.",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "match": "species"
       }
     },
     {
@@ -5359,6 +5807,14 @@
           "lengthFt": 1,
           "widthFt": 0.3
         }
+      },
+      "photo": {
+        "file": "plants/aspidistra-elatior.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Aspidistra_elatior1.jpg",
+        "author": "KENPEI",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "match": "species"
       }
     },
     {
@@ -5425,6 +5881,14 @@
           "stalkFt": 0.4,
           "heads": 9
         }
+      },
+      "photo": {
+        "file": "plants/liriope-muscari.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Liriope_muscari_4.JPG",
+        "author": "Qwert1234",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -5560,6 +6024,14 @@
           "unit": "tube",
           "stalkFt": 0.6
         }
+      },
+      "photo": {
+        "file": "plants/clivia-miniata.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Clivia_miniata,_blomme_en_vrugte,_Manie_van_der_Schijff_BT,_a.jpg",
+        "author": "JMK",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "species"
       }
     },
     {
@@ -5635,6 +6107,14 @@
           "color": "#f4f4ee",
           "centerColor": "#e0e0d0"
         }
+      },
+      "photo": {
+        "file": "plants/clinopodium-douglasii.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Yerba_Buena_-_Clinopodium_douglasii.jpg",
+        "author": "Joyce Cory on Flickr as docentjoyce",
+        "license": "CC BY 2.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+        "match": "species"
       }
     },
     {
@@ -5836,6 +6316,14 @@
           "color": "#ffffff",
           "centerColor": "#f2d55c"
         }
+      },
+      "photo": {
+        "file": "plants/fragaria-seascape.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Garden_strawberry_(Fragaria_%C3%97_ananassa)_single2.jpg",
+        "author": "Ivar Leidus",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "species"
       }
     },
     {
@@ -6003,6 +6491,14 @@
           "count": 200,
           "centerColor": "#e8b030"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-julia-child.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Julia-child-rose.jpg",
+        "author": "Carolf2011",
+        "license": "CC BY-SA 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+        "match": "cultivar"
       }
     },
     {
@@ -6088,6 +6584,14 @@
           "count": 320,
           "centerColor": "#f2d55c"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-knock-out.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Rosa_Radrazz_1zz.jpg",
+        "author": "Photo by David J. Stang",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -6170,6 +6674,14 @@
           "count": 110,
           "centerColor": "#7a0f1e"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-mr-lincoln.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Mr._Lincoln.jpg",
+        "author": "Gaurav Dhwaj Khadka",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -6252,6 +6764,14 @@
           "count": 110,
           "centerColor": "#d9a39a"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-double-delight.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Rose_Double_Delight_(8262).jpg",
+        "author": "Alexey V. Kurochkin",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -6335,6 +6855,14 @@
           "count": 500,
           "centerColor": "#f2d55c"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-the-fairy.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:The_Fairy_Rose.jpg",
+        "author": "Florian Moeckel",
+        "license": "Public domain",
+        "licenseUrl": "",
+        "match": "cultivar"
       }
     },
     {
@@ -6494,6 +7022,14 @@
           "count": 900,
           "centerColor": "#f2d55c"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-cecile-brunner-climbing.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Rosa_%27Climbing_Mlle_C%C3%A9cile_Br%C3%BCnner_kz4.jpg",
+        "author": "Krzysztof Ziarnek, Kenraiz",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -6567,6 +7103,14 @@
           "count": 1500,
           "centerColor": "#e8c850"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-banksiae.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Roses_de_Rosa_banksiae_%27Lutea%27.jpg",
+        "author": "Abrahami",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+        "match": "cultivar"
       }
     },
     {
@@ -6655,6 +7199,14 @@
           "count": 260,
           "centerColor": "#f2d55c"
         }
+      },
+      "photo": {
+        "file": "plants/rosa-californica.jpg",
+        "page": "https://commons.wikimedia.org/wiki/File:Rosa_californica_2004-07-20.jpg",
+        "author": "Copyright by Curtis Clark, licensed as noted",
+        "license": "CC BY-SA 2.5",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+        "match": "species"
       }
     }
   ],

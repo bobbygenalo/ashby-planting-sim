@@ -4,12 +4,12 @@ import { activeStructures } from '../engine/site';
 import { pointInPolygon } from '../engine/geometry';
 import { placedPlants, type PlacedPlant } from '../engine/growth';
 import { planIrrigation, type IrrigationPlan } from '../engine/irrigation';
-import { buildSchedule, nextRun, type IrrigationSchedule, type ValveRun } from '../engine/irrigationSchedule';
+import { buildSchedule, nextRun, waterByYear, type IrrigationSchedule, type ValveRun } from '../engine/irrigationSchedule';
 import { doyToMonthDay } from '../engine/time';
 import { footprint } from '../engine/hardscape';
 import { polygonArea } from '../engine/geometry';
 import soilRaw from '../data/soil.json';
-import { costReadout, type CostReadout } from '../engine/pricing';
+import { costReadout, waterCost, type CostReadout } from '../engine/pricing';
 import { waterDemand } from '../engine/water';
 import { appStore, useApp } from './store';
 
@@ -47,6 +47,7 @@ export function useWaterDemand() {
         growth: engine.growth,
         hardscapeCfg: engine.hardscape,
         useRain,
+        containers: soilRaw.containers,
       }),
     [plants, hardscape, hydrozones, autoIrrigation, site, water, engine, month, useRain],
   );
@@ -192,4 +193,48 @@ export function useShowRun(): { next: { doy: number; run: ValveRun } | null; jum
     setLayer('irrigation', true);
   };
   return { next, jump };
+}
+
+export interface WaterCostOverTime {
+  /** A few ages of the planting (0 is the day of planting), each with its applied gallons and cost for that year. */
+  milestones: { year: number; gallons: number; cost: number }[];
+  /** All thirty years added up, at today's rate. */
+  thirtyYearGallons: number;
+  thirtyYearCost: number;
+}
+
+/** How the water cost grows as the plants do: the scenario's yearly water at several ages, and the first thirty years added up. */
+export function useWaterCostOverTime(): WaterCostOverTime {
+  const instances = useApp((s) => s.instances);
+  const palette = useApp((s) => s.palette);
+  const hardscape = useApp((s) => s.hardscape);
+  const hydrozones = useApp((s) => s.hydrozones);
+  const autoIrrigation = useApp((s) => s.autoIrrigation);
+  const site = useApp((s) => s.site);
+  const water = useApp((s) => s.water);
+  const library = useApp((s) => s.library);
+  const engine = useApp((s) => s.engine);
+  const useRain = useApp((s) => s.useRain);
+  return useMemo(() => {
+    const last = engine.timeline.maxYears;
+    const years = Array.from({ length: last + 1 }, (_, i) => i);
+    const beds = hardscape.filter((e) => e.type === 'raisedBed' && !e.removed && !e.existing).map((e) => {
+      const points = footprint(e, engine.hardscape);
+      return { points, areaSf: polygonArea(points) };
+    });
+    const per = waterByYear({
+      years, plantsAt: (y) => placedPlants(instances, palette, library.species, y * 12, engine.growth),
+      lawns: hardscape.filter((e) => e.type === 'lawn'), hydrozones, autoIrrigation, zones: site.zones, water, growth: engine.growth,
+      hardscapeCfg: engine.hardscape, useRain, beds, cfg: engine.irrigation, containers: soilRaw.containers,
+    });
+    const cost = (g: number) => waterCost(g, engine.pricing);
+    const marks = [0, 2, 5, 10, last].filter((y, i, a) => a.indexOf(y) === i && y <= last);
+    // thirty years of watering: years 0 to last - 1, each at the size the plants have that year
+    const span = per.slice(0, last);
+    const gal = span.reduce((a, r) => a + r.gallons, 0);
+    return {
+      milestones: marks.map((y) => ({ year: y, gallons: per[y].gallons, cost: cost(per[y].gallons) })),
+      thirtyYearGallons: gal, thirtyYearCost: cost(gal),
+    };
+  }, [instances, palette, hardscape, hydrozones, autoIrrigation, site, water, library, engine, useRain]);
 }

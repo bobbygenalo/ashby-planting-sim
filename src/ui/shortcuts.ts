@@ -48,6 +48,12 @@ export function isWalkKey(e: KeyLike): boolean {
   return e.key === 'w' || e.key === 'W';
 }
 
+/** F on its own frames the selected element in the view. Held-down repeats and combinations (Cmd+F finds on the page) are ignored. */
+export function isFitKey(e: KeyLike): boolean {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return false;
+  return e.key === 'f' || e.key === 'F';
+}
+
 /** "/" on its own, or Cmd/Ctrl+K, opens quick find. */
 export function isFindKey(e: KeyLike): boolean {
   if (e.altKey) return false;

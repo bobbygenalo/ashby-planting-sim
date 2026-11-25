@@ -43,7 +43,7 @@ describe('scenario data', () => {
     const d = emptyScenarioData(site);
     expect(Object.keys(d.palette).sort()).toEqual([...OWNER_PICKS].sort());
     expect(d.instances).toEqual([]);
-    expect(d.hardscape.map((e) => e.id)).toEqual(['driveway']);
+    expect(d.hardscape.map((e) => e.id)).toEqual(site.hardscape.map((e) => e.id));
     expect(d.aduEnabled).toBe(true);
     d.hardscape[0].removed = true; // editing a scenario must not touch the site file
     expect(site.hardscape[0].removed).toBeUndefined();

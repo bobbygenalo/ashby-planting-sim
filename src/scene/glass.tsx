@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { glassBands, type GlassBand } from '../engine/glazing';
+import { interiorLight, outdoorLight, seedOf } from '../engine/interior';
 import { solarPosition, sunVectorSite } from '../engine/solar';
 import { skyColor } from '../engine/sky';
 import { doyToMonthDay, localToUtc } from '../engine/time';
@@ -35,7 +36,7 @@ function skyScene(horizon: string, zenith: string, ground: string, sunDir: THREE
 }
 
 /** The environment map the glass reflects, rebuilt when the sun has moved a few degrees; null until a renderer exists. */
-function useSkyEnvironment(): THREE.Texture | null {
+export function useSkyEnvironment(): THREE.Texture | null {
   const gl = useThree((s) => s.gl);
   const site = useApp((s) => s.site);
   const engine = useApp((s) => s.engine);
@@ -94,6 +95,29 @@ function bandGeometry(b: GlassBand, outFt: number, frameFt: number) {
   return { glass, frame: parts };
 }
 
+/** The sun's height above the horizon now (degrees), at the sun dock's date and time. */
+export function useSunElevation(): number {
+  return useApp((st) => {
+    const [m, d] = doyToMonthDay(st.doy);
+    return solarPosition(localToUtc(st.site.timeZone, st.engine.referenceYear, m, d, 0, st.minutes), st.site.latitude, st.site.longitude, st.engine.sun.refraction).elevationDeg;
+  });
+}
+
+/** How brightly the windows of a building glow now, 0 to 1 (`interior` in engine.json): on as the sun sets, out at bedtime. */
+export function useInteriorGlow(building: string): number {
+  const elev = useSunElevation();
+  const minutes = useApp((st) => st.minutes);
+  const cfg = useApp((st) => st.engine.interior);
+  return interiorLight(elev, minutes, cfg, seedOf(building));
+}
+
+/** How brightly the round outdoor lights glow now, 0 to 1: on from dusk until the sun is up. */
+export function useOutdoorGlow(): number {
+  const elev = useSunElevation();
+  const cfg = useApp((st) => st.engine.interior);
+  return outdoorLight(elev, cfg);
+}
+
 /**
  * The wide clerestory glass in a structure's wall: dark, glossy panes that mirror the sky (an environment map of the sky's
  * gradient and the sun, rebuilt as the sun moves), a bright rim of reflection at grazing angles, slim dark mullions and rails,
@@ -102,13 +126,10 @@ function bandGeometry(b: GlassBand, outFt: number, frameFt: number) {
 export function Glazing({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
   const bands = useMemo(() => glassBands(s), [s]);
   const env = useSkyEnvironment();
-  const sunEl = useApp((st) => {
-    const [m, d] = doyToMonthDay(st.doy);
-    return solarPosition(localToUtc(st.site.timeZone, st.engine.referenceYear, m, d, 0, st.minutes), st.site.latitude, st.site.longitude, st.engine.sun.refraction).elevationDeg;
-  });
+  const cfg = useApp((st) => st.engine.interior);
+  const glow = useInteriorGlow(s.group ?? s.id);
   const geos = useMemo(() => bands.map((b) => bandGeometry(b, 0.03, 0.18)), [bands]);
   useEffect(() => () => geos.forEach((g) => { g.glass.dispose(); g.frame.forEach((p) => p.dispose()); }), [geos]);
-  const night = sunEl < -3;
   if (!bands.length) return null;
   return (
     <group {...noHit}>
@@ -117,7 +138,7 @@ export function Glazing({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
           <mesh geometry={g.glass} receiveShadow {...noHit}>
             <meshPhysicalMaterial
               color="#0d1620" metalness={0.8} roughness={0.05} envMap={env} envMapIntensity={1.35} clearcoat={1} clearcoatRoughness={0.02}
-              emissive={night ? '#ffc474' : '#000000'} emissiveIntensity={night ? 0.55 : 0} side={THREE.DoubleSide} {...depthBias(3, rank)}
+              emissive={cfg.color} emissiveIntensity={glow * 0.8} side={THREE.DoubleSide} {...depthBias(3, rank)}
             />
           </mesh>
           {g.frame.map((p, k) => (

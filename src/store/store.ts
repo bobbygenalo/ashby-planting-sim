@@ -191,6 +191,9 @@ export interface AppState {
   /** How many of the plant in hand have been placed since it was picked up; placing carries on until Escape or Stop placing. */
   placedRun: number;
   quickFindOpen: boolean;
+  /** Counts the presses of F: each one asks the yard to frame whatever is selected. */
+  fitRequest: number;
+  requestFit: () => void;
   setQuickFind: (open: boolean) => void;
   /** Put the chosen quick-find item in hand: a plant to click into the yard, or a hardscape shape to place or draw. Closes the box. */
   chooseQuick: (item: QuickItem) => void;
@@ -479,6 +482,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       placingSpeciesId: null,
       placedRun: 0,
       quickFindOpen: false,
+      fitRequest: 0,
+      requestFit: () => set({ fitRequest: get().fitRequest + 1 }),
       placeContainer: '5gal',
       hover: null,
       dragId: null,

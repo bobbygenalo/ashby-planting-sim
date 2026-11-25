@@ -6,7 +6,7 @@ import { emptyPrices, projectCost } from './pricing';
 import { SHARE_FORMAT } from '../share/format';
 import { activeStructures } from './site';
 import type {
-  EngineConfig, HardscapeElement, Hydrozone, Irrigation, Material, PlantInstance, Prices, SiteConfig, SoilProfile, Species, WaterConfig,
+  EngineConfig, HardscapeElement, Hydrozone, Irrigation, Material, PlantInstance, Prices, SiteConfig, SoilConfig, SoilProfile, Species, WaterConfig,
 } from './types';
 import { waterDemand } from './water';
 
@@ -460,6 +460,8 @@ export interface MetricsContext {
   species: Species[];
   materials: Material[];
   timelineMonth: number;
+  /** Root ball sizes by container (`soil.containers`), for the watered-area floor. */
+  containers?: SoilConfig['containers'];
 }
 
 export interface ScenarioMetrics {
@@ -482,7 +484,7 @@ export function scenarioMetrics(data: ScenarioData, ctx: MetricsContext): Scenar
   const canopySf = plants.reduce((a, p) => a + Math.PI * (p.size.width / 2) ** 2, 0);
   const demand = waterDemand({
     plants, lawns: data.hardscape.filter((e) => e.type === 'lawn'), hydrozones: data.hydrozones, autoIrrigation: data.autoIrrigation,
-    zones: ctx.site.zones, timelineMonth: ctx.timelineMonth, water: ctx.water, growth: ctx.engine.growth, hardscapeCfg: ctx.engine.hardscape, useRain: data.useRain,
+    zones: ctx.site.zones, timelineMonth: ctx.timelineMonth, water: ctx.water, growth: ctx.engine.growth, hardscapeCfg: ctx.engine.hardscape, useRain: data.useRain, containers: ctx.containers,
   });
   const tk = takeoff(data.hardscape, ctx.materials, ctx.engine.hardscape).total;
   const conflicts = detectConflicts({

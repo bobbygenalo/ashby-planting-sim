@@ -144,7 +144,7 @@ export function ScenariosPanel() {
   const rows = useMemo(() => {
     if (!b) return null;
     const ws = s.toWorkspace();
-    const ctx = { site: s.site, engine: s.engine, water: s.water, species: s.library.species, materials: s.materials, timelineMonth: s.timelineMonth };
+    const ctx = { site: s.site, engine: s.engine, water: s.water, species: s.library.species, materials: s.materials, timelineMonth: s.timelineMonth, containers: s.soil.containers };
     return compareMetrics(scenarioMetrics(ws.data[a], ctx), scenarioMetrics(ws.data[b], ctx));
     // The workspace snapshot changes whenever any scenario does.
     // eslint-disable-next-line react-hooks/exhaustive-deps

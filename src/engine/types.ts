@@ -1,3 +1,5 @@
+import type { FitCfg } from './fit';
+import type { InteriorCfg } from './interior';
 import type { IrrigationCfg } from './irrigation';
 export type Pt = [number, number];
 export type Pt3 = [number, number, number];
@@ -28,6 +30,10 @@ export interface StructureCfg {
   status: 'existing' | 'proposed';
   toggleable: boolean;
   note?: string;
+  /** The finish of walls facing a side where it is not the plain stucco of the rest: `hardie` is vertical fiber-cement (Hardie) board. */
+  finish?: Partial<Record<'south' | 'north' | 'east' | 'west', 'hardie'>>;
+  /** An open structure has a roof and no walls (a covered porch): only the roof is drawn and casts shade; the footprint still counts for clearances. */
+  open?: boolean;
   /** Bands of glass in the walls (the ADU's clerestories). */
   windows?: WindowCfg[];
 }
@@ -48,9 +54,52 @@ export interface WindowCfg {
 /** Existing hardscape shipped in the site file. Same shape as a scenario element. */
 export type HardscapeCfg = HardscapeElement;
 
+/**
+ * A door, window, garage door, sconce or flat wall panel on a wall, drawn from its center `at` on the wall surface, facing
+ * the outward direction `facing`. Heights are above grade. Positions and sizes read from the owner's photographs are
+ * estimates (`estimate`), good to a few inches at best.
+ */
+export interface OpeningCfg {
+  id: string;
+  /** The building it belongs to (a structure id or group): it is hidden when that building is not in the plan (the ADU switched off). */
+  building?: string;
+  kind: 'door' | 'window' | 'garageDoor' | 'sconce' | 'panel' | 'unit';
+  label: string;
+  /** The wall point at the middle of the opening. */
+  at: Pt;
+  /** Unit vector pointing away from the wall (out of the building). */
+  facing: Pt;
+  widthFt: number;
+  heightFt: number;
+  /** Height of the bottom edge above grade. A sconce's `sillFt` is its center. */
+  sillFt: number;
+  /** Width of the casing round it, and its color. */
+  frameFt?: number;
+  frameColor?: string;
+  /** Wood trim round the casing (a second, wider ring), and its color. */
+  trimFt?: number;
+  trimColor?: string;
+  /** Door or panel color, or a sconce's glass. */
+  color?: string;
+  /** A sliding door: its panes slide open (a window drawn as a glass door). */
+  slider?: boolean;
+  /** Vertical dividers in a window or garage door. */
+  mullions?: number;
+  /** Horizontal rows of panels in a garage door. */
+  rows?: number;
+  /** A door with a large pane of glass in its leaf. */
+  lite?: boolean;
+  /** The pane's margin to the leaf's edge all round, in feet, which makes it full height; without it the pane is about three quarters of the leaf. */
+  liteMarginFt?: number;
+  /** How far a wall-hung light or a unit stands out from the wall, in feet. */
+  depthFt?: number;
+  estimate?: boolean;
+  note?: string;
+}
+
 export interface ContextObjectCfg {
   id: string;
-  kind: 'fence' | 'wall' | 'building' | 'tree' | 'pole';
+  kind: 'fence' | 'wall' | 'building' | 'tree' | 'pole' | 'screen' | 'post';
   name: string;
   line?: Pt[];
   footprint?: Pt[];
@@ -61,6 +110,22 @@ export interface ContextObjectCfg {
   trunkHeight?: number;
   /** 0..1 share of sunlight blocked by the object. */
   density?: number;
+  /** A screen or post stands on this height (a porch floor) and rises to `height`, both above grade. */
+  baseHeight?: number;
+  /**
+   * A screen of vertical slats (2x4s) set between two posts at the ends of its `line`: each slat is `slatFt` thick and
+   * `slatWidthFt` wide, turned `slatAngleDeg` about the vertical from square to the line (a louver), `slatCount` of them
+   * spread evenly from the first post to the second, and `endPostFt` is the side of the post at each end. `thickness`
+   * is how deep the screen is overall (the shade body).
+   */
+  slatFt?: number;
+  slatWidthFt?: number;
+  slatAngleDeg?: number;
+  slatCount?: number;
+  endPostFt?: number;
+  /** A post's side, in feet. */
+  postFt?: number;
+  color?: string;
   placeholder?: boolean;
   note?: string;
 }
@@ -118,6 +183,10 @@ export interface DoorCfg {
   /** The structure's group, or its id when it has none. */
   building: string;
   point: Pt;
+  /** The doorway itself, on the wall, when `point` is a spot short of it (the front edge of a stoop): people walk on to it to go in. */
+  entry?: Pt;
+  /** The drawn door (an opening id) that opens and closes for them. */
+  opening?: string;
   /** Unit vector pointing away from the building. */
   outward: Pt;
   /** True when the position is assumed rather than read from a plan. */
@@ -172,6 +241,8 @@ export interface SiteConfig {
   driveSide: 'left' | 'right';
   lot: { width: number; depth: number };
   structures: StructureCfg[];
+  /** Doors, windows and wall details drawn on the buildings. */
+  openings?: OpeningCfg[];
   /** Doors people walk in and out of. Optional: a site without them has people stay outside. */
   doors?: DoorCfg[];
   /** Where the water comes in (hose bibs, each with its own valve manifold). Optional: without it there is no irrigation layout. */
@@ -646,6 +717,12 @@ export interface LifeCfg {
     lingerS: [number, number];
     /** How far outside a door they stop before going in, in feet. */
     doorApproachFt: number;
+    /**
+     * Doors are opened and closed by the people using them: a person stops `reachFt` short of the door, reaches for it and waits until
+     * it has swung (or slid, or rolled) open over `swingS`, goes through, and the door closes `closeDelayS` after the last person
+     * has passed. Coming out, they wait inside for it to open first.
+     */
+    door: { reachFt: number; swingS: number; closeDelayS: number };
   };
   dogs: { max: number; speedFt: [number, number]; pauseS: [number, number]; followFt: [number, number]; replanS: number; heightFt: number; turnRate: number };
   bees: {
@@ -894,6 +971,8 @@ export interface PricingCfg {
 }
 
 export interface EngineConfig {
+  /** Interior lights glowing in the windows at dusk. */
+  interior: InteriorCfg;
   irrigation: IrrigationCfg;
   birthday: BirthdayCfg;
   pricing: PricingCfg;
@@ -928,7 +1007,14 @@ export interface EngineConfig {
     presets: { id: string; label: string; month: number; day: number }[];
     seasons: SeasonCfg[];
   };
-  scene: { snapDefaultFt: number; snapOptionsFt: number[]; treeCanopyRings: number; /** Shift with an arrow key moves this many times as far. */ arrowShiftMultiplier: number };
+  scene: { snapDefaultFt: number; snapOptionsFt: number[]; treeCanopyRings: number; /** Shift with an arrow key moves this many times as far. */ arrowShiftMultiplier: number;
+    /**
+     * The sun's shadow map. `bias` is a share of the depth range (`far` - `near`), so it is worth `bias * (far - near)` feet along the ray:
+     * too much lets light leak under a thin overhang, as a lit stripe on the wall just below an awning.
+     */
+    /** Press F with something selected to frame it. */
+    fit: FitCfg;
+    shadow: { mapSize: number; halfWidthFt: number; near: number; far: number; bias: number; normalBias: number } };
   growth: {
     steepness: number;
     containers: Record<string, { label: string; height: number; width: number }>;
@@ -1059,6 +1145,8 @@ export interface Species {
   roots: { behavior: 'shallow' | 'moderate' | 'sensitive' | 'aggressive'; minFoundationFt: number; minPavingFt: number };
   soil: { drainageNeed: 'fast' | 'moderate' | 'tolerant'; textures: string[]; phMin: number; phMax: number };
   /** The owner's data sheet (2026-11-21): how well this row is verified and what is left to check. */
+  /** A free-licensed photo copied into public/plants (Wikimedia Commons); `match` says how close it is to this plant. */
+  photo?: { file: string; page: string; author: string; license: string; licenseUrl: string; match: 'cultivar' | 'species' | 'genus' };
   sheet?: { confidence: string; verified: string | null; toVerify: string | null };
   provenance?: Partial<Record<'size' | 'light' | 'water' | 'pollinator' | 'soil', { source: string; confidence: Confidence }>>;
 }
@@ -1111,7 +1199,7 @@ export interface Material {
 }
 
 /** The look of a surface: slab concrete with joints, pavers, mortared or dry-laid flagstone, fine granules, gravel, wood chips, turf, deck boards, composite decking, block wall, fence boards. */
-export type SurfacePattern = 'slab' | 'pavers' | 'flagstone-mortar' | 'flagstone-dry' | 'granular' | 'gravel' | 'mulch' | 'turf' | 'planks' | 'composite' | 'cmu' | 'boards';
+export type SurfacePattern = 'slab' | 'pavers' | 'flagstone-mortar' | 'flagstone-dry' | 'granular' | 'gravel' | 'mulch' | 'turf' | 'planks' | 'composite' | 'cmu' | 'boards' | 'hardie';
 
 export interface HardscapeElement {
   id: string;
@@ -1180,6 +1268,8 @@ export interface WaterConfig {
   defaultIrrigation: Record<PlantType, Irrigation>;
   establishment: Record<PlantType, { months: number; multiplier: number }>;
   establishmentSource: string;
+  /** The least area watered round a plant, from its container's root ball, so young plants are not watered by canopy area alone. */
+  wetting: { ballDiameterFactor: number; source: string; confidence: Confidence };
   lawn: { plantFactor: number; irrigation: Irrigation; source: string; confidence: Confidence };
   budget: { etaf: number; source: string; confidence: Confidence };
   pollinator: { weights: Record<PollinatorValue, number>; countCap: number; source: string; topSuggestions: number };

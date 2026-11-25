@@ -1,3 +1,4 @@
+import { PlantPhoto } from './PlantPhoto';
 import { useMemo } from 'react';
 import { plantPrice } from '../engine/pricing';
 import { fruitState, monthRange, sizeFraction } from '../engine/fruit';
@@ -85,6 +86,7 @@ export function PlantInspector({ growing }: { growing: SunHoursResult | null }) 
         {sp.invasive && <span className="pill warn">invasive</span>}
         {sp.toxic && <span className="pill warn">toxic</span>}
       </div>
+      <PlantPhoto sp={sp} />
       {warnings.length > 0 && (
         <ul className="warnings">{warnings.map((w) => <li key={w}>{w}</li>)}</ul>
       )}

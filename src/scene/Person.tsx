@@ -196,6 +196,9 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
       } else if (w.pose === 'spin') {
         l = [0, -0.1, 1.35];
         r = [0, -0.1, 1.35];
+      } else if (w.pose === 'door') {
+        // Reaching for the door handle: the right arm out in front, a little bent.
+        r = [-1.3, -0.45, 0.08];
       } else if (w.pose === 'tag') {
         r = [-1.4, -0.15, 0.1];
       } else if (w.pose === 'puppet') {

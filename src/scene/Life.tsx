@@ -1,4 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber';
+import { doorOpen } from './doorState';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { fireworksDay } from '../engine/fireworks';
@@ -878,6 +879,8 @@ export function LifeLayer() {
   useEffect(() => {
     crit.current?.setLimits({ hummingbirds: settings.hummingbirds, butterflies: settings.butterflies, birds: settings.birds, worms: settings.worms });
   }, [settings.hummingbirds, settings.butterflies, settings.birds, settings.worms]);
+  // With the life layer gone every door stands shut again.
+  useEffect(() => () => doorOpen.clear(), []);
   // In development the simulation is on `window.__life`, for inspecting it from the console.
   if (import.meta.env.DEV) {
     (window as unknown as { __life?: LifeSim | null }).__life = sim.current;
@@ -887,6 +890,8 @@ export function LifeLayer() {
     const sm = sim.current;
     if (!sm) return;
     sm.step(Math.min(dt, 0.25));
+    // The doors people are using: how far open each drawn door is.
+    for (const d of sm.world.doors) if (d.opening) doorOpen.set(d.opening, sm.doorOpenness(d.id));
     crit.current?.step(Math.min(dt, 0.25));
     // Chairs are drawn by their tables; hand them how far each is pulled out.
     sm.chairs.forEach((v, k) => chairPull.set(k, v));

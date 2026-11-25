@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { defaultLifeSettings, useApp } from '../store/store';
 import { defaultSkySettings } from '../engine/planet';
 import { money, waterCost } from '../engine/pricing';
-import { useCostReadout, useIrrigationPlan, useShowRun } from '../store/derived';
+import { useCostReadout, useIrrigationPlan, useShowRun, useWaterCostOverTime } from '../store/derived';
 import { doyToMonthDay } from '../engine/time';
 import { clock } from './IrrigationPanel';
 import { useRunningValves } from '../scene/IrrigationFlow';
@@ -166,6 +166,7 @@ function CostReadout() {
   const pricing = useApp((x) => x.engine.pricing);
   const scenarioName = useApp((x) => x.scenarios.find((sc) => sc.id === x.activeScenarioId)?.name ?? 'This scenario');
   const plan = useIrrigationPlan();
+  const over = useWaterCostOverTime();
   const m = (n: number) => money(n, pricing);
   return (
     <Dropdown ariaLabel="Scenario cost" title={`Estimated cost of ${scenarioName}: click for the detail`} wide className="costdrop"
@@ -191,6 +192,19 @@ function CostReadout() {
               <tr className="sum"><td>First year, all in</td><td>{m(cost.firstYear)}</td></tr>
             </tbody>
           </table>
+          <div className="costtitle">Water cost as the plants grow</div>
+          <table className="tbl tight">
+            <thead><tr><th>Year</th><th>Gallons</th><th>Per year</th></tr></thead>
+            <tbody>
+              {over.milestones.map((r) => (
+                <tr key={r.year}><td>{r.year === 0 ? 'Planting' : `Year ${r.year}`}</td><td>{Math.round(r.gallons).toLocaleString('en-US')}</td><td>{m(r.cost)}</td></tr>
+              ))}
+              <tr className="sum"><td>First 30 years</td><td>{Math.round(over.thirtyYearGallons).toLocaleString('en-US')}</td><td>{m(over.thirtyYearCost)}</td></tr>
+            </tbody>
+          </table>
+          <p className="small muted">
+            The readout above is today's size. A new plant is watered over at least the soil round its root ball (and gets a first-year boost), then water climbs as the canopy fills out and levels off at maturity. Rate held at today's price.
+          </p>
           <p className="small muted">
             New work only: hardscape from each material's price and the plants from their containers (set your own in Outputs, Prices). Water is the irrigation plan's applied gallons at {pricing.currency}{pricing.water.perCcf} per hundred cubic feet ({pricing.water.galPerCcf} gal), about {pricing.currency}{(waterCost(1000, pricing)).toFixed(2)} per 1,000 gallons. <span className="pill warn" title={pricing.water.source}>stand-in rate</span> Replace it with the rate on your own bill (LADWP's biannual notice is the reference; hover the tag for the notes).
           </p>

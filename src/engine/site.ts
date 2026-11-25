@@ -87,8 +87,9 @@ export function structureSolids(s: StructureCfg): Pt3[][] {
   return bodies;
 }
 
-/** Convex 3D body of the walls and roof over the footprint. */
+/** Convex 3D body of the walls and roof over the footprint (an open structure, a covered porch, is only its roof). */
 export function structureSolidPoints(s: StructureCfg): Pt3[] {
+  if (s.open) return roofPoints(s);
   return [...s.footprint.map(([x, y]): Pt3 => [x, y, 0]), ...roofPoints(s)];
 }
 
@@ -134,7 +135,7 @@ function treeSolid(o: ContextObjectCfg, rings: number): Solid {
   return { id: o.id, points: pts, density: o.density ?? 0.75 };
 }
 
-function lineSolids(o: ContextObjectCfg): Solid[] {
+function lineSolids(o: ContextObjectCfg, base = 0, density = 1): Solid[] {
   const line = o.line ?? [];
   const out: Solid[] = [];
   const t = (o.thickness ?? 0.3) / 2;
@@ -152,8 +153,8 @@ function lineSolids(o: ContextObjectCfg): Solid[] {
     ];
     out.push({
       id: `${o.id}#${i}`,
-      points: [...ends.map(([x, y]): Pt3 => [x, y, 0]), ...ends.map(([x, y]): Pt3 => [x, y, o.height])],
-      density: 1,
+      points: [...ends.map(([x, y]): Pt3 => [x, y, base]), ...ends.map(([x, y]): Pt3 => [x, y, o.height])],
+      density,
     });
   }
   return out;
@@ -178,6 +179,13 @@ export function buildSunScene(site: SiteConfig, flags: SiteFlags, engine: Engine
         density: 1,
       });
     } else if (o.kind === 'fence' || o.kind === 'wall') solids.push(...lineSolids(o));
+    else if (o.kind === 'screen') solids.push(...lineSolids(o, o.baseHeight ?? 0, o.density ?? 0.5));
+    else if (o.kind === 'post' && o.position) {
+      const [x, y] = o.position;
+      const h = (o.postFt ?? 0.4) / 2;
+      const pts: Pt[] = [[x - h, y - h], [x + h, y - h], [x + h, y + h], [x - h, y + h]];
+      solids.push({ id: o.id, points: [...pts.map(([px, py]): Pt3 => [px, py, o.baseHeight ?? 0]), ...pts.map(([px, py]): Pt3 => [px, py, o.height])], density: 1 });
+    }
     else if (o.kind === 'building' && o.footprint) {
       solids.push({
         id: o.id,

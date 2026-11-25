@@ -16,7 +16,7 @@ import { QuickFind } from './QuickFind';
 import { PlacingPanel } from './PlacingPanel';
 import { SelectionPanel } from './SelectionPanel';
 import { ShuffleBar } from './ShuffleControl';
-import { arrowDelta, isFindKey, isPlayPauseKey, isWalkKey, viewForKey } from './shortcuts';
+import { arrowDelta, isFindKey, isFitKey, isPlayPauseKey, isWalkKey, viewForKey } from './shortcuts';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
 import { startCloudSync } from '../store/cloudSync';
@@ -109,6 +109,12 @@ function useShortcuts() {
       if (isFindKey(e) && !document.querySelector('.dialog')) {
         e.preventDefault();
         st.setQuickFind(true);
+        return;
+      }
+      // F frames whatever is selected in the yard (a plant, a drawn element or the hive), outside the Walk view and with no dialog open.
+      if (isFitKey(e) && !document.querySelector('.dialog') && !st.quickFindOpen && st.site.views.find((v) => v.id === st.view)?.kind !== 'walk' && (st.selectedId || st.selectedElementId || st.hiveSelected)) {
+        e.preventDefault();
+        st.requestFit();
         return;
       }
       // W, outside the Walk view, takes you into it (dropped where the view is looking); inside it W is walking forward.

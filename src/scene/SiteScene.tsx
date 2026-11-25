@@ -5,7 +5,10 @@ import { grab, groundUnder } from './grab';
 import { depthBias, useOverlayBase } from './overlay';
 import { skyColor } from '../engine/sky';
 import { tiledSurface } from './surfaces';
-import { useEffect, useMemo } from 'react';
+import { splitFaces } from './siding';
+import { fitDistance, fitPose, fitSphere, fitZoom, selectionBox } from '../engine/fit';
+import { usePlaced } from '../store/derived';
+import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { elementAt } from '../engine/hardscape';
 import { Html, Line, OrbitControls, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
@@ -25,6 +28,7 @@ import { LifeLayer } from './Life';
 import { HardscapeLayer, useSnapper } from './Hardscape';
 import { ConflictRings, SuggestionLayer } from './Suggestions';
 import { IrrigationLayer } from './Irrigation';
+import { Openings, Screens } from './Facade';
 import { CompassMark, PlanetGround, SkyBodies } from './Planet';
 import { Glazing } from './glass';
 
@@ -40,21 +44,92 @@ function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
     [s],
   );
   const roof = useMemo(() => new ConvexGeometry(roofPoints(s).map(([x, y, z]) => new THREE.Vector3(x, y, z))), [s]);
+  // The roof's flat underside sits on the wall tops, hidden inside the building. It is left out of what is drawn (the walls' top caps
+  // still close the shape for shadows): with the roof's depth bias it can win the depth test against the wall just below the eave and
+  // show as a dark line along it when seen from below. An open porch keeps it, as its ceiling.
+  const roofShown = useMemo(() => (s.open ? roof : splitFaces(roof, (n) => n.z < -0.5).rest), [s.open, roof]);
   const slab = useMemo(() => { const p = overhangPoints(s); return p ? new ConvexGeometry(p.map(([x, y, z]) => new THREE.Vector3(x, y, z))) : null; }, [s]);
+  const ceiling = useMemo(() => {
+    const g = new THREE.ShapeGeometry(shapeOf(s.footprint));
+    g.translate(0, 0, s.eaveHeight - 0.02);
+    return g;
+  }, [s]);
+  // A wall with its own finish on the south (the ADU's vertical Hardie board): the wall's south faces, and the vertical faces the
+  // roof wedge adds above the wall, are cut out and drawn with that surface; the other vertical faces above the wall stay wall-colored.
+  const sidingTex = useMemo(() => (s.finish?.south === 'hardie' ? tiledSurface('hardie', 4) : null), [s.finish?.south]);
+  useEffect(() => () => sidingTex?.dispose(), [sidingTex]);
+  const split = useMemo(() => {
+    if (!sidingTex) return null;
+    const south = (n: THREE.Vector3) => n.y < -0.7 && Math.abs(n.z) < 0.2;
+    const w = splitFaces(walls, south);
+    const vertical = splitFaces(roofShown, (n) => Math.abs(n.z) < 0.1);
+    const v = vertical.picked ? splitFaces(vertical.picked, south) : { picked: null, rest: null };
+    return { wallSouth: w.picked, wallRest: w.rest, roofSouth: v.picked, roofWall: v.rest, roofRest: vertical.rest };
+  }, [sidingTex, walls, roofShown]);
+  // The vertical faces above a wall end exactly on the roof's top edge. They are pushed a little back in depth (the roof's own offset
+  // pulls it forward), so that edge cannot show through the roof as a thin dark line.
+  const pushedBack = { polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 } as const;
   const proposed = s.status === 'proposed';
+  const wallColor = proposed ? '#cdd8e6' : '#e9e3d6';
+  const roofColor = proposed ? '#5d6b7d' : '#6d5b52';
   return (
     <group>
       {/* Where parts of a building meet, their faces can lie in one plane (a fin's roof and the slab above it): a roof wins over a
           wall, a slab over a roof, and a later part over an earlier one, by a hair of depth, so the same one is always seen. */}
-      <mesh geometry={walls} castShadow receiveShadow>
-        <meshStandardMaterial color={proposed ? '#cdd8e6' : '#e9e3d6'} roughness={0.9} {...depthBias(0, rank)} />
-      </mesh>
-      <mesh geometry={roof} castShadow receiveShadow>
-        <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} {...depthBias(1, rank)} />
-      </mesh>
+      {!s.open && !split && (
+        <mesh geometry={walls} castShadow receiveShadow>
+          <meshStandardMaterial color={wallColor} roughness={0.9} {...depthBias(0, rank)} />
+        </mesh>
+      )}
+      {!s.open && split && (
+        <>
+          <mesh geometry={split.wallRest} castShadow receiveShadow>
+            <meshStandardMaterial color={wallColor} roughness={0.9} {...depthBias(0, rank)} />
+          </mesh>
+          {split.wallSouth && (
+            <mesh geometry={split.wallSouth} castShadow receiveShadow>
+              <meshStandardMaterial color="#e6e1d6" map={sidingTex} bumpMap={sidingTex} bumpScale={0.4} roughness={0.9} {...depthBias(0, rank)} />
+            </mesh>
+          )}
+        </>
+      )}
+      {s.open && (
+        // an open porch: no walls, a white ceiling under the roof
+        <mesh geometry={ceiling} receiveShadow>
+          <meshStandardMaterial color="#f1ede4" roughness={0.9} {...depthBias(0, rank)} />
+        </mesh>
+      )}
+      {/* the whole roof shape still casts its shadow, drawn invisibly (no color, no depth) */}
+      {roofShown !== roof && (
+        <mesh geometry={roof} castShadow>
+          <meshBasicMaterial colorWrite={false} depthWrite={false} />
+        </mesh>
+      )}
+      {!split && (
+        <mesh geometry={roofShown} castShadow receiveShadow>
+          <meshStandardMaterial color={roofColor} roughness={0.8} {...depthBias(1, rank)} />
+        </mesh>
+      )}
+      {split && (
+        <>
+          <mesh geometry={split.roofRest} castShadow receiveShadow>
+            <meshStandardMaterial color={roofColor} roughness={0.8} {...depthBias(1, rank)} />
+          </mesh>
+          {split.roofWall && (
+            <mesh geometry={split.roofWall} castShadow receiveShadow>
+              <meshStandardMaterial color={wallColor} roughness={0.9} {...pushedBack} />
+            </mesh>
+          )}
+          {split.roofSouth && (
+            <mesh geometry={split.roofSouth} castShadow receiveShadow>
+              <meshStandardMaterial color="#e6e1d6" map={sidingTex} bumpMap={sidingTex} bumpScale={0.4} roughness={0.9} {...pushedBack} />
+            </mesh>
+          )}
+        </>
+      )}
       {slab && (
         <mesh geometry={slab} castShadow receiveShadow>
-          <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} {...depthBias(2, rank)} />
+          <meshStandardMaterial color={roofColor} roughness={0.8} {...depthBias(2, rank)} />
         </mesh>
       )}
       {s.windows && <Glazing s={s} rank={rank} />}
@@ -208,6 +283,7 @@ function Sun({ target }: { target: THREE.Object3D }) {
   const [tx, ty, tz] = SITE_TO_THREE(site.lot.width / 2, site.lot.depth / 2, 0);
   const [dx, dy, dz] = SITE_TO_THREE(v[0], v[1], v[2]);
   const up = sun.elevationDeg > 0;
+  const sh = engine.scene.shadow;
   return (
     <>
       <primitive object={target} position={[tx, ty, tz]} />
@@ -216,15 +292,15 @@ function Sun({ target }: { target: THREE.Object3D }) {
         target={target}
         intensity={up ? 2.6 : 0.15}
         castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-110}
-        shadow-camera-right={110}
-        shadow-camera-top={110}
-        shadow-camera-bottom={-110}
-        shadow-camera-near={10}
-        shadow-camera-far={700}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.05}
+        shadow-mapSize={[sh.mapSize, sh.mapSize]}
+        shadow-camera-left={-sh.halfWidthFt}
+        shadow-camera-right={sh.halfWidthFt}
+        shadow-camera-top={sh.halfWidthFt}
+        shadow-camera-bottom={-sh.halfWidthFt}
+        shadow-camera-near={sh.near}
+        shadow-camera-far={sh.far}
+        shadow-bias={sh.bias}
+        shadow-normalBias={sh.normalBias}
       />
       <hemisphereLight args={['#cfe3ff', '#7d8a6a', up ? 0.7 : 0.25]} />
     </>
@@ -564,6 +640,61 @@ function Cameras() {
   );
 }
 
+/**
+ * Press F with something selected and the camera glides to frame it: the same way of looking, closer or further, centered on it.
+ * In the Orbit and street views the camera keeps its direction and moves along it to the distance that fits the thing; in the plan view
+ * it pans to it and zooms. The first view of a thing is never closer than `scene.fit.minRadiusFt`.
+ */
+function FitView() {
+  const request = useApp((s) => s.fitRequest);
+  const fit = useApp((s) => s.engine.scene.fit);
+  const hs = useApp((s) => s.engine.hardscape);
+  const plants = usePlaced();
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls) as unknown as { target: THREE.Vector3; update: () => void } | null;
+  const size = useThree((s) => s.size);
+  const handled = useRef(request);
+  const anim = useRef<{ t: number; from: { pos: THREE.Vector3; target: THREE.Vector3; zoom: number }; to: { pos: THREE.Vector3; target: THREE.Vector3; zoom: number } } | null>(null);
+  useEffect(() => {
+    if (request === handled.current) return;
+    handled.current = request;
+    if (!controls) return;
+    const st = appStore.getState();
+    const box = selectionBox({ plants, elements: st.hardscape, hardscapeCfg: hs, selectedId: st.selectedId, selectedElementId: st.selectedElementId, hive: st.hive, hiveSelected: st.hiveSelected });
+    if (!box) return;
+    const sphere = fitSphere(box, fit);
+    const [cx, cy, cz] = SITE_TO_THREE(...sphere.center);
+    const target = new THREE.Vector3(cx, cy, cz);
+    const from = { pos: camera.position.clone(), target: controls.target.clone(), zoom: (camera as THREE.OrthographicCamera).zoom ?? 1 };
+    if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
+      const oc = camera as THREE.OrthographicCamera;
+      const halfW = (oc.right - oc.left) / 2, halfH = (oc.top - oc.bottom) / 2;
+      const delta = target.clone().sub(controls.target);
+      anim.current = { t: 0, from, to: { pos: camera.position.clone().add(new THREE.Vector3(delta.x, 0, delta.z)), target: new THREE.Vector3(target.x, controls.target.y, target.z), zoom: fitZoom(sphere.radius, halfW, halfH, fit.margin) } };
+    } else {
+      const pc = camera as THREE.PerspectiveCamera;
+      const dist = fitDistance(sphere.radius, pc.fov, size.width / Math.max(1, size.height), fit.margin);
+      const pose = fitPose([camera.position.x, camera.position.y, camera.position.z], [controls.target.x, controls.target.y, controls.target.z], { center: [cx, cy, cz], radius: sphere.radius }, dist);
+      anim.current = { t: 0, from, to: { pos: new THREE.Vector3(...pose.position), target: new THREE.Vector3(...pose.target), zoom: 1 } };
+    }
+  }, [request, controls, camera, plants, hs, fit, size]);
+  useFrame((_, dt) => {
+    const a = anim.current;
+    if (!a || !controls) return;
+    a.t = Math.min(1, a.t + dt / Math.max(0.05, fit.animateS));
+    const k = a.t * a.t * (3 - 2 * a.t);
+    camera.position.lerpVectors(a.from.pos, a.to.pos, k);
+    controls.target.lerpVectors(a.from.target, a.to.target, k);
+    if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
+      (camera as THREE.OrthographicCamera).zoom = a.from.zoom + (a.to.zoom - a.from.zoom) * k;
+      camera.updateProjectionMatrix();
+    }
+    controls.update();
+    if (a.t >= 1) anim.current = null;
+  });
+  return null;
+}
+
 export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
   const site = useApp((s) => s.site);
   const aduEnabled = useApp((s) => s.aduEnabled);
@@ -576,6 +707,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
     <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true }}>
       <Sky />
       <Cameras />
+      <FitView />
       <ViewPoseTracker />
       <Sun target={target} />
       {layers.skyBodies && <SkyBodies />}
@@ -588,6 +720,8 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
         {structures.map((s, i) => (
           <StructureMesh key={s.id} s={s} rank={i} />
         ))}
+        <Openings />
+        <Screens />
         {layers.context &&
           site.contextObjects.map((o) =>
             o.kind === 'tree' ? <TreeMesh key={o.id} o={o} />

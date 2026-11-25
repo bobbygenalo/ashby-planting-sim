@@ -13,8 +13,8 @@ export function useOverlayBase(): number {
   return useMemo(() => overlayHeightFt(hardscape, cfg), [hardscape, cfg]);
 }
 
-/** Depth bias for a surface of a given kind and place in a list, so that where two coplanar surfaces overlap the same one always wins: later in the list, and a roof over a wall and a slab over a roof. */
+/** (The slope factor is kept small: it scales with the angle of view, and a large one pulled surfaces through corners seen edge-on.) Depth bias for a surface of a given kind and place in a list, so that where two coplanar surfaces overlap the same one always wins: later in the list, and a roof over a wall and a slab over a roof. */
 export function depthBias(kind: number, index: number): { polygonOffset: true; polygonOffsetFactor: number; polygonOffsetUnits: number } {
   const i = Math.min(Math.max(index, 0), 39); // the part's place never outweighs a step in kind
-  return { polygonOffset: true, polygonOffsetFactor: -(kind * 4 + i * 0.1), polygonOffsetUnits: -(kind * 40 + i * 0.5) };
+  return { polygonOffset: true, polygonOffsetFactor: -(kind * 0.5 + i * 0.01), polygonOffsetUnits: -(kind * 40 + i * 0.5) };
 }

@@ -1,5 +1,10 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import { depthBias } from './overlay';
+/**
+ * A small constant depth push that puts an opening's pieces in front of the wall they sit on (layer 0: frames and slabs, 1: glass
+ * and panel insets). Only `polygonOffsetUnits`, never the slope factor: a slope-scaled offset grows without limit at grazing
+ * angles and pulled doors and panels through the corner of the wall when seen from the side.
+ */
+const openBias = (layer: number) => ({ polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -(12 + layer * 8) });
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ContextObjectCfg, OpeningCfg } from '../engine/types';
@@ -16,7 +21,7 @@ function Box({ x, y, z, w, d, h, color, rough = 0.8, metal = 0, shadow = false, 
   return (
     <mesh position={[x, y, z]} castShadow={shadow} receiveShadow {...noHit}>
       <boxGeometry args={[w, d, h]} />
-      <meshStandardMaterial color={color} roughness={rough} metalness={metal} emissive={glowColor ?? '#000000'} emissiveIntensity={glow} {...depthBias(y >= 0.08 ? 6 : 5, 0)} />
+      <meshStandardMaterial color={color} roughness={rough} metalness={metal} emissive={glowColor ?? '#000000'} emissiveIntensity={glow} {...openBias(y >= 0.08 ? 1 : 0)} />
     </mesh>
   );
 }
@@ -77,7 +82,7 @@ function OpeningMesh({ o, env }: { o: OpeningCfg; env: THREE.Texture | null }) {
               {o.lite && (
                 <mesh position={[0, 0.085, z0 + h * 0.5]} {...noHit}>
                   <boxGeometry args={o.liteMarginFt !== undefined ? [w - 2 * f - 2 * o.liteMarginFt, 0.02, h - f - 2 * o.liteMarginFt] : [(w - 2 * f) * 0.72, 0.02, (h - f) * 0.76]} />
-                  <meshPhysicalMaterial color="#0d1620" metalness={0.8} roughness={0.06} envMap={env} envMapIntensity={1.2} clearcoat={1} clearcoatRoughness={0.03} emissive={interior.color} emissiveIntensity={glow} {...depthBias(6, 0)} />
+                  <meshPhysicalMaterial color="#0d1620" metalness={0.8} roughness={0.06} envMap={env} envMapIntensity={1.2} clearcoat={1} clearcoatRoughness={0.03} emissive={interior.color} emissiveIntensity={glow} {...openBias(1)} />
                 </mesh>
               )}
               <Box x={w / 2 - f - 0.28} y={0.12} z={z0 + 3.0} w={0.05} d={0.1} h={0.55} color="#c9c9c9" rough={0.3} metal={0.8} />
@@ -115,7 +120,7 @@ function OpeningMesh({ o, env }: { o: OpeningCfg; env: THREE.Texture | null }) {
               <group key={i} ref={moving ? slide : undefined} position={[x0, moving ? 0.045 : 0, 0]}>
                 <mesh position={[0, 0.06, z0 + h / 2]} {...noHit}>
                   <boxGeometry args={[paneW, 0.03, h - 2 * f]} />
-                  <meshPhysicalMaterial color="#0d1620" metalness={0.8} roughness={0.06} envMap={env} envMapIntensity={1.2} clearcoat={1} clearcoatRoughness={0.03} emissive={interior.color} emissiveIntensity={glow} {...depthBias(6, 0)} />
+                  <meshPhysicalMaterial color="#0d1620" metalness={0.8} roughness={0.06} envMap={env} envMapIntensity={1.2} clearcoat={1} clearcoatRoughness={0.03} emissive={interior.color} emissiveIntensity={glow} {...openBias(1)} />
                 </mesh>
                 <Box x={-paneW / 2 + f * 0.4} y={0.07} z={z0 + h / 2} w={f * 0.8} d={0.07} h={h - 2 * f} color={frame} />
                 <Box x={paneW / 2 - f * 0.4} y={0.07} z={z0 + h / 2} w={f * 0.8} d={0.07} h={h - 2 * f} color={frame} />
@@ -130,7 +135,7 @@ function OpeningMesh({ o, env }: { o: OpeningCfg; env: THREE.Texture | null }) {
           {o.trimFt && <Casing w={w + 2 * o.trimFt} h={h + 2 * o.trimFt} f={o.trimFt} d={0.1} z0={z0 - o.trimFt} color={o.trimColor ?? '#c8923a'} />}
           <mesh position={[0, 0.06, z0 + h / 2]} {...noHit}>
             <boxGeometry args={[w - 2 * f, 0.03, h - 2 * f]} />
-            <meshPhysicalMaterial color="#0d1620" metalness={0.8} roughness={0.06} envMap={env} envMapIntensity={1.2} clearcoat={1} clearcoatRoughness={0.03} emissive={interior.color} emissiveIntensity={glow} {...depthBias(6, 0)} />
+            <meshPhysicalMaterial color="#0d1620" metalness={0.8} roughness={0.06} envMap={env} envMapIntensity={1.2} clearcoat={1} clearcoatRoughness={0.03} emissive={interior.color} emissiveIntensity={glow} {...openBias(1)} />
           </mesh>
           <Casing w={w} h={h} f={f} d={0.14} z0={z0} color={frame} />
           {Array.from({ length: o.mullions ?? 0 }, (_, i) => {

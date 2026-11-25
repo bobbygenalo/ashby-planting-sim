@@ -14,6 +14,66 @@
     "outdoorEmissive": 2.4,
     "haloOpacity": 0.28
   },
+  "fenceVine": {
+    "climbFt": 1.5,
+    "planeDepthFt": [0.1, 0.32],
+    "spillMinGrowth": 0.6,
+    "spillFt": 4,
+    "spillHeightShare": 0.85,
+    "overTopFt": 0.8,
+    "unsupportedFt": 1.5,
+    "stemRadiusFt": 0.014,
+    "stemsMax": 7,
+    "branchEveryFt": 0.9,
+    "branchLenFt": [0.6, 1.6],
+    "maxLeaves": 2200,
+    "flowerShare": 0.14,
+    "youngLeafScale": 0.65,
+    "edgeTaper": 0.55
+  },
+  "fenceDesign": {
+    "targetId": "fence-west",
+    "postIn": 3.5,
+    "boardThicknessIn": 0.75,
+    "railIn": [1.5, 3.5],
+    "railCount": 2,
+    "railInsetFt": 0.75,
+    "boardNominalIn": [2, 3, 4, 5, 6],
+    "boardActualIn": { "2": 1.5, "3": 2.5, "4": 3.5, "5": 4.5, "6": 5.5 },
+    "boardNominalDefault": 6,
+    "boardGapIn": { "min": 0, "max": 1, "step": 0.125, "default": 0.25 },
+    "boardHeightFt": { "options": [6, 8], "default": 6 },
+    "postRiseFt": 0.2,
+    "materials": [
+      { "id": "cedar", "label": "Cedar boards", "kind": "boards", "color": "#b49a78", "widthsFt": [2, 4, 6, 8] },
+      { "id": "redwood", "label": "Redwood boards", "kind": "boards", "color": "#9a5a40", "widthsFt": [2, 4, 6, 8] },
+      { "id": "weathered", "label": "Weathered gray boards", "kind": "boards", "color": "#8d8a82", "widthsFt": [2, 4, 6, 8] },
+      { "id": "hog", "label": "Hog wire panel", "kind": "wire", "color": "#9ea4aa", "widthsFt": [4, 8, 12, 16], "heightIn": 34, "gridWidthIn": 4, "gridHeightIn": 4 },
+      { "id": "cattle", "label": "Cattle panel", "kind": "wire", "color": "#8d9399", "widthsFt": [4, 8, 12, 16], "heightIn": 50, "gridWidthIn": 8, "gridHeightIn": 6 },
+      { "id": "welded", "label": "Welded wire trellis", "kind": "wire", "color": "#a8aeb4", "widthsFt": [4, 8, 12, 16], "heightIn": 72, "gridWidthIn": 2, "gridHeightIn": 4 }
+    ],
+    "fill": { "material": "cedar", "bayFt": { "options": [2, 4, 6, 8], "default": 8 } },
+    "defaultBlocks": [
+      { "material": "hog", "widthFt": 8, "atFt": 76 },
+      { "material": "redwood", "widthFt": 2, "atFt": 84 },
+      { "material": "hog", "widthFt": 8, "atFt": 86 }
+    ],
+    "quickAdd": [
+      { "label": "Hog wire panel", "material": "hog", "widthFt": 8 },
+      { "label": "Wood fence panel", "material": "cedar", "widthFt": 4 }
+    ],
+    "maxBlocks": 40,
+    "blockStepFt": 0.5,
+    "panelHeightIn": { "min": 24, "max": 96, "step": 2 },
+    "panelBottomFt": { "min": 0, "max": 4, "step": 0.25, "default": 0 },
+    "gridIn": { "min": 2, "max": 12, "step": 0.5 },
+    "panelOpenShare": 0.9,
+    "wireIn": 0.2,
+    "wireDisplayScale": 2.5,
+    "maxWires": 9000,
+    "vine": { "spacingFt": { "min": 1, "max": 10, "step": 0.5, "default": 4 }, "offsetFt": 1.0, "tightOffsetFt": 0.6, "idPrefix": "fv-" },
+    "colors": { "post": "#8f7a58", "rail": "#9a8460" }
+  },
   "irrigation": {
     "source": "General residential drip and spray design practice. Every number here is guidance, not a manufacturer's figure.",
     "confidence": "unverified",
@@ -231,6 +291,7 @@
       2
     ],
     "treeCanopyRings": 12,
+    "gableFlushMaxFt": 4,
     "arrowShiftMultiplier": 4,
     "fit": { "margin": 1.6, "minRadiusFt": 4, "animateS": 0.55 },
     "shadow": { "mapSize": 4096, "halfWidthFt": 110, "near": 80, "far": 460, "bias": -0.00012, "normalBias": 0.02 }
@@ -438,6 +499,7 @@
       "fence"
     ],
     "drivewayBufferFt": 3,
+    "stoopTypes": ["patio", "deck", "gravel", "path"],
     "raisedBedFrame": {
       "boardHeightFt": 0.46,
       "boardThicknessFt": 0.125,
@@ -457,6 +519,8 @@
       "lawn": 0.03,
       "gravel": 0.06
     },
+    "siding": { "lapTileFt": 3.5, "lapColor": "#e6e1d6" },
+    "chainlink": { "postDiaFt": 0.2, "postRiseFt": 0.15, "railDiaFt": 0.14, "diamondFt": 0.19, "wirePx": 4, "tilePx": 64, "meshColor": "#a8adb2", "steelColor": "#8a9096" },
     "fence": {
       "postFt": 0.33,
       "postSpacingFt": 8,
@@ -970,7 +1034,7 @@
     }
   },
   "fruit": {
-    "displayScale": 3,
+    "displayScale": 1.5,
     "unripeScale": 0.75,
     "minSizeFraction": 0.55,
     "startCountFraction": 0.3,
@@ -980,7 +1044,7 @@
       0.95
     ],
     "maxCount": 170,
-    "minDisplayDiameterFt": 0.4
+    "minDisplayDiameterFt": 0.2
   },
   "life": {
     "cellFt": 1,

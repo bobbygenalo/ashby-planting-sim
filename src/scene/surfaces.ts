@@ -231,6 +231,31 @@ const PAINT: Record<SurfacePattern, Painter> = {
     }
   },
 
+  // Horizontal fiber-cement (Hardie) lap siding: six 7 in boards to the tile, each overlapping the one below it, so a fine shadow line
+  // runs under every board's lower edge. UVs run down as the wall goes up, so a board's lower edge is the top of its row here.
+  'hardie-lap'(ctx, rnd) {
+    ctx.fillStyle = gray(236);
+    ctx.fillRect(0, 0, S, S);
+    const n = 6, h = S / n;
+    for (let i = 0; i < n; i++) {
+      const tone = 236 + (rnd() - 0.5) * 8;
+      ctx.fillStyle = gray(tone);
+      ctx.fillRect(0, i * h, S, h);
+      ctx.fillStyle = gray(140);
+      ctx.fillRect(0, i * h, S, 4); // the shadow under the lap
+      ctx.fillStyle = gray(190);
+      ctx.fillRect(0, i * h + 4, S, 3);
+      ctx.fillStyle = gray(252);
+      ctx.fillRect(0, (i + 1) * h - 2, S, 2); // the board's top edge catching light
+      for (let k = 0; k < 14; k++) {
+        const y = i * h + 9 + rnd() * (h - 12);
+        ctx.strokeStyle = gray(rnd() < 0.5 ? tone - 22 : tone + 12, 0.1 + rnd() * 0.12);
+        ctx.lineWidth = 0.6;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(S, y + (rnd() - 0.5) * 1.5); ctx.stroke();
+      }
+    }
+  },
+
   // Fence boards: tall boards 5.3 in wide with gaps, vertical grain, each a slightly different tone.
   boards(ctx, rnd) {
     ctx.fillStyle = gray(70);
@@ -359,5 +384,34 @@ export function tiledSurface(pattern: SurfacePattern, tileFt: number): THREE.Can
   const t = base.clone();
   t.repeat.set(1 / tileFt, 1 / tileFt);
   t.needsUpdate = true;
+  return t;
+}
+
+let chainlinkCache: THREE.CanvasTexture | null | undefined;
+/**
+ * One diamond of chain link mesh as a seamless transparent tile: two wires at 45 degrees crossing through the tile's corners and
+ * centre, so tiles side by side make a grid of diamonds. Null without a document (tests).
+ */
+export function chainlinkTexture(tilePx: number, wirePx: number, color: string): THREE.CanvasTexture | null {
+  if (chainlinkCache !== undefined) return chainlinkCache;
+  if (typeof document === 'undefined') { chainlinkCache = null; return null; }
+  const c = document.createElement('canvas');
+  c.width = c.height = tilePx;
+  const ctx = c.getContext('2d');
+  if (!ctx) { chainlinkCache = null; return null; }
+  ctx.clearRect(0, 0, tilePx, tilePx);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = wirePx;
+  ctx.lineCap = 'butt';
+  ctx.beginPath();
+  // the diagonals run past the tile's corners so the half-width at the edges is finished by the next tile
+  ctx.moveTo(-wirePx, -wirePx); ctx.lineTo(tilePx + wirePx, tilePx + wirePx);
+  ctx.moveTo(-wirePx, tilePx + wirePx); ctx.lineTo(tilePx + wirePx, -wirePx);
+  ctx.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  chainlinkCache = t;
   return t;
 }

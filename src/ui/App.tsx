@@ -17,6 +17,7 @@ import { QuickFind } from './QuickFind';
 import { PlacingPanel } from './PlacingPanel';
 import { SelectionPanel } from './SelectionPanel';
 import { ShuffleBar } from './ShuffleControl';
+import { FenceBar } from './FenceControls';
 import { arrowDelta, isFindKey, isFitKey, isPlayPauseKey, isWalkKey, viewForKey } from './shortcuts';
 import { PlanSheet } from './PlanSheet';
 import { shareClient, tokenFromSearch } from '../share/client';
@@ -245,6 +246,9 @@ function Planner() {
   const hasSelection = useApp((x) => !!x.selectedId || !!x.selectedElementId || x.hiveSelected);
   const selectionView = hasSelection && !inHand && !quickOpen;
   useEffect(() => { if (quickOpen) setPanelOpen(true); }, [quickOpen]);
+  // Selecting something in the yard opens the panel if it was closed, to show its details; clicking off it leaves the panel open.
+  const selectionKey = useApp((x) => x.selectedId ?? x.selectedElementId ?? (x.hiveSelected ? 'hive' : null));
+  useEffect(() => { if (selectionKey) setPanelOpen(true); }, [selectionKey]);
   // On a narrow screen the panel is a bottom sheet over the yard: peek, half or full height. Showing something in it raises it.
   const narrow = useMedia(NARROW_QUERY);
   // A phone is a viewer: editing is switched off while the screen is that small.
@@ -268,6 +272,7 @@ function Planner() {
         <WalkOverlay />
         <CanvasToolbar />
         <ShuffleBar />
+        <FenceBar />
         <SimDock />
       </main>
       <aside className={`right ${quickOpen ? 'quick-open' : ''} ${placingView ? 'placing-open' : ''} ${selectionView ? 'selection-open' : ''}`}>

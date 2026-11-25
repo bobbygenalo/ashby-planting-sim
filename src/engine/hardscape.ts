@@ -188,7 +188,7 @@ export function hardscapeSolids(elements: HardscapeElement[], cfg: HsCfg): Solid
   return out;
 }
 
-export type HardscapeWarning = { kind: 'easement' | 'tree-roots' | 'driveway' | 'outside-lot'; message: string };
+export type HardscapeWarning = { kind: 'easement' | 'tree-roots' | 'driveway' | 'stoop' | 'outside-lot'; message: string };
 
 export interface WarningContext {
   easements: { id: string; label: string; polygon: Pt[] }[];
@@ -213,6 +213,11 @@ export function hardscapeWarnings(el: HardscapeElement, all: HardscapeElement[],
   for (const other of all) {
     if (other.keepClear && !other.removed && other.id !== el.id && polygonsIntersect(fp, footprint(other, cfg))) {
       out.push({ kind: 'driveway', message: `Blocks ${other.name ?? 'the driveway'}.` });
+    }
+  }
+  for (const other of all) {
+    if (isStoop(other, cfg) && other.id !== el.id && polygonsIntersect(fp, footprint(other, cfg))) {
+      out.push({ kind: 'stoop', message: `Overlaps ${other.name ?? 'a stoop or step'}.` });
     }
   }
   const lotPoly: Pt[] = [[0, 0], [ctx.lot.width, 0], [ctx.lot.width, ctx.lot.depth], [0, ctx.lot.depth]];
@@ -279,13 +284,29 @@ export function elementAt(elements: HardscapeElement[], p: Pt, cfg: HsCfg): Hard
     .sort((a, b) => order(b.e) - order(a.e) || b.i - a.i)[0]?.e;
 }
 
+/** Whether a spot is on the driveway itself (any element marked keep-clear still in the plan), not merely near it. */
+export function onKeepClear(p: Pt, elements: HardscapeElement[], cfg: HsCfg): boolean {
+  return elements.some((e) => e.keepClear && !e.removed && pointInPolygon(p[0], p[1], footprint(e, cfg)));
+}
+
+/** A raised slab that is part of the site: porch floor, stoop, step or landing (existing, with a height of its own). */
+export function isStoop(e: Pick<HardscapeElement, 'type' | 'existing' | 'height' | 'removed'>, cfg: Pick<HsCfg, 'stoopTypes'>): boolean {
+  return !!e.existing && !e.removed && (e.height ?? 0) > 0 && cfg.stoopTypes.includes(e.type);
+}
+
 /**
  * Whether a spot is too close to the driveway to plant in: on it, or within `drivewayBufferFt` of its edge. The driveway
  * is any element marked keep-clear that is not removed in this scenario.
  */
 export function drivewayBlocks(p: Pt, elements: HardscapeElement[], cfg: HsCfg): boolean {
   for (const e of elements) {
-    if (!e.keepClear || e.removed) continue;
+    if (e.removed) continue;
+    // A raised slab that is already there (porch floor, stoop, step, landing) is never planted on either.
+    if (isStoop(e, cfg)) {
+      if (pointInPolygon(p[0], p[1], footprint(e, cfg))) return true;
+      continue;
+    }
+    if (!e.keepClear) continue;
     const poly = footprint(e, cfg);
     if (poly.length < 3) continue;
     if (pointInPolygon(p[0], p[1], poly) || distanceToPolygon(p[0], p[1], poly) < cfg.drivewayBufferFt) return true;

@@ -1,6 +1,6 @@
 import { bbox, pointInPolygon } from './geometry';
 import type { PlacedPlant } from './growth';
-import { footprint } from './hardscape';
+import { footprint, isStoop } from './hardscape';
 import { raisedBedSoilTop } from './soil';
 import { Heap } from './pathnet';
 import { hydrozoneMixWarning, hydrozoneOf, WATER_ORDER } from './water';
@@ -384,7 +384,7 @@ export function planIrrigation(inp: IrrigationInput): IrrigationPlan {
   const live = inp.elements.filter((e) => !e.removed).sort((a, b) => hs.drawOrder.indexOf(a.type) - hs.drawOrder.indexOf(b.type));
   for (const el of live) {
     const poly = footprint(el, hs);
-    if (cfg.blockedTypes.includes(el.type)) paint(poly, Infinity);
+    if (cfg.blockedTypes.includes(el.type) || isStoop(el, hs)) paint(poly, Infinity);
     else if (el.keepClear) paint(poly, cfg.keepClearCost);
     else if (cfg.crossCost[el.type] !== undefined) paint(poly, cfg.crossCost[el.type]);
   }

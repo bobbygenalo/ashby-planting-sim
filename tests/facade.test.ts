@@ -178,10 +178,11 @@ describe('openings against the printed elevations', () => {
 describe('the ADU from the owner isometric views', () => {
   const adu = (id: string) => byId(site.structures, id);
 
-  it('clads the south-facing walls of the great room and the bedroom wing in vertical Hardie board, and nothing else', () => {
+  it('clads the south-facing walls of the great room and the bedroom wing in vertical Hardie board, with only the garage (horizontal lap board) beside them', () => {
     expect(adu('adu-great').finish?.south).toBe('hardie');
     expect(adu('adu-bedroom').finish?.south).toBe('hardie');
-    expect(site.structures.filter((st) => st.finish).map((st) => st.id).sort()).toEqual(['adu-bedroom', 'adu-great']);
+    expect(site.structures.filter((st) => st.finish).map((st) => st.id).sort()).toEqual(['adu-bedroom', 'adu-great', 'garage']);
+    expect(site.structures.find((st) => st.id === 'garage')!.finish?.all).toBe('hardie-lap');
   });
 
   it('puts the entry landing at the printed 12\'-2 3/4" by 4\'-0", against the east fin and the south wall, level with the door sill', () => {

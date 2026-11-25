@@ -5,6 +5,7 @@ import { bloomCalendar } from './pollinator';
 import { emptyPrices, projectCost } from './pricing';
 import { SHARE_FORMAT } from '../share/format';
 import { activeStructures } from './site';
+import type { FenceDesign } from './fencedesign';
 import type {
   EngineConfig, HardscapeElement, Hydrozone, Irrigation, Material, PlantInstance, Prices, SiteConfig, SoilConfig, SoilProfile, Species, WaterConfig,
 } from './types';
@@ -28,6 +29,8 @@ export interface ScenarioData {
   aduEnabled: boolean;
   /** Where the owner put the beehive; without it the app picks a spot. */
   hive?: [number, number] | null;
+  /** The owner's custom west fence (posts, boards, hog wire panels, climbing plants); null keeps the plain fence. */
+  fenceDesign?: FenceDesign | null;
   /** Prices the owner set; without them the stand-in prices apply. */
   prices?: Prices;
 }
@@ -102,6 +105,7 @@ export function emptyScenarioData(site: SiteConfig): ScenarioData {
     useRain: false,
     aduEnabled: true,
     hive: null,
+    fenceDesign: null,
     prices: { plant: {}, material: {} },
   };
 }
@@ -267,12 +271,14 @@ export function validateScenarioData(raw: unknown, ctx: ValidationContext, extra
   const prices: Prices = { plant: priceRecord(isRecord(raw.prices) ? raw.prices.plant : undefined), material: priceRecord(isRecord(raw.prices) ? raw.prices.material : undefined) };
   // The hive position is optional: a pair of finite numbers, or the app picks a spot.
   const hive: [number, number] | null = Array.isArray(raw.hive) && raw.hive.length === 2 && raw.hive.every((v) => typeof v === 'number' && Number.isFinite(v)) ? [raw.hive[0] as number, raw.hive[1] as number] : null;
+  // The fence design is optional; the store forces its values into range when it loads.
+  const fenceDesign = isRecord(raw.fenceDesign) ? (raw.fenceDesign as unknown as FenceDesign) : null;
   if (typeof raw.aduEnabled !== 'boolean') errors.push('The ADU setting is missing.');
 
   warnings.push(...replaced);
   if (errors.length) return { data: null, errors, warnings };
   return {
-    data: { palette, instances, hardscape, hydrozones, autoIrrigation, useRain: raw.useRain as boolean, aduEnabled: raw.aduEnabled as boolean, hive, prices },
+    data: { palette, instances, hardscape, hydrozones, autoIrrigation, useRain: raw.useRain as boolean, aduEnabled: raw.aduEnabled as boolean, hive, fenceDesign, prices },
     errors,
     warnings,
   };

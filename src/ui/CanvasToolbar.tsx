@@ -324,6 +324,10 @@ export function CanvasToolbar() {
                 <input type="checkbox" checked={s.aduEnabled} disabled={!edit} onChange={(e) => s.setAduEnabled(e.target.checked)} />
                 Model the ADU{!edit && ' (locked)'}
               </label>
+              <label className="check">
+                <input type="checkbox" checked={!!s.fenceDesign} disabled={!edit} onChange={(e) => s.setFenceCustom(e.target.checked)} />
+                Customize fence{!edit && ' (locked)'}
+              </label>
             </>
           )}
         </Dropdown>

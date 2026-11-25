@@ -5,6 +5,7 @@ import speciesRaw from '../src/data/species.json';
 import waterRaw from '../src/data/water.json';
 import { placedPlants } from '../src/engine/growth';
 import { distanceToPolygon, pointInPolygon } from '../src/engine/geometry';
+import { footprint, isStoop } from '../src/engine/hardscape';
 import { planIrrigation, type IrrigationInput, type IrrigationPlan } from '../src/engine/irrigation';
 import { emptyScenarioData } from '../src/engine/scenario';
 import { activeStructures, loadSite } from '../src/engine/site';
@@ -342,6 +343,18 @@ describe('valve labels', () => {
     for (let i = 0; i < p.valves.length; i++) for (let j = i + 1; j < p.valves.length; j++) {
       const a = p.valves[i].labelAt, b = p.valves[j].labelAt;
       expect(Math.hypot(a[0] - b[0], a[1] - b[1])).toBeGreaterThan(0.5);
+    }
+  });
+});
+
+describe('irrigation keeps off stoops and steps', () => {
+  it('puts each manifold and every line off the raised slabs', () => {
+    const p = plan([inst('salvia-leucantha', 30, 18), inst('salvia-leucantha', 36, 72), inst('salvia-leucantha', 14, 66)]);
+    const slabs = engine.hardscape && emptyScenarioData(site).hardscape.filter((e) => isStoop(e, engine.hardscape)).map((e) => footprint(e, engine.hardscape));
+    expect(slabs.length).toBeGreaterThan(5);
+    for (const src of p.sources) expect(slabs.some((poly) => pointInPolygon(src.manifold[0], src.manifold[1], poly)), `${src.id} manifold on a stoop`).toBe(false);
+    for (const v of p.valves) for (const r of v.runs ?? []) for (const [x, y] of r.points ?? []) {
+      expect(slabs.some((poly) => pointInPolygon(x, y, poly)), `${v.id} line on a stoop at ${x},${y}`).toBe(false);
     }
   });
 });

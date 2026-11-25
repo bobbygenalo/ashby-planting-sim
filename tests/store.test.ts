@@ -162,12 +162,13 @@ describe('hydrozones, soil, and settings (M5)', () => {
     expect(s.getState().addHydrozone('  ', 'drip')).toBeNull();
   });
 
-  it('starts every yard zone on the default loam profile and marks it as an edit once entered', () => {
+  it('starts every yard zone on the default clay profile and marks it as an edit once entered', () => {
     const s = makeAppStore('edit');
     const zones = s.getState().site.zones.map((z) => z.id);
     expect(zones.every((z) => s.getState().soilProfiles[z].isDefault === true)).toBe(true);
-    s.getState().setSoilProfile(zones[0], { texture: 'clay', drainageInHr: 0.3 });
-    expect(s.getState().soilProfiles[zones[0]]).toMatchObject({ texture: 'clay', drainageInHr: 0.3, isDefault: false });
+    expect(s.getState().soilProfiles[zones[0]].texture).toBe('clay');
+    s.getState().setSoilProfile(zones[0], { texture: 'loam', drainageInHr: 1.1 });
+    expect(s.getState().soilProfiles[zones[0]]).toMatchObject({ texture: 'loam', drainageInHr: 1.1, isDefault: false });
     expect(s.getState().soilProfiles[zones[1]].isDefault).toBe(true);
   });
 

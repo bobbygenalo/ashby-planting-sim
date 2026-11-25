@@ -178,7 +178,7 @@ export function buildSunScene(site: SiteConfig, flags: SiteFlags, engine: Engine
         points: [...pts.map(([px, py]): Pt3 => [px, py, 0]), ...pts.map(([px, py]): Pt3 => [px, py, o.height])],
         density: 1,
       });
-    } else if (o.kind === 'fence' || o.kind === 'wall') solids.push(...lineSolids(o));
+    } else if (o.kind === 'fence' || o.kind === 'wall') solids.push(...lineSolids(o, 0, o.density ?? 1));
     else if (o.kind === 'screen') solids.push(...lineSolids(o, o.baseHeight ?? 0, o.density ?? 0.5));
     else if (o.kind === 'post' && o.position) {
       const [x, y] = o.position;

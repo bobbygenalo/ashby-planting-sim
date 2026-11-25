@@ -177,10 +177,12 @@ describe('soil (WS-10 to WS-14)', () => {
     expect(soilMismatches(clev, profile({ drainageInHr: 0.2, texture: 'clay' }), soil).length).toBeGreaterThanOrEqual(2);
     expect(soilMismatches(clev, profile({ drainageInHr: 3, texture: 'sandy loam' }), soil)).toEqual([]);
     const lor = sp('loropetalum-chinense'); // acid soil
-    expect(soilMismatches(lor, profile({ ph: 8 }), soil).some((m) => m.includes('pH'))).toBe(true);
-    expect(soilMismatches(lor, profile({ ph: 6 }), soil)).toEqual([]);
-    // The default profile (loam, 1 in/hr, pH 7) suits a moderate-drainage plant.
-    expect(soilMismatches(sp('salvia-leucantha'), soil.defaultProfile, soil)).toEqual([]);
+    expect(soilMismatches(lor, profile({ ph: 8, drainageInHr: 1, texture: 'loam' }), soil).some((m) => m.includes('pH'))).toBe(true);
+    expect(soilMismatches(lor, profile({ ph: 6, drainageInHr: 1, texture: 'loam' }), soil)).toEqual([]);
+    // The default profile is clay (0.2 in/hr, pH 7): a plant that likes clay is not flagged, a sun-lover that wants sharp drainage is.
+    expect(soil.defaultProfile.texture).toBe('clay');
+    expect(soilMismatches(sp('iris-douglasiana'), soil.defaultProfile, soil)).toEqual([]);
+    expect(soilMismatches(clev, soil.defaultProfile, soil).length).toBeGreaterThanOrEqual(2);
   });
 
   it('sizes planting holes from the container (WS-12)', () => {

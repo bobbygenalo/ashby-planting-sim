@@ -2733,7 +2733,8 @@
           10
         ],
         "count": 70,
-        "source": "General estimate for display; ripening months vary with variety and year."
+        "source": "General estimate for display; ripening months vary with variety and year.",
+        "minDisplayFt": 0.14
       },
       "crown": {
         "density": 0.9
@@ -4565,6 +4566,100 @@
       }
     },
     {
+      "id": "prunus-gold-kist",
+      "botanical": "Prunus armeniaca 'Gold Kist'",
+      "common": "Gold Kist apricot",
+      "type": "edible",
+      "origin": "other",
+      "evergreen": false,
+      "leafOffMonths": [
+        12,
+        1,
+        2
+      ],
+      "matureHeight": 14,
+      "matureWidth": 14,
+      "yearsToMaturity": 6,
+      "habit": "round",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        1,
+        2
+      ],
+      "bloomColor": "#fde8ec",
+      "foliageColor": "#4d7c2a",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "native bees",
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "A low-chill apricot (about 300 chill hours) bred for Southern California, self-fertile, ripening in late May to June. Blooms very early, so a late frost or rain can cost the crop. Needs fast drainage and does poorly in wet clay; size assumes a standard rootstock kept pruned to 12-14 ft. Size, water, bloom and fruit values are general estimates from recall, not checked against a nursery or WUCOLS.",
+      "soil": {
+        "drainageNeed": "fast",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "silt loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 10,
+        "minPavingFt": 4
+      },
+      "fruit": {
+        "shape": "sphere",
+        "diameterFt": 0.15,
+        "ripeColor": "#f2a33a",
+        "unripeColor": "#8aab4a",
+        "ripeMonths": [
+          5,
+          6
+        ],
+        "unripeMonths": [
+          3,
+          4
+        ],
+        "count": 40,
+        "source": "General estimate for display; ripening months vary with variety and year."
+      },
+      "crown": {
+        "density": 0.8
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.28,
+          "widthFt": 0.2,
+          "perFt": 14,
+          "underColor": "#9fb87f",
+          "underShare": 0.12,
+          "droop": 0.2,
+          "fold": 0.3
+        },
+        "trunkColor": "#5a4538",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.12,
+          "count": 800,
+          "color": "#fdeef0",
+          "centerColor": "#e9b44c"
+        },
+        "twigs": 900,
+        "limbs": 6
+      }
+    },
+    {
       "id": "malus-pink-pearl",
       "botanical": "Malus domestica 'Pink Pearl'",
       "common": "Pink Pearl apple",
@@ -4739,7 +4834,8 @@
           10
         ],
         "count": 70,
-        "source": "General estimate for display; ripening months vary with variety and year."
+        "source": "General estimate for display; ripening months vary with variety and year.",
+        "minDisplayFt": 0.12
       },
       "crown": {
         "density": 0.55
@@ -4852,7 +4948,8 @@
           10
         ],
         "count": 70,
-        "source": "General estimate for display; ripening months vary with variety and year."
+        "source": "General estimate for display; ripening months vary with variety and year.",
+        "minDisplayFt": 0.12
       },
       "crown": {
         "density": 0.55,
@@ -7207,6 +7304,307 @@
         "license": "CC BY-SA 2.5",
         "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
         "match": "species"
+      }
+    },
+    {
+      "id": "trachelospermum-jasminoides",
+      "botanical": "Trachelospermum jasminoides",
+      "common": "Star jasmine",
+      "type": "vine",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 12,
+      "matureWidth": 6,
+      "yearsToMaturity": 5,
+      "habit": "vine",
+      "sun": "part",
+      "wucols": "moderate",
+      "bloomMonths": [
+        4,
+        5,
+        6
+      ],
+      "bloomColor": "#ffffff",
+      "foliageColor": "#2f5d2f",
+      "pollinator": {
+        "value": "high",
+        "groups": [
+          "honey bees",
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Twining evergreen with glossy leaves and very fragrant white pinwheel flowers in late spring. Tolerates clay and part shade; blooms best with some sun. Milky sap can irritate skin. Climbs a fence, hog wire or trellis it can twine or be tied to. Size assumes a support about 6 ft tall and is a general estimate from recall; water, bloom and soil values are not checked against WUCOLS or a nursery.",
+      "soil": {
+        "drainageNeed": "tolerant",
+        "textures": [
+          "loam",
+          "clay loam",
+          "clay",
+          "sandy loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 8.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3.0,
+        "minPavingFt": 1.5
+      },
+      "crown": {
+        "density": 0.85
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.2,
+          "widthFt": 0.09,
+          "perFt": 14,
+          "underColor": "#6d9a64",
+          "underShare": 0.15,
+          "fold": 0.25
+        },
+        "twigs": 800,
+        "limbs": 7,
+        "trunkColor": "#6b5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.07,
+          "count": 1100,
+          "centerColor": "#f3e6a0"
+        }
+      }
+    },
+    {
+      "id": "jasminum-polyanthum",
+      "botanical": "Jasminum polyanthum",
+      "common": "Pink jasmine",
+      "type": "vine",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 15,
+      "matureWidth": 8,
+      "yearsToMaturity": 4,
+      "habit": "vine",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "bloomColor": "#f9d3dc",
+      "foliageColor": "#4a7a3a",
+      "pollinator": {
+        "value": "high",
+        "groups": [
+          "honey bees",
+          "native bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "Vigorous twining evergreen with sweetly scented pink buds opening white in late winter and spring. Fast, and can sprawl without pruning; needs a sturdy support and a cut back after bloom. Climbs a fence, hog wire or trellis it can twine or be tied to. Size assumes a support about 6 ft tall and is a general estimate from recall; water, bloom and soil values are not checked against WUCOLS or a nursery.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "loam",
+          "sandy loam",
+          "clay loam",
+          "silt loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3.0,
+        "minPavingFt": 1.5
+      },
+      "crown": {
+        "density": 0.85
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.14,
+          "widthFt": 0.07,
+          "perFt": 16,
+          "underColor": "#79a46c",
+          "underShare": 0.12,
+          "fold": 0.2
+        },
+        "twigs": 900,
+        "limbs": 7,
+        "trunkColor": "#6b5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.06,
+          "count": 1300,
+          "centerColor": "#fff3d6"
+        }
+      }
+    },
+    {
+      "id": "passiflora-edulis-frederick",
+      "botanical": "Passiflora edulis 'Frederick'",
+      "common": "Passion fruit 'Frederick'",
+      "type": "vine",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 15,
+      "matureWidth": 8,
+      "yearsToMaturity": 3,
+      "habit": "vine",
+      "sun": "full",
+      "wucols": "moderate",
+      "bloomMonths": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "bloomColor": "#ece4f2",
+      "foliageColor": "#3f7a3a",
+      "pollinator": {
+        "value": "high",
+        "groups": [
+          "native bees",
+          "honey bees",
+          "butterflies"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "A vigorous tendril vine for sun and a warm wall or fence, with striking white and purple flowers followed by purple, egg-sized fruit in late summer to winter. Tender to hard frost; wants regular water and feeding. Fruit is not drawn on the plant. Climbs a fence, hog wire or trellis it can twine or be tied to. Size assumes a support about 6 ft tall and is a general estimate from recall; water, bloom and soil values are not checked against WUCOLS or a nursery.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "loam",
+          "sandy loam",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.0
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3.0,
+        "minPavingFt": 1.5
+      },
+      "crown": {
+        "density": 0.85
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.3,
+          "widthFt": 0.25,
+          "perFt": 7,
+          "underColor": "#7aa66e",
+          "underShare": 0.12,
+          "droop": 0.2,
+          "fold": 0.2
+        },
+        "twigs": 700,
+        "limbs": 7,
+        "trunkColor": "#6b5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.2,
+          "count": 260,
+          "centerColor": "#6c3f93"
+        }
+      }
+    },
+    {
+      "id": "hardenbergia-violacea",
+      "botanical": "Hardenbergia violacea",
+      "common": "Lilac vine",
+      "type": "vine",
+      "origin": "other",
+      "evergreen": true,
+      "leafOffMonths": [],
+      "matureHeight": 10,
+      "matureWidth": 6,
+      "yearsToMaturity": 3,
+      "habit": "vine",
+      "sun": "full",
+      "wucols": "low",
+      "bloomMonths": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "bloomColor": "#7a4fb5",
+      "foliageColor": "#3a6a3a",
+      "pollinator": {
+        "value": "moderate",
+        "groups": [
+          "native bees",
+          "honey bees"
+        ],
+        "larvalHost": []
+      },
+      "invasive": false,
+      "toxic": false,
+      "maintenance": "moderate",
+      "notes": "An Australian evergreen twiner with sprays of purple pea flowers in late winter. Takes sun, drains well, and needs little water once established; keep it off a damp, shaded fence. Climbs a fence, hog wire or trellis it can twine or be tied to. Size assumes a support about 6 ft tall and is a general estimate from recall; water, bloom and soil values are not checked against WUCOLS or a nursery.",
+      "soil": {
+        "drainageNeed": "moderate",
+        "textures": [
+          "sandy loam",
+          "loam",
+          "loamy sand",
+          "clay loam"
+        ],
+        "phMin": 6.0,
+        "phMax": 7.5
+      },
+      "roots": {
+        "behavior": "moderate",
+        "minFoundationFt": 3.0,
+        "minPavingFt": 1.5
+      },
+      "crown": {
+        "density": 0.85
+      },
+      "look": {
+        "kind": "tree",
+        "leaf": {
+          "shape": "oval",
+          "lengthFt": 0.25,
+          "widthFt": 0.08,
+          "perFt": 13,
+          "underColor": "#6d9962",
+          "underShare": 0.1,
+          "fold": 0.2
+        },
+        "twigs": 700,
+        "limbs": 6,
+        "trunkColor": "#6b5a48",
+        "flower": {
+          "form": "blossom",
+          "sizeFt": 0.05,
+          "count": 1000,
+          "centerColor": "#e8d86a"
+        }
       }
     }
   ],

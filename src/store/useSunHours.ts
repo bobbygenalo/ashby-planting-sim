@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { placedPlants, plantSolid } from '../engine/growth';
+import { fenceRun, fenceSunPieces } from '../engine/fencedesign';
 import { hardscapeSolids } from '../engine/hardscape';
 import { buildSunScene, type SunScene } from '../engine/site';
 import type { SunHoursResult, SunPeriod } from '../engine/sunhours';
@@ -50,7 +51,7 @@ function useSunRun(scene: SunScene, period: SunPeriod, year: number, config: Eng
  * light need with its location (SUN-6). Plants cast shadows at their size on the timeline (SUN-7).
  */
 export function useSunHours() {
-  const site = useApp((s) => s.site);
+  const baseSite = useApp((s) => s.site);
   const engine = useApp((s) => s.engine);
   const aduEnabled = useApp((s) => s.aduEnabled);
   const doy = useApp((s) => s.doy);
@@ -60,6 +61,15 @@ export function useSunHours() {
   const library = useApp((s) => s.library);
   const month = useApp((s) => s.timelineMonth);
   const hardscape = useApp((s) => s.hardscape);
+  const fenceDesign = useApp((s) => s.fenceDesign);
+  // A custom fence is its stretches, each with its own height and the light its boards or wire let through.
+  const site = useMemo(() => {
+    if (!fenceDesign) return baseSite;
+    const run = fenceRun(baseSite, engine.fenceDesign);
+    if (!run) return baseSite;
+    const pieces = fenceSunPieces(fenceDesign, run, engine.fenceDesign).map((p) => ({ id: p.id, kind: 'fence' as const, name: 'Fence', line: p.line, height: p.height, density: p.density }));
+    return { ...baseSite, contextObjects: [...baseSite.contextObjects.filter((o) => o.id !== engine.fenceDesign.targetId), ...pieces] };
+  }, [baseSite, fenceDesign, engine]);
 
   const scene = useMemo(() => {
     const solids = placedPlants(instances, palette, library.species, month, engine.growth).flatMap((p) => {

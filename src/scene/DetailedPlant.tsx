@@ -12,7 +12,7 @@ import { aimMatrix, bladesGeometry, leafGeometry, petalGeometry, plumeGeometry, 
 import { MIN_FORM_SIZE } from './forms';
 
 /** Instanced leaves, colored by shade and by whether they show their underside. */
-function Leaves({ leaves, shape, fold, droop, color, under }: { leaves: LeafSpec[]; shape: Parameters<typeof leafGeometry>[0]; fold?: number; droop?: number; color: string; under?: string }) {
+export function Leaves({ leaves, shape, fold, droop, color, under }: { leaves: LeafSpec[]; shape: Parameters<typeof leafGeometry>[0]; fold?: number; droop?: number; color: string; under?: string }) {
   const geometry = useMemo(() => leafGeometry(shape, fold ?? 0.3, (droop ?? 0.25) * 0.7), [shape, fold, droop]);
   const mesh = useRef<THREE.InstancedMesh>(null);
   useEffect(() => () => geometry.dispose(), [geometry]);
@@ -41,7 +41,7 @@ function Leaves({ leaves, shape, fold, droop, color, under }: { leaves: LeafSpec
 }
 
 /** Flowers of one form, instanced; `color` is the petals or tubes, `center` the heart of a blossom. */
-function Flowers({ list, form, color, center }: { list: FlowerSpec[]; form: FlowerSpec['form']; color: string; center: string }) {
+export function Flowers({ list, form, color, center }: { list: FlowerSpec[]; form: FlowerSpec['form']; color: string; center: string }) {
   const geometry = useMemo(() => (form === 'petal' ? petalGeometry(new THREE.Color(color), new THREE.Color(center)) : form === 'tube' ? tubeGeometry() : plumeGeometry()), [form, color, center]);
   const mesh = useRef<THREE.InstancedMesh>(null);
   useEffect(() => () => geometry.dispose(), [geometry]);

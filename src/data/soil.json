@@ -15,8 +15,8 @@
  },
  "drainageSource": "Design choice: percolation of 2 in/hr or more is fast, 0.5 to 2 moderate, under 0.5 slow.",
  "defaultProfile": {
-  "texture": "loam",
-  "drainageInHr": 1.0,
+  "texture": "clay",
+  "drainageInHr": 0.2,
   "ph": 7.0,
   "organicMatterPct": 3,
   "compaction": "unknown",

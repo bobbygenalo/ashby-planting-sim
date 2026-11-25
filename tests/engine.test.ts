@@ -497,7 +497,9 @@ describe('the garage from the owner\'s garage plan', () => {
     expect(span(xs(roof))).toBeCloseTo(20 + 2 / 12, 3);
     expect(Math.min(...xs(garage.footprint)) - Math.min(...xs(roof))).toBeCloseTo(1, 3);
     expect(Math.max(...ys(roof)) - Math.max(...ys(garage.footprint))).toBeCloseTo(1, 3);
-    expect(garage.ridgeHeight).toBeCloseTo(12 + 8 / 12, 3);
+    expect(garage.eaveHeight).toBe(8); // the lowest part of the garage
+    expect(garage.ridgeHeight).toBe(12); // the top
+    expect(siteRaw.openings.find((o: { id: string }) => o.id === 'garage-door')!.heightFt).toBe(7); // under the eave
     const pts = roofPoints(garage);
     const ridge = pts.filter((p) => p[2] === garage.ridgeHeight);
     expect(ridge).toHaveLength(2);

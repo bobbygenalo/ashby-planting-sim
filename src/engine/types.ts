@@ -31,7 +31,10 @@ export interface StructureCfg {
   toggleable: boolean;
   note?: string;
   /** The finish of walls facing a side where it is not the plain stucco of the rest: `hardie` is vertical fiber-cement (Hardie) board. */
-  finish?: Partial<Record<'south' | 'north' | 'east' | 'west', 'hardie'>>;
+  finish?: Partial<Record<'south' | 'north' | 'east' | 'west', 'hardie'>> & {
+    /** Every wall (and the gable ends) in horizontal fiber-cement lap siding (`hardie-lap`), as on the garage. */
+    all?: 'hardie-lap';
+  };
   /** An open structure has a roof and no walls (a covered porch): only the roof is drawn and casts shade; the footprint still counts for clearances. */
   open?: boolean;
   /** Bands of glass in the walls (the ADU's clerestories). */
@@ -105,6 +108,10 @@ export interface ContextObjectCfg {
   footprint?: Pt[];
   position?: Pt;
   height: number;
+  /** A fence of chain link (a mesh of wires turned 45 degrees on steel posts) rather than boards. */
+  style?: 'chainlink';
+  /** Distance between a chain link fence's posts, feet. */
+  postSpacingFt?: number;
   thickness?: number;
   canopyWidth?: number;
   trunkHeight?: number;
@@ -973,6 +980,10 @@ export interface PricingCfg {
 }
 
 export interface EngineConfig {
+  /** How climbing plants cover a fence: up the wire panels, then onto the boards beside them once grown (see engine/fencevine.ts). */
+  fenceVine: import('./fencevine').FenceVineCfg;
+  /** The customizable west fence: limits, stock sizes and defaults (see engine/fencedesign.ts). */
+  fenceDesign: import('./fencedesign').FenceDesignCfg;
   /** Interior lights glowing in the windows at dusk. */
   interior: InteriorCfg;
   irrigation: IrrigationCfg;
@@ -1009,7 +1020,7 @@ export interface EngineConfig {
     presets: { id: string; label: string; month: number; day: number }[];
     seasons: SeasonCfg[];
   };
-  scene: { snapDefaultFt: number; snapOptionsFt: number[]; treeCanopyRings: number; /** Shift with an arrow key moves this many times as far. */ arrowShiftMultiplier: number;
+  scene: { snapDefaultFt: number; snapOptionsFt: number[]; treeCanopyRings: number; /** A gable end is slid back onto its wall only when the wall is within this many feet (the roof's overhang). */ gableFlushMaxFt: number; /** Shift with an arrow key moves this many times as far. */ arrowShiftMultiplier: number;
     /**
      * The sun's shadow map. `bias` is a share of the depth range (`far` - `near`), so it is worth `bias * (far - near)` feet along the ray:
      * too much lets light leak under a thin overhang, as a lit stripe on the wall just below an awning.
@@ -1058,6 +1069,8 @@ export interface EngineConfig {
     notDrawable?: HardscapeType[];
     /** Nothing is planted on the driveway (any element marked keep-clear) or this close to it, in feet. */
     drivewayBufferFt: number;
+    /** Existing raised slabs of these types (porch floor, stoops, steps, landings) are kept clear of plants, new work and irrigation. */
+    stoopTypes: HardscapeType[];
     /** How a raised bed is built: stacked boards on corner posts under a cap rail, all in feet. */
     raisedBedFrame: RaisedBedFrameCfg;
     /** Raised beds come in a few shapes made of square modules; modules placed near each other snap together into one. */
@@ -1068,6 +1081,10 @@ export interface EngineConfig {
     surfaceThicknessFt: Partial<Record<HardscapeType, number>>;
     /** How the lot's fences are built: posts, spacing, how far the posts and the cap rail stand proud. */
     fence: { postFt: number; postSpacingFt: number; postRiseFt: number; capFt: number; capOverhangFt: number };
+    /** 1950s chain link: steel pipe posts and top rail, and a mesh of wires turned 45 degrees (diamonds `diamondFt` across), all in feet. */
+    /** Fiber-cement lap siding: the texture repeats every `lapTileFt` feet up the wall (six 7 in boards in 3.5 ft), tinted `lapColor`. */
+    siding: { lapTileFt: number; lapColor: string };
+    chainlink: { postDiaFt: number; postRiseFt: number; railDiaFt: number; diamondFt: number; wirePx: number; tilePx: number; meshColor: string; steelColor: string };
     /** Flat ground elements start this far above the ground, and where two overlap the later one stands at least `layerStepFt` above the earlier one, so their tops never share a depth and flicker. */
     groundLiftFt: number;
     layerStepFt: number;
@@ -1201,7 +1218,7 @@ export interface Material {
 }
 
 /** The look of a surface: slab concrete with joints, pavers, mortared or dry-laid flagstone, fine granules, gravel, wood chips, turf, deck boards, composite decking, block wall, fence boards. */
-export type SurfacePattern = 'slab' | 'pavers' | 'flagstone-mortar' | 'flagstone-dry' | 'granular' | 'gravel' | 'mulch' | 'turf' | 'planks' | 'composite' | 'cmu' | 'boards' | 'hardie';
+export type SurfacePattern = 'slab' | 'pavers' | 'flagstone-mortar' | 'flagstone-dry' | 'granular' | 'gravel' | 'mulch' | 'turf' | 'planks' | 'composite' | 'cmu' | 'boards' | 'hardie' | 'hardie-lap';
 
 export interface HardscapeElement {
   id: string;

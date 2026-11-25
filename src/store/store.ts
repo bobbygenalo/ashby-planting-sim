@@ -3,7 +3,8 @@ import siteRaw from '../data/site.json';
 import engineRaw from '../data/engine.json';
 import type { Conflict } from '../engine/conflicts';
 import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engine/geometry';
-import { drivewayBlocks, dropMappedColors } from '../engine/hardscape';
+import { drivewayBlocks, dropMappedColors, onKeepClear } from '../engine/hardscape';
+import { defaultFenceDesign, fenceLayout, fenceRun, materialOf, nextBlockId, packBlocks, sanitizeFenceDesign, shuffleBlocks, vineSpots, type FenceBlock, type FenceDesign } from '../engine/fencedesign';
 import { placeShape, reshapeBed, rotateBed, settleBed } from '../engine/bed';
 import type { QuickItem } from '../engine/quickfind';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
@@ -60,6 +61,7 @@ export interface ScenarioSnapshot {
   autoIrrigation: Record<string, Irrigation>;
   useRain: boolean;
   hive: Pt | null;
+  fenceDesign: FenceDesign | null;
   prices: Prices;
 }
 
@@ -297,6 +299,29 @@ export interface AppState {
   useRain: boolean;
   /** Where the owner put the beehive (null: the app picks a spot), whether it is selected, and whether it is being dragged. */
   hive: Pt | null;
+  /** The custom west fence design, or null for the plain fence; the Customize fence panel edits it. */
+  fenceDesign: FenceDesign | null;
+  /** Turn the custom fence on (with defaults) or off. */
+  setFenceCustom: (on: boolean) => void;
+  /** Change the fence's fill and planting settings (values are forced into range). */
+  patchFenceDesign: (patch: Partial<FenceDesign>) => void;
+  /** Add a block of a material at a place along the fence (default: after the last block); returns its id, or null when it does not fit. */
+  addFenceBlock: (material: string, atFt?: number, widthFt?: number) => string | null;
+  /** Change one block (its material, width, place or sizes); a new material starts from that material's own sizes. */
+  updateFenceBlock: (id: string, patch: Partial<FenceBlock>) => void;
+  removeFenceBlock: (id: string) => void;
+  /** Copy a block, settings and all, to sit right after it (later blocks move along); returns the copy's id, or null when the fence has no room for it. */
+  duplicateFenceBlock: (id: string) => string | null;
+  /** Trade a block's place with its neighbor along the fence (-1 toward the street, 1 toward the rear). */
+  moveFenceBlock: (id: string, dir: -1 | 1) => void;
+  /** Put the blocks in a new order; each press is a new order, and one undo step. */
+  shuffleFenceBlocks: () => void;
+  /** How many times the blocks have been shuffled (it picks the next seed). */
+  fenceShuffles: number;
+  /** Replace the climbing plants on the fence panels with the chosen species; returns how many were planted. */
+  applyFenceVines: () => number;
+  /** Remove the climbing plants this fence planted. */
+  clearFenceVines: () => void;
   /** Prices the owner set (in dollars) for plants by species and materials by id; the rest use stand-in defaults. */
   prices: Prices;
   /** Set the price of every plant of a species, or clear it with null. */
@@ -353,9 +378,32 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       if (get().mode !== 'edit') return;
       set(patch);
     };
+    // The climbing plants this fence set out, laid again for a design: when some are planted they follow the panels as they change;
+    // `force` plants them even when none were. Returns the patch to merge into a scenario edit.
+    const fenceVinesFor = (d: FenceDesign): { instances: PlantInstance[] } => {
+      const cfg = engine.fenceDesign;
+      const all = get().instances;
+      const old = all.filter((i) => i.id.startsWith(cfg.vine.idPrefix));
+      const run = fenceRun(get().site, cfg);
+      if (!run) return { instances: all };
+      const layout = fenceLayout(d, run.lengthFt, cfg);
+      // A plant roots a foot from the fence; where that is within the driveway's buffer (the narrow strip beside it) it roots closer in,
+      // unless even that is on the driveway.
+      const spots = vineSpots(d, run.a, run.b, cfg, layout).flatMap((v) => {
+        const at = !drivewayBlocks(v.at, get().hardscape, engine.hardscape) ? v.at : !onKeepClear(v.tight, get().hardscape, engine.hardscape) && !drivewayBlocks(v.tight, get().hardscape.filter((e) => !e.keepClear), engine.hardscape) ? v.tight : null;
+        return at ? [{ ...v, at }] : [];
+      });
+      if (!old.length && !spots.length) return { instances: all };
+      // a plant that is still where it was (same species, same spot) keeps its age; the others are planted now
+      const added: PlantInstance[] = spots.map((v, k) => {
+        const same = old.find((o) => o.speciesId === v.speciesId && Math.hypot(o.position[0] - v.at[0], o.position[1] - v.at[1]) < 0.05);
+        return { id: `${cfg.vine.idPrefix}${k + 1}`, speciesId: v.speciesId, position: v.at, plantedMonth: same?.plantedMonth ?? get().timelineMonth, container: same?.container ?? get().placeContainer, existing: false };
+      });
+      return { instances: [...all.filter((i) => !i.id.startsWith(cfg.vine.idPrefix)), ...added] };
+    };
     const snapshot = (): ScenarioSnapshot => ({
       instances: get().instances, palette: get().palette, hardscape: get().hardscape,
-      hydrozones: get().hydrozones, autoIrrigation: get().autoIrrigation, useRain: get().useRain, hive: get().hive, prices: get().prices,
+      hydrozones: get().hydrozones, autoIrrigation: get().autoIrrigation, useRain: get().useRain, hive: get().hive, fenceDesign: get().fenceDesign, prices: get().prices,
     });
     // Push an undo step. Repeated edits with the same key within a second count as one step.
     const record = (key?: string) => {
@@ -385,12 +433,12 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     };
     const currentData = (): ScenarioData => ({
       palette: get().palette, instances: get().instances, hardscape: get().hardscape, hydrozones: get().hydrozones,
-      autoIrrigation: get().autoIrrigation, useRain: get().useRain, aduEnabled: get().aduEnabled, hive: get().hive, prices: get().prices,
+      autoIrrigation: get().autoIrrigation, useRain: get().useRain, aduEnabled: get().aduEnabled, hive: get().hive, fenceDesign: get().fenceDesign, prices: get().prices,
     });
     // Replace the working fields with a scenario's data and clear everything tied to the old one.
     const applyData = (d: ScenarioData) =>
       set({
-        ...clone(d), hive: d.hive ?? null, prices: d.prices ?? emptyPrices(), hiveSelected: false, hiveDragging: false, hardscape: dropMappedColors(syncExistingHardscape(clone(d.hardscape), get().site), engine.hardscape), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
+        ...clone(d), hive: d.hive ?? null, fenceDesign: d.fenceDesign ? sanitizeFenceDesign(d.fenceDesign, engine.fenceDesign, fenceRun(get().site, engine.fenceDesign)?.lengthFt ?? 0) : null, prices: d.prices ?? emptyPrices(), hiveSelected: false, hiveDragging: false, hardscape: dropMappedColors(syncExistingHardscape(clone(d.hardscape), get().site), engine.hardscape), history: { past: [], future: [], t: 0 }, selectedId: null, selectedElementId: null, placingSpeciesId: null, drawing: null,
         hsDrag: null, dragId: null, measureActive: false, measurePoints: [], suggestion: null, suggestFocus: null,
       });
     const customSpeciesList = () => get().library.species.filter((s) => !baseSpeciesIds.has(s.id));
@@ -907,6 +955,116 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       autoIrrigation: {},
       useRain: false,
       hive: null,
+      fenceDesign: null,
+      fenceShuffles: 0,
+      setFenceCustom: (on) => {
+        const cfg = engine.fenceDesign;
+        if (on) scenario({ fenceDesign: get().fenceDesign ?? defaultFenceDesign(cfg) });
+        // turning it off takes the plants it set out away too, as one undo step
+        else scenario({ fenceDesign: null, instances: get().instances.filter((i) => !i.id.startsWith(cfg.vine.idPrefix)) });
+      },
+      patchFenceDesign: (patch) => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        if (!cur) return;
+        const len = fenceRun(get().site, cfg)?.lengthFt ?? 0;
+        const next = sanitizeFenceDesign({ ...cur, ...patch }, cfg, len);
+        scenario({ fenceDesign: next, ...fenceVinesFor(next) }, 'fence-design');
+      },
+      addFenceBlock: (material, atFt, widthFt) => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        const mat = materialOf(cfg, material);
+        const run = fenceRun(get().site, cfg);
+        if (!cur || !mat || !run || get().mode !== 'edit') return null;
+        const id = nextBlockId(cur);
+        const width = widthFt ?? mat.widthsFt[0];
+        const end = cur.blocks.reduce((m, b) => Math.max(m, b.atFt + b.widthFt), 0);
+        const next = sanitizeFenceDesign({ ...cur, blocks: [...cur.blocks, { id, material, widthFt: width, atFt: atFt ?? Math.min(end, Math.max(0, run.lengthFt - width)) }] }, cfg, run.lengthFt);
+        scenario({ fenceDesign: next, ...fenceVinesFor(next) });
+        return next.blocks.some((b) => b.id === id) ? id : null;
+      },
+      updateFenceBlock: (id, patch) => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (!cur || !run) return;
+        const blocks = cur.blocks.map((b) => {
+          if (b.id !== id) return b;
+          // a new material starts from that material's own sizes
+          if (patch.material && patch.material !== b.material) return { id: b.id, atFt: b.atFt, widthFt: patch.widthFt ?? b.widthFt, material: patch.material };
+          return { ...b, ...patch };
+        });
+        const next = sanitizeFenceDesign({ ...cur, blocks }, cfg, run.lengthFt);
+        scenario({ fenceDesign: next, ...fenceVinesFor(next) }, `fence-block:${id}`);
+      },
+      removeFenceBlock: (id) => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (!cur || !run) return;
+        const next = sanitizeFenceDesign({ ...cur, blocks: cur.blocks.filter((b) => b.id !== id) }, cfg, run.lengthFt);
+        scenario({ fenceDesign: next, ...fenceVinesFor(next) });
+      },
+      duplicateFenceBlock: (id) => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (!cur || !run || get().mode !== 'edit') return null;
+        const sorted = packBlocks(cur.blocks, cfg, run.lengthFt);
+        const i = sorted.findIndex((b) => b.id === id);
+        if (i < 0 || sorted.length >= cfg.maxBlocks) return null;
+        const src = sorted[i];
+        const copy = { ...src, id: nextBlockId({ blocks: sorted }), atFt: src.atFt + src.widthFt };
+        // the copy goes straight after its original; any blocks behind it are pushed along, and the copy fails if one would fall off the end
+        const next = sanitizeFenceDesign({ ...cur, blocks: [...sorted.slice(0, i + 1), copy, ...sorted.slice(i + 1)] }, cfg, run.lengthFt);
+        if (next.blocks.length !== sorted.length + 1 || next.blocks.some((b) => b.id === copy.id && b.widthFt !== src.widthFt)) return null;
+        scenario({ fenceDesign: next, ...fenceVinesFor(next) });
+        return copy.id;
+      },
+      moveFenceBlock: (id, dir) => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (!cur || !run) return;
+        const sorted = packBlocks(cur.blocks, cfg, run.lengthFt);
+        const i = sorted.findIndex((b) => b.id === id), k = i + dir;
+        if (i < 0 || k < 0 || k >= sorted.length) return;
+        // the two trade places, packed side by side from where the earlier of them started
+        const [first, second] = i < k ? [sorted[i], sorted[k]] : [sorted[k], sorted[i]];
+        const swapped = [{ ...second, atFt: first.atFt }, { ...first, atFt: first.atFt + second.widthFt }];
+        const blocks = sorted.map((b) => swapped.find((x) => x.id === b.id) ?? b);
+        const next = sanitizeFenceDesign({ ...cur, blocks }, cfg, run.lengthFt);
+        scenario({ fenceDesign: next, ...fenceVinesFor(next) });
+      },
+      shuffleFenceBlocks: () => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (!cur || !run) return;
+        const n = get().fenceShuffles + 1;
+        const next = shuffleBlocks(cur, n * 7919 + cur.blocks.length, cfg, run.lengthFt);
+        scenario({ fenceDesign: next, fenceShuffles: n, ...fenceVinesFor(next) });
+      },
+      applyFenceVines: () => {
+        const cfg = engine.fenceDesign;
+        const d = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (get().mode !== 'edit' || !d || !run) return 0;
+        // every wire panel gets climbing plants (a panel can be switched off again on its own)
+        const next = sanitizeFenceDesign({ ...d, blocks: d.blocks.map((b) => (materialOf(cfg, b.material)?.kind === 'wire' ? { ...b, climbers: true } : b)) }, cfg, run.lengthFt);
+        const patch = fenceVinesFor(next);
+        scenario({ fenceDesign: next, ...patch });
+        return patch.instances.filter((i) => i.id.startsWith(cfg.vine.idPrefix)).length;
+      },
+      clearFenceVines: () => {
+        const cfg = engine.fenceDesign;
+        const d = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (!d || !run) return;
+        const next = sanitizeFenceDesign({ ...d, blocks: d.blocks.map(({ climbers: _c, ...b }) => { void _c; return b; }) }, cfg, run.lengthFt);
+        scenario({ fenceDesign: next, ...fenceVinesFor(next) });
+      },
       prices: emptyPrices(),
       setPlantPrice: (speciesId, price) => {
         const plant = { ...get().prices.plant };

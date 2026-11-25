@@ -4,8 +4,8 @@ import { viewPose } from './viewPose';
 import { grab, groundUnder } from './grab';
 import { depthBias, useOverlayBase } from './overlay';
 import { skyColor } from '../engine/sky';
-import { tiledSurface } from './surfaces';
-import { splitFaces } from './siding';
+import { chainlinkTexture, tiledSurface } from './surfaces';
+import { flushToWalls, splitFaces } from './siding';
 import { fitDistance, fitPose, fitSphere, fitZoom, selectionBox } from '../engine/fit';
 import { usePlaced } from '../store/derived';
 import { useEffect, useMemo, useRef } from 'react';
@@ -28,6 +28,7 @@ import { LifeLayer } from './Life';
 import { HardscapeLayer, useSnapper } from './Hardscape';
 import { ConflictRings, SuggestionLayer } from './Suggestions';
 import { IrrigationLayer } from './Irrigation';
+import { CustomFence } from './CustomFence';
 import { Openings, Screens } from './Facade';
 import { CompassMark, PlanetGround, SkyBodies } from './Planet';
 import { Glazing } from './glass';
@@ -39,6 +40,7 @@ function shapeOf(poly: Pt[]) {
 }
 
 function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
+  const gableMaxFt = useApp((st) => st.engine.scene.gableFlushMaxFt);
   const walls = useMemo(
     () => new THREE.ExtrudeGeometry(shapeOf(s.footprint), { depth: s.eaveHeight, bevelEnabled: false }),
     [s],
@@ -58,6 +60,12 @@ function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
   // roof wedge adds above the wall, are cut out and drawn with that surface; the other vertical faces above the wall stay wall-colored.
   const sidingTex = useMemo(() => (s.finish?.south === 'hardie' ? tiledSurface('hardie', 4) : null), [s.finish?.south]);
   useEffect(() => () => sidingTex?.dispose(), [sidingTex]);
+  // Horizontal lap siding on every wall (the garage): all the vertical faces take the texture, the wall tops stay plain, and the gable
+  // ends (below) take it too.
+  const siding = useApp((st) => st.engine.hardscape.siding);
+  const lapTex = useMemo(() => (s.finish?.all === 'hardie-lap' ? tiledSurface('hardie-lap', siding.lapTileFt) : null), [s.finish?.all, siding.lapTileFt]);
+  useEffect(() => () => lapTex?.dispose(), [lapTex]);
+  const lap = useMemo(() => (lapTex ? splitFaces(walls, (n) => Math.abs(n.z) < 0.2) : null), [lapTex, walls]);
   const split = useMemo(() => {
     if (!sidingTex) return null;
     const south = (n: THREE.Vector3) => n.y < -0.7 && Math.abs(n.z) < 0.2;
@@ -69,6 +77,17 @@ function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
   // The vertical faces above a wall end exactly on the roof's top edge. They are pushed a little back in depth (the roof's own offset
   // pulls it forward), so that edge cannot show through the roof as a thin dark line.
   const pushedBack = { polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 } as const;
+  // A gable end is a continuation of the wall below it, not roof: the roof's vertical faces (above the wall, up to the ridge) are
+  // drawn wall-colored and the sloping faces roof-colored. (The ADU's own split above already does this for its south faces.)
+  const gable = useMemo(() => {
+    if (split || s.open) return null;
+    const v = splitFaces(roofShown, (n) => Math.abs(n.z) < 0.1);
+    if (!v.picked) return null;
+    // The gable's triangle goes back onto the wall below it. What is left of the roof is its sloping sheets, drawn on both sides
+    // (from below the overhang shows the roof's underside) so they cast the shadow themselves: the full hull's wedge past the wall
+    // would put a shadow on the wall just under the triangle.
+    return { walls: flushToWalls(v.picked, s.footprint as [number, number][], gableMaxFt), roof: v.rest };
+  }, [split, s.open, roofShown, s.footprint, gableMaxFt]);
   const proposed = s.status === 'proposed';
   const wallColor = proposed ? '#cdd8e6' : '#e9e3d6';
   const roofColor = proposed ? '#5d6b7d' : '#6d5b52';
@@ -76,10 +95,22 @@ function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
     <group>
       {/* Where parts of a building meet, their faces can lie in one plane (a fin's roof and the slab above it): a roof wins over a
           wall, a slab over a roof, and a later part over an earlier one, by a hair of depth, so the same one is always seen. */}
-      {!s.open && !split && (
+      {!s.open && !split && !lap && (
         <mesh geometry={walls} castShadow receiveShadow>
           <meshStandardMaterial color={wallColor} roughness={0.9} {...depthBias(0, rank)} />
         </mesh>
+      )}
+      {!s.open && !split && lap && (
+        <>
+          <mesh geometry={lap.rest} castShadow receiveShadow>
+            <meshStandardMaterial color={wallColor} roughness={0.9} {...depthBias(0, rank)} />
+          </mesh>
+          {lap.picked && (
+            <mesh geometry={lap.picked} castShadow receiveShadow>
+              <meshStandardMaterial color={siding.lapColor} map={lapTex} bumpMap={lapTex} bumpScale={0.5} roughness={0.9} {...depthBias(0, rank)} />
+            </mesh>
+          )}
+        </>
       )}
       {!s.open && split && (
         <>
@@ -100,16 +131,24 @@ function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
         </mesh>
       )}
       {/* the whole roof shape still casts its shadow, drawn invisibly (no color, no depth) */}
-      {roofShown !== roof && (
+      {roofShown !== roof && !gable && (
         <mesh geometry={roof} castShadow>
           <meshBasicMaterial colorWrite={false} depthWrite={false} />
         </mesh>
       )}
       {!split && (
-        <mesh geometry={roofShown} castShadow receiveShadow>
-          <meshStandardMaterial color={roofColor} roughness={0.8} {...depthBias(1, rank)} />
+        <mesh geometry={gable ? gable.roof : roofShown} castShadow receiveShadow>
+          <meshStandardMaterial color={roofColor} roughness={0.8} side={gable ? THREE.DoubleSide : THREE.FrontSide} {...depthBias(1, rank)} />
         </mesh>
       )}
+      {gable && (
+        <mesh geometry={gable.walls} castShadow receiveShadow>
+          {lapTex
+            ? <meshStandardMaterial color={siding.lapColor} map={lapTex} bumpMap={lapTex} bumpScale={0.5} roughness={0.9} {...pushedBack} />
+            : <meshStandardMaterial color={wallColor} roughness={0.9} {...pushedBack} />}
+        </mesh>
+      )}
+
       {split && (
         <>
           <mesh geometry={split.roofRest} castShadow receiveShadow>
@@ -174,11 +213,55 @@ function FenceRun({ a, b, o }: { a: [number, number]; b: [number, number]; o: Co
   );
 }
 
+/**
+ * One run of 1950s chain link: a mesh of wires turned 45 degrees (diamonds, a see-through texture on a plane) between steel pipe
+ * posts, with a top rail, all as tall as the fence. The posts stand `postRiseFt` above the mesh and are spaced as the fence says.
+ */
+function ChainLinkRun({ a, b, o }: { a: [number, number]; b: [number, number]; o: ContextObjectCfg }) {
+  const cfg = useApp((st) => st.engine.hardscape.chainlink);
+  const spacing = useApp((st) => st.engine.hardscape.fence.postSpacingFt);
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const tex = useMemo(() => {
+    const t = chainlinkTexture(cfg.tilePx, cfg.wirePx, cfg.meshColor)?.clone() ?? null;
+    // one repeat per diamond across and up the fence
+    t?.repeat.set(len / cfg.diamondFt, o.height / cfg.diamondFt);
+    if (t) t.needsUpdate = true;
+    return t;
+  }, [cfg, len, o.height]);
+  useEffect(() => () => tex?.dispose(), [tex]);
+  const gap = o.postSpacingFt ?? spacing;
+  const posts = Math.max(1, Math.round(len / gap));
+  const postH = o.height + cfg.postRiseFt;
+  return (
+    <group position={[a[0], a[1], 0]} rotation={[0, 0, ang]}>
+      {/* the mesh: a plane standing on the ground, seen from both sides */}
+      <mesh position={[len / 2, 0, o.height / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <planeGeometry args={[len, o.height]} />
+        <meshStandardMaterial color="#ffffff" map={tex} transparent alphaTest={0.3} side={THREE.DoubleSide} metalness={0.5} roughness={0.55} />
+      </mesh>
+      <mesh position={[len / 2, 0, o.height]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[cfg.railDiaFt / 2, cfg.railDiaFt / 2, len, 8]} />
+        <meshStandardMaterial color={cfg.steelColor} metalness={0.6} roughness={0.45} />
+      </mesh>
+      {Array.from({ length: posts + 1 }, (_, i) => (
+        <mesh key={i} position={[(i / posts) * len, 0, postH / 2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[cfg.postDiaFt / 2, cfg.postDiaFt / 2, postH, 10]} />
+          <meshStandardMaterial color={cfg.steelColor} metalness={0.6} roughness={0.45} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function FenceMesh({ o }: { o: ContextObjectCfg }) {
   const line = o.line ?? [];
+  const design = useApp((st) => st.fenceDesign);
+  const target = useApp((st) => st.engine.fenceDesign.targetId);
+  if (design && o.id === target && line.length === 2) return <CustomFence a={line[0]} b={line[1]} design={design} />;
   return (
     <group>
-      {line.slice(0, -1).map((a, i) => <FenceRun key={i} a={a} b={line[i + 1]} o={o} />)}
+      {line.slice(0, -1).map((a, i) => (o.style === 'chainlink' ? <ChainLinkRun key={i} a={a} b={line[i + 1]} o={o} /> : <FenceRun key={i} a={a} b={line[i + 1]} o={o} />))}
     </group>
   );
 }

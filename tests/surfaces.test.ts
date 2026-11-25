@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import siteRaw from '../src/data/site.json';
 import engineRaw from '../src/data/engine.json';
 import materialsRaw from '../src/data/materials.json';
 import { footprint, layeredThickness } from '../src/engine/hardscape';
@@ -26,9 +27,9 @@ describe('hardscape surfaces', () => {
   });
 
   it('has a painter for every pattern the type allows, and each pattern is used', () => {
-    expect(SURFACE_PATTERNS.length).toBe(13);
+    expect(SURFACE_PATTERNS.length).toBe(14);
     const used = new Set(mats.map((m) => m.surface?.pattern).filter(Boolean));
-    for (const p of SURFACE_PATTERNS) expect(used.has(p) || p === 'planks' || p === 'composite' || p === 'cmu' || p === 'boards' || p === 'hardie', p).toBe(true);
+    for (const p of SURFACE_PATTERNS) expect(used.has(p) || p === 'planks' || p === 'composite' || p === 'cmu' || p === 'boards' || p === 'hardie' || p === 'hardie-lap', p).toBe(true);
   });
 
   it('stands flat surfaces a little proud of the ground, thicker for loose fill than for a slab', () => {
@@ -48,6 +49,14 @@ describe('hardscape surfaces', () => {
     expect(f.postRiseFt).toBeGreaterThan(0);
     expect(f.capFt).toBeGreaterThan(0);
     expect(f.capOverhangFt).toBeGreaterThan(0);
+  });
+
+  it('sides the garage in horizontal lap board, six 7 in boards to the tile, and the ADU in vertical board', () => {
+    const garage = (siteRaw as { structures: { id: string; finish?: Record<string, string> }[] }).structures.find((x) => x.id === 'garage')!;
+    expect(garage.finish).toEqual({ all: 'hardie-lap' });
+    expect(engine.hardscape.siding.lapTileFt / 6).toBeCloseTo(7 / 12, 6);
+    expect(SURFACE_PATTERNS).toContain('hardie-lap');
+    expect((siteRaw as { structures: { id: string; finish?: Record<string, string> }[] }).structures.find((x) => x.id === 'adu-great')!.finish).toEqual({ south: 'hardie' });
   });
 
   it('makes no texture without a document, rather than failing', () => {

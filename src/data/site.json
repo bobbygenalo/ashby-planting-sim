@@ -332,12 +332,12 @@
           103.46875
         ]
       ],
-      "eaveHeight": 9.3,
-      "ridgeHeight": 12.6667,
+      "eaveHeight": 8,
+      "ridgeHeight": 12,
       "roofForm": "gable",
       "status": "existing",
       "toggleable": false,
-      "note": "From the owner's garage plan: walls 18'-2\" by 20'-1\" with the west wall 2'-11\" from the west lot line, and a gable roof 20'-2\" by 22'-1\" (1'-0\" overhang) with the ridge running front to back. Ridge 12'-8\" is printed; the eave height (9.3 ft, a 4:12 roof) is assumed. The rear wall is placed from the printed 19'-10 3/4\" to the ADU, assuming that distance is wall to wall (about 1 ft of uncertainty).",
+      "note": "From the owner's garage plan: walls 18'-2\" by 20'-1\" with the west wall 2'-11\" from the west lot line, and a gable roof 20'-2\" by 22'-1\" (1'-0\" overhang) with the ridge running front to back. Heights per the owner: the lowest part of the garage (the eave) is 8 ft above the ground and the top is 12 ft; the garage door is 7 ft tall (the plan printed a 12'-8\" ridge). The rear wall is placed from the printed 19'-10 3/4\" to the ADU, assuming that distance is wall to wall (about 1 ft of uncertainty). Siding: horizontal fiber-cement (Hardie) lap board on every wall, per the owner.",
       "roofFootprint": [
         [
           1.9167,
@@ -355,7 +355,10 @@
           1.9167,
           104.4688
         ]
-      ]
+      ],
+      "finish": {
+        "all": "hardie-lap"
+      }
     },
     {
       "id": "adu-bedroom",
@@ -923,7 +926,7 @@
       "line": [
         [
           0,
-          0
+          20
         ],
         [
           0,
@@ -936,24 +939,28 @@
     {
       "id": "fence-east",
       "kind": "fence",
-      "name": "Fence, far side",
+      "name": "Chain link fence, east property line",
       "line": [
         [
           50.6875,
-          0
+          20
         ],
         [
           50.6875,
           150.46875
         ]
       ],
-      "height": 6,
-      "placeholder": true
+      "height": 4,
+      "placeholder": false,
+      "style": "chainlink",
+      "postSpacingFt": 6,
+      "density": 0.1,
+      "note": "1950s chain link: a mesh of wires turned 45 degrees on steel posts about every 6 ft, 4 ft tall (the owner's description). The owner calls the rear line north; the site's rear bearing is 330 degrees."
     },
     {
       "id": "fence-rear",
       "kind": "fence",
-      "name": "Fence, rear",
+      "name": "Chain link fence, north (rear) property line",
       "line": [
         [
           0,
@@ -964,8 +971,12 @@
           150.46875
         ]
       ],
-      "height": 6,
-      "placeholder": true
+      "height": 4,
+      "placeholder": false,
+      "style": "chainlink",
+      "postSpacingFt": 6,
+      "density": 0.1,
+      "note": "1950s chain link: a mesh of wires turned 45 degrees on steel posts about every 6 ft, 4 ft tall (the owner's description). The owner calls the rear line north; the site's rear bearing is 330 degrees."
     },
     {
       "id": "pole",
@@ -1487,8 +1498,13 @@
       "estimate": true
     },
     {
+      "id": "fence-start",
+      "text": "The side fences (west and east neighbors) begin about 20 ft from the street, per the owner; the rear fence runs the full width. The front 20 ft of the side lot lines are open.",
+      "estimate": true
+    },
+    {
       "id": "heights",
-      "text": "The 6 ft fences and the garage eave height (9.3 ft, a 4:12 roof) are placeholders; the garage ridge, 12'-8\", is printed. House and ADU heights come from the plans. Terrain is modeled flat; the house's natural grade rises about half a foot from front to back.",
+      "text": "The west fence's 6 ft is a placeholder. The garage's heights are the owner's: 8 ft to the lowest part (the eave), 12 ft to the top, a 7 ft door. The east and rear fences are 4 ft chain link on steel posts about every 6 ft (the owner's description). House and ADU heights come from the plans. Terrain is modeled flat; the house's natural grade rises about half a foot from front to back.",
       "estimate": true
     }
   ],

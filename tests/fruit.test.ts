@@ -17,7 +17,7 @@ describe('fruit data', () => {
   it('covers the edible fruiting plants: apples, olives, lemon, kumquat, satsuma, persimmon, two blueberries, a blackberry and two strawberries', () => {
     expect(fruiting.map((s) => s.id).sort()).toEqual([
       'citrus-kumquat', 'citrus-meyer-lemon', 'citrus-satsuma', 'diospyros-kaki-hachiya', 'fragaria-seascape', 'fragaria-vesca-alexandria',
-      'malus-mutsu', 'malus-pink-pearl', 'olea-arbequina', 'olea-frantoio', 'rubus-arapaho', 'vaccinium-misty', 'vaccinium-sunshine-blue',
+      'malus-mutsu', 'malus-pink-pearl', 'olea-arbequina', 'olea-frantoio', 'prunus-gold-kist', 'rubus-arapaho', 'vaccinium-misty', 'vaccinium-sunshine-blue',
     ]);
     expect(fruiting.every((s) => s.type === 'edible')).toBe(true);
   });
@@ -67,7 +67,7 @@ describe('when fruit shows', () => {
     expect(fruitState(apple, grown(apple, 1), 1, cfg)).toBeNull();
     expect(ripe.diameterFt).toBeCloseTo(apple.fruit!.diameterFt * cfg.displayScale, 9);
     const olive = sp('olea-arbequina');
-    expect(fruitState(olive, grown(olive, 1), 12, cfg)!.diameterFt).toBe(cfg.minDisplayDiameterFt); // tiny fruit stays visible
+    expect(fruitState(olive, grown(olive, 1), 12, cfg)!.diameterFt).toBe(olive.fruit!.minDisplayFt); // tiny fruit stays visible (olives set their own minimum)
   });
 
   it('draws olives and lemons as ovals and apples as spheres', () => {

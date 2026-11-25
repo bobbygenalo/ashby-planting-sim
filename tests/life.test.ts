@@ -385,7 +385,7 @@ describe('going into buildings', () => {
       const [i, j] = [Math.floor(d.approach[0] / w.cell), Math.floor(d.approach[1] / w.cell)];
       expect(w.blocked[j * w.nx + i]).toBe(0);
       expect(w.reachable).toContain(j * w.nx + i);
-      expect(Math.hypot(d.approach[0] - d.stand[0], d.approach[1] - d.stand[1])).toBeLessThan(d.id === 'house-front' || d.id === 'adu-front' ? 14 : 5);
+      expect(Math.hypot(d.approach[0] - d.stand[0], d.approach[1] - d.stand[1])).toBeLessThan(['house-front', 'house-rear', 'adu-front'].includes(d.id) ? 14 : 5);
     }
   });
 

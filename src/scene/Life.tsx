@@ -84,7 +84,7 @@ function Dog({ sim, index }: { sim: React.MutableRefObject<LifeSim | null>; inde
       return;
     }
     g.visible = !isInside(w);
-    g.position.set(w.x, w.y, 0);
+    g.position.set(w.x, w.y, w.gz);
     g.rotation.z = w.heading;
     const swing = Math.sin(w.gait) * 0.8 * Math.min(1, w.speed / 2.5);
     legs.forEach((l, n) => l.current?.rotation.set(0, n === 0 || n === 3 ? swing : -swing, 0));

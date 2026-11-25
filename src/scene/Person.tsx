@@ -99,7 +99,7 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
     if (!g) return;
     if (!w) { g.visible = false; return; }
     g.visible = !isInside(w);
-    g.position.set(w.x, w.y, 0);
+    g.position.set(w.x, w.y, w.gz);
     g.rotation.z = w.heading;
     const t = clock.elapsedTime;
     const seated = w.sit;
@@ -248,7 +248,7 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
         const lz = b.shoulderH - Math.cos(carry) * b.upperArmL - Math.cos(carry + carryElbow) * reach2 - z + b.hipH;
         const ly = -b.shoulderHalf;
         const cos = Math.cos(w.heading), sin = Math.sin(w.heading);
-        basketAt.set(index, [w.x + cos * lx - sin * ly, w.y + sin * lx + cos * ly, lz + z - b.hipH + 0.05]);
+        basketAt.set(index, [w.x + cos * lx - sin * ly, w.y + sin * lx + cos * ly, lz + z - b.hipH + 0.05 + w.gz]);
         const items = w.basket.items;
         const mesh = fruitInBasket.current;
         if (mesh) {
@@ -320,7 +320,7 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
       elbows[0].current?.rotation.set(0, ik.elbow, 0);
       // Where the hand ended up, in site coordinates, for the fruit to ride in.
       const tx = S[0] + ik.tip[0], ty = S[1] + ik.tip[1], tz = S[2] + ik.tip[2];
-      handTipAt.set(index, [w.x + cosH * tx - sinH * ty, w.y + sinH * tx + cosH * ty, tz]);
+      handTipAt.set(index, [w.x + cosH * tx - sinH * ty, w.y + sinH * tx + cosH * ty, tz + w.gz]);
     } else {
       handTipAt.delete(index);
       const sh0 = shoulders[0].current;

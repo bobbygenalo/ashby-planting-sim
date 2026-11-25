@@ -1234,6 +1234,7 @@
         "cooldownS": 60
       },
       "giveUpS": 9,
+      "stepRiseFtS": 3,
       "manner": {
         "pace": { "driftAmp": 0.13, "driftRadS": 0.37, "energyMul": [0.84, 1.14], "hours": [[0, 0.6], [6, 0.8], [9, 1], [12, 0.92], [15, 1], [18, 0.9], [21, 0.7], [24, 0.6]], "hourWeight": 0.2 },
         "weave": { "ampFt": [0.12, 0.5], "lenFt": [8, 15], "minLeftFt": 3 },

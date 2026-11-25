@@ -823,6 +823,96 @@
       "existing": true,
       "estimate": true,
       "note": "A low concrete step in front of the great room's north sliding door, read from the north-east view; its size is an estimate."
+    },
+    {
+      "id": "stoop-slider",
+      "type": "patio",
+      "name": "Back stoop at the sliding door (E)",
+      "points": [
+        [
+          27.5,
+          66.23
+        ],
+        [
+          42.5,
+          66.23
+        ],
+        [
+          42.5,
+          69.23
+        ],
+        [
+          27.5,
+          69.23
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 0.75,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "estimate": true,
+      "note": "Owner's brief: 15 ft wide (widened from 10 at the owner's request), 3 ft deep, centered on the three-panel sliding door 12 (x 35.0) on the rear wing's north wall. Height is an estimate (one step below the floor, like the front stoop)."
+    },
+    {
+      "id": "stoop-kitchen",
+      "type": "patio",
+      "name": "Kitchen stoop (E)",
+      "points": [
+        [
+          11.530000000000001,
+          58.4584
+        ],
+        [
+          17.53,
+          58.4584
+        ],
+        [
+          17.53,
+          63.4584
+        ],
+        [
+          11.530000000000001,
+          63.4584
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 0.75,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "estimate": true,
+      "note": "Owner's brief: 6 ft wide, 5 ft deep at the kitchen door 10 (x 15.57). The rear wing's cut-out wall is at x 17.53, so the slab sits flush against it (its middle is x 14.53, a foot west of the door's) instead of running into the wall. Height is an estimate."
+    },
+    {
+      "id": "stoop-kitchen-step",
+      "type": "patio",
+      "name": "Kitchen stoop step down (E)",
+      "points": [
+        [
+          11.530000000000001,
+          63.4584
+        ],
+        [
+          17.53,
+          63.4584
+        ],
+        [
+          17.53,
+          64.9584
+        ],
+        [
+          11.530000000000001,
+          64.9584
+        ]
+      ],
+      "materialId": "concrete",
+      "height": 0.4,
+      "depthIn": 4,
+      "width": 0,
+      "existing": true,
+      "estimate": true,
+      "note": "A step down towards the backyard from the kitchen stoop, 1.5 ft deep, as wide as the stoop. Depth and height are estimates."
     }
   ],
   "contextObjects": [
@@ -1455,15 +1545,19 @@
       "building": "house",
       "point": [
         35.0,
-        66.23
+        69.23
       ],
       "outward": [
         0,
         1
       ],
       "estimate": true,
-      "note": "The three-panel sliding door in the rear wing's north wall (12 in the north elevation), which opens onto the back yard; x read from the drawing. The other back door (10) opens onto the driveway's taper in the cut-out, which paths and plants keep clear of, so it is drawn but not used as a door for people.",
-      "opening": "rear-slider"
+      "note": "The three-panel sliding door in the rear wing's north wall (12 in the north elevation), which opens onto the back yard; x read from the drawing. The other back door (10) opens onto the driveway's taper in the cut-out, which paths and plants keep clear of, so it is drawn but not used as a door for people. People walk to the front edge of the 15 by 3 ft stoop (`stoop-slider`) and step up to the door.",
+      "opening": "rear-slider",
+      "entry": [
+        35.0,
+        66.23
+      ]
     },
     {
       "id": "garage-front",

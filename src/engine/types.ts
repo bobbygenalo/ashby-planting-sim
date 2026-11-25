@@ -699,6 +699,8 @@ export interface LifeCfg {
     blockedReplanS: number;
     /** Someone who has made no headway for this many seconds (held up by others, or going round in circles) gives up that errand and chooses another. */
     giveUpS: number;
+    /** How fast, in feet a second, a walker's feet rise onto or drop off raised ground such as a stoop. */
+    stepRiseFtS: number;
     /** Two free people sometimes meet to talk, and sometimes hug first. */
     meet: MeetCfg;
     manner: MannerCfg;

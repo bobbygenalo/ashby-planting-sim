@@ -135,6 +135,8 @@ export interface LifeWorld {
   beamOn: boolean;
   /** Places to perch on the rim of a raised bed: where the hips rest, which way a sitter faces (away from the bed), the open ground just outside, and the rim's height. */
   rims: Rim[];
+  /** Raised flat ground (the porch floor, the stoop, a landing): where a walker's feet stand higher than the lot. */
+  raised: { poly: Pt[]; top: number }[];
 }
 
 export interface Rim {
@@ -214,7 +216,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.filter((s) => !s.open).map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], harvest: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [], rims: [], beamCells: null, beamCost: null, beamOn: false,
+    plants: [], structures: input.structures.filter((s) => !s.open).map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], harvest: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [], rims: [], raised: [], beamCells: null, beamCost: null, beamOn: false,
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -338,6 +340,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const pool = (w.partyCells.length ? w.partyCells : w.reachable.filter((k) => cellPt(k)[1] > depth / 2)).map(cellPt);
   w.skySpots = skyWatchSpots(pool, cfg.fireworks.spotGapFt, mulberry32(11));
   w.rims = buildRims(classes, w.structures);
+  w.raised = classes.filter(({ el }) => el.height > 0 && ['patio', 'deck', 'gravel', 'path'].includes(el.type)).map(({ el, poly }) => ({ poly, top: el.height }));
   return w;
 }
 
@@ -820,6 +823,8 @@ export interface Walker {
   snackColor: string | null;
   /** Height of the seat they sit on when it is not a chair's, and the rim they perch on. */
   seatZ: number | null;
+  /** Height of the ground under the feet (a porch or stoop is above the lot), eased as they step up or down. */
+  gz: number;
   /** Whom or what the head is turned toward for now: a place, or a walker's index, and seconds left. */
   glance: { kind: 'person' | 'dog' | 'bee' | 'bloom'; x: number; y: number; who: number; left: number } | null;
   glanceCool: number;
@@ -934,7 +939,7 @@ export class LifeSim {
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
         pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, stepFt: 1.5, basket: null, pickU: 0, aim: null, hug: 0, blockedS: 0, heldTotal: 0, probeX: 0, probeY: 0, probeT: 0, meetCool: this.rng() * 30, talking: false, cheer: false, lookUp: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
         replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
-        pers: personalityOf(this.rng, this.cfg.people.manner), weaveD: this.rng() * 20, weaveOff: 0, skip: 0, wave: 0, smile: 0.15, headPitch: 0, bend: 0, five: 0, pose: 'none', poseT: 0, snackColor: null, seatZ: null, glance: null, glanceCool: this.rng() * 3, gazeTick: this.rng() * 0.25, greetCool: this.rng() * 10, playCool: this.rng() * 20, shadowS: 0, shoo: 0, shooAt: -1, reactT: null,
+        pers: personalityOf(this.rng, this.cfg.people.manner), weaveD: this.rng() * 20, weaveOff: 0, skip: 0, wave: 0, smile: 0.15, headPitch: 0, bend: 0, five: 0, pose: 'none', poseT: 0, snackColor: null, seatZ: null, gz: 0, glance: null, glanceCool: this.rng() * 3, gazeTick: this.rng() * 0.25, greetCool: this.rng() * 10, playCool: this.rng() * 20, shadowS: 0, shoo: 0, shooAt: -1, reactT: null,
       });
       const made = this.walkers[this.walkers.length - 1];
       if (spec) {
@@ -1325,6 +1330,23 @@ export class LifeSim {
    * pair who had stopped, or an errand ended beside them) ease apart, the one with nothing to do moving first, never into a
    * wall, a bed or a plant, and never when they are hugging or seated together.
    */
+  /** The height of the highest raised ground at a point (0 on the lot). */
+  groundAt(x: number, y: number): number {
+    let top = 0;
+    for (const r of this.world.raised) if (r.top > top && pointInPolygon(x, y, r.poly)) top = r.top;
+    return top;
+  }
+
+  /** Walkers stand on the porch floor and the stoop, not in them: the feet follow the ground's height, stepping up and down at a pace. */
+  private stepGround(dt: number) {
+    if (this.world.raised.length === 0) return;
+    const rate = this.cfg.people.stepRiseFtS * dt;
+    for (const wk of this.walkers) {
+      const target = this.groundAt(wk.x, wk.y);
+      wk.gz += Math.max(-rate, Math.min(rate, target - wk.gz));
+    }
+  }
+
   private separate(dt: number) {
     const ps = this.walkers.filter((w) => w.kind === 'person' && !w.away && !isInside(w));
     const step = 2.5 * dt;
@@ -2851,6 +2873,7 @@ export class LifeSim {
       }
     }
     this.separate(dt);
+    this.stepGround(dt);
     this.stepDoors(dt);
     this.stepProjector(dt);
     this.clock += dt;

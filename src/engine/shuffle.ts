@@ -139,7 +139,9 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
       const sp = speciesById.get(inst.speciesId);
       if (!sp) return inst;
       const wasFine = suits(sp, inst.position, index);
-      const alts = lookAlikes(sp, pool, cfg.sizeRatioBand).filter((o) => !wasFine || suits(o, inst.position, index));
+      // Whatever else was off (a companion planted closer than the usual room), a spot with the right light keeps it.
+      const lightWasFine = lightSuits(sp, inst.position, ctx.sunMap, ctx.engine);
+      const alts = lookAlikes(sp, pool, cfg.sizeRatioBand).filter((o) => (!wasFine || suits(o, inst.position, index)) && (!lightWasFine || lightSuits(o, inst.position, ctx.sunMap, ctx.engine)));
       if (alts.length === 0) return inst;
       changes.species++;
       const next = { ...inst, speciesId: pick(rng, alts).id };
@@ -155,18 +157,21 @@ export function shuffleScenario(data: ScenarioData, ctx: ShuffleContext, opts: S
       // A plant keeps its roots as far from buildings as the species wants, or no closer than it already was.
       const clearance = Math.min(sp?.roots.minFoundationFt ?? 0, ctx.structures.length ? nearest(inst.position) : 0);
       const wasFine = sp ? suits(sp, inst.position, index) : true;
+      const lightWasFine = sp ? lightSuits(sp, inst.position, ctx.sunMap, ctx.engine) : true;
       for (let attempt = 0; attempt < cfg.moveAttempts; attempt++) {
         const angle = rng() * Math.PI * 2;
         const r = Math.sqrt(rng()) * cfg.plantMoveRadiusFt;
-        const p: Pt = [inst.position[0] + Math.cos(angle) * r, inst.position[1] + Math.sin(angle) * r];
+        // Rounded first: the spot is judged where it will be stored, which can fall in the next sun-map cell.
+        const p: Pt = [Number((inst.position[0] + Math.cos(angle) * r).toFixed(2)), Number((inst.position[1] + Math.sin(angle) * r).toFixed(2))];
         if (p[0] < 0 || p[0] > width || p[1] < 0 || p[1] > depth) continue;
         if (ctx.structures.some((s) => pointInPolygon(p[0], p[1], s.footprint) || distanceToPolygon(p[0], p[1], s.footprint) < clearance - 1e-9)) continue;
         if (hardCover.some((poly) => pointInPolygon(p[0], p[1], poly))) continue;
         if (drivewayBlocks(p, hardscape, ctx.engine.hardscape)) continue;
         if (instances.some((o, k) => k !== index && Math.hypot(o.position[0] - p[0], o.position[1] - p[1]) < cfg.minPlantGapFt)) continue;
         if (sp && wasFine && !suits(sp, p, index)) continue;
+        if (sp && lightWasFine && !lightSuits(sp, p, ctx.sunMap, ctx.engine)) continue;
         changes.moved++;
-        const moved = { ...inst, position: [Number(p[0].toFixed(2)), Number(p[1].toFixed(2))] as Pt };
+        const moved = { ...inst, position: p };
         instances[index] = moved;
         return moved;
       }

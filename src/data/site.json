@@ -387,6 +387,9 @@
       "note": "Rear wing over grids 01 to 02. Shed roof sloping down to the west: 10'-5\" at the west gutter, 13'-1 1/4\" at the east edge (roof plan), measured from finished floor, plus 0.8 ft for the floor above grade.",
       "groupName": "ADU (proposed)",
       "roofThickness": 0.6,
+      "windows": [
+        { "side": "east", "insetFt": 0.8, "belowRoofFt": 0.4, "heightFt": 2.4, "mullionFt": 4.5 }
+      ],
       "roofFootprint": [
         [
           8.9583,
@@ -484,7 +487,10 @@
       "toggleable": true,
       "note": "Front wing over grids 02 to 04. Shed roof sloping down to the west: 9'-4\" at the west gutter, 13'-1 1/8\" at the east edge, plus 0.8 ft. The roof reaches 2'-5 1/4\" south of the front wall over the entry landing (printed width 25'-6 1/2\" includes it).",
       "groupName": "ADU (proposed)",
-      "roofThickness": 0.6
+      "roofThickness": 0.6,
+      "windows": [
+        { "side": "east", "insetFt": 0.8, "belowRoofFt": 0.4, "heightFt": 2.4, "mullionFt": 4.5 }
+      ]
     },
     {
       "id": "adu-fin-great-w",
@@ -926,7 +932,7 @@
       ],
       "drift": {
         "degPerSecond": 2.4,
-        "resumeS": 6
+        "resumeS": 0
       }
     },
     {
@@ -1201,6 +1207,26 @@
       "estimate": true
     }
   ],
+  "irrigation": {
+    "sources": [
+      {
+        "id": "hose-bib-front",
+        "label": "Front yard water access, middle of the front of the house",
+        "short": "front",
+        "point": [28.55, 25.04],
+        "estimate": true,
+        "note": "Placed by the owner's instruction at the middle of the house's street-facing wall (x midway between the house's west and east edges, on the front wall). A hose bib and valve manifold there; the real fixture is not read from a plan."
+      },
+      {
+        "id": "hose-bib-back",
+        "label": "Back yard water access, middle of the back of the garage",
+        "short": "back",
+        "point": [12.0, 103.47],
+        "estimate": true,
+        "note": "Placed by the owner's instruction at the middle of the garage's rear wall (the wall facing the ADU). A hose bib and valve manifold there; the real fixture is not read from a plan."
+      }
+    ]
+  },
   "doors": [
     {
       "id": "house-front",

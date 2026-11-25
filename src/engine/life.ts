@@ -9,6 +9,8 @@ import { mulberry32 } from './shuffle';
 import { skyWatchSpots } from './fireworks';
 import { fruitState } from './fruit';
 import { bodyOf, stepLengthFt } from './anatomy';
+import { beamTriangle, castOnWall, coverage, dogSpheres, inBeam, personSpheres, type Disc } from './projector';
+import { ageGroup, approach, fiveArm, greeting, headTurnToward, lingerOptions, paceMultiplier, personalityOf, pickWeighted, weaveOffset, type LingerKind, type Personality } from './manner';
 import type { SedanSpot } from './vehicle';
 import engineData from '../data/engine.json';
 import type { AnatomyCfg, EngineConfig, HardscapeElement, Material, Pt, SiteConfig, StructureCfg } from './types';
@@ -126,6 +128,21 @@ export interface LifeWorld {
   partyCells: number[];
   /** Open ground to stand on and watch the fireworks over the back of the lot, spread out. */
   skySpots: Pt[];
+  /** Ground the projector's beam crosses (with a margin), as 1s, while a screen exists; and the extra route cost of crossing it, which the sim turns on only while a film shows. */
+  beamCells: Uint8Array | null;
+  beamCost: Float32Array | null;
+  /** Set by the sim while a film shows: routes then pay `beamCost` for crossing the beam. */
+  beamOn: boolean;
+  /** Places to perch on the rim of a raised bed: where the hips rest, which way a sitter faces (away from the bed), the open ground just outside, and the rim's height. */
+  rims: Rim[];
+}
+
+export interface Rim {
+  x: number;
+  y: number;
+  face: number;
+  out: Pt;
+  z: number;
 }
 
 export interface LifeTable {
@@ -145,6 +162,8 @@ export interface LifeScreen {
   spots: Pt[];
   /** Where the projector stands, behind the viewers. */
   projector: Pt;
+  /** The lens: x, y and height, in site coordinates. */
+  lens: [number, number, number];
 }
 
 /** A door: where someone stands to go in, and the open ground a little way out where they walk to first. */
@@ -193,7 +212,7 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   const isPath = new Uint8Array(nx * ny);
   const w: LifeWorld = {
     lot: { width, depth }, nx, ny, cell: cfg.cellFt, minCost: Math.min(...Object.values(cfg.costs)), blocked, cost, isPath, reachable: [], pathCells: [],
-    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], harvest: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [],
+    plants: [], structures: input.structures.map((s) => s.footprint), blooms: [], hive: null, doors: [], tables: [], screen: null, month: input.month, flowers: [], perches: [], wormSpots: [], birdFood: [], harvest: [], structureTops: input.structures.map((st) => ({ poly: st.footprint, top: Math.max(st.ridgeHeight, st.eaveHeight) })), partyCells: [], skySpots: [], rims: [], beamCells: null, beamCost: null, beamOn: false,
   };
 
   // Ground, in the order the plan draws it, so what is on top decides what a cell is.
@@ -282,11 +301,58 @@ export function buildLifeWorld(input: LifeWorldInput): LifeWorld {
   if (yard) w.partyCells = w.reachable.filter((k) => pointInPolygon(((k % w.nx) + 0.5) * w.cell, (Math.floor(k / w.nx) + 0.5) * w.cell, yard.polygon));
   w.tables = buildTables(w, input, cfg);
   w.screen = buildScreen(w, input, cfg);
+  if (w.screen) {
+    const sc = w.screen, sh = cfg.movie.shadow;
+    const tri = beamTriangle(sc.lens, sc.x, sc.y - sc.width / 2, sc.y + sc.width / 2);
+    w.beamCells = new Uint8Array(w.nx * w.ny);
+    w.beamCost = new Float32Array(w.nx * w.ny);
+    for (let j = 0; j < w.ny; j++) for (let i = 0; i < w.nx; i++) {
+      const [cx, cy] = center(w, i, j);
+      if (inBeam(cx, cy, tri, 1.0)) { w.beamCells[idx(w, i, j)] = 1; w.beamCost[idx(w, i, j)] = sh.beamAvoidCost; }
+    }
+  }
   // Watching the fireworks: the party yard when it has room, otherwise anywhere in the back half of the lot.
   const cellPt = (k: number): Pt => [((k % w.nx) + 0.5) * w.cell, (Math.floor(k / w.nx) + 0.5) * w.cell];
   const pool = (w.partyCells.length ? w.partyCells : w.reachable.filter((k) => cellPt(k)[1] > depth / 2)).map(cellPt);
   w.skySpots = skyWatchSpots(pool, cfg.fireworks.spotGapFt, mulberry32(11));
+  w.rims = buildRims(classes, w.structures);
   return w;
+}
+
+/** Spots to perch on the rim of a raised bed, one near the middle of each long enough side of a bed with a sitting-height rim. */
+function buildRims(classes: { el: HardscapeElement; poly: Pt[] }[], structures: Pt[][]): Rim[] {
+  const out: Rim[] = [];
+  for (const { el, poly } of classes) {
+    if (el.type !== 'raisedBed' || !(el.height >= 1 && el.height <= 3)) continue;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (len < 2.4) continue;
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      let nx = (b[1] - a[1]) / len, ny = -(b[0] - a[0]) / len;
+      if (pointInPolygon(mx + nx * 0.3, my + ny * 0.3, poly)) { nx = -nx; ny = -ny; }
+      // An edge shared with another bed or a wall of the same bed (an L's inside corner) has no room to sit; skip those.
+      if (poly.some((q, j) => j !== i && j !== (i + 1) % poly.length && Math.hypot(q[0] - (mx + nx * 1.2), q[1] - (my + ny * 1.2)) < 0.8)) continue;
+      const seat: Pt = [mx - nx * 0.35, my - ny * 0.35], outside: Pt = [mx + nx * 1.5, my + ny * 1.5];
+      // Never on a bed that touches a building, and the open ground beside it must be clear of one too.
+      if (structures.some((st) => [seat, outside, [mx, my] as Pt].some(([px, py]) => pointInPolygon(px, py, st) || distanceToPolygon(px, py, st) < 0.6))) continue;
+      out.push({ x: seat[0], y: seat[1], face: Math.atan2(ny, nx), out: outside, z: el.height });
+    }
+  }
+  return out;
+}
+
+/** The point on a polygon's outline nearest to (x, y). */
+export function nearestOnPolygon(poly: Pt[], x: number, y: number): Pt {
+  let best: Pt = poly[0], bestD = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy || 1e-9;
+    const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / l2));
+    const px = a[0] + dx * t, py = a[1] + dy * t, d = Math.hypot(px - x, py - y);
+    if (d < bestD) { bestD = d; best = [px, py]; }
+  }
+  return best;
 }
 
 /** The doors of the buildings that are in the plan, each with a reachable spot to walk to first. */
@@ -388,12 +454,15 @@ function buildScreen(w: LifeWorld, input: LifeWorldInput, cfg: Cfg): LifeScreen 
   const y = (best.y0 + best.y1) / 2;
   const width = Math.min(mc.widthFt, (best.y1 - best.y0) * 0.8);
   const spots: Pt[] = [];
+  // Viewers stand out of the projector's light, so nobody watches with a shadow across the screen.
+  const tri = beamTriangle([best.x + mc.projectorFromWallFt - 0.55, y, mc.projectorHeightFt], best.x, y - width / 2, y + width / 2);
   for (const k of w.reachable) {
     const [cx, cy] = center(w, k % w.nx, Math.floor(k / w.nx));
-    if (cx - best.x >= mc.spotFromWallFt[0] && cx - best.x <= mc.spotFromWallFt[1] && Math.abs(cy - y) <= mc.spotLateralFt) spots.push([cx, cy]);
+    if (cx - best.x >= mc.spotFromWallFt[0] && cx - best.x <= mc.spotFromWallFt[1] && Math.abs(cy - y) <= mc.spotLateralFt && !inBeam(cx, cy, tri, 1.4)) spots.push([cx, cy]);
   }
   if (spots.length < 3) return null;
-  return { x: best.x, y, width, bottom: mc.bottomFt, height: mc.heightFt, spots, projector: [best.x + mc.projectorFromWallFt, y] };
+  const lens: [number, number, number] = [best.x + mc.projectorFromWallFt - 0.55, y, mc.projectorHeightFt];
+  return { x: best.x, y, width, bottom: mc.bottomFt, height: mc.heightFt, spots, projector: [best.x + mc.projectorFromWallFt, y], lens };
 }
 
 /** Inflate the cost beside blocked ground, then find the largest connected open region and the path cells in it. */
@@ -546,7 +615,8 @@ export function findRoute(w: LifeWorld, from: Pt, to: Pt): Pt[] | null {
         const n = idx(w, a, b);
         if (w.blocked[n] || done[n]) continue;
         if (di && dj && (w.blocked[idx(w, i + di, j)] || w.blocked[idx(w, i, j + dj)])) continue; // no cutting corners
-        const step = Math.hypot(di, dj) * w.cell * (w.cost[k] + w.cost[n]) * 0.5;
+        const bc = w.beamOn ? w.beamCost : null; // crossing the projector's beam costs more while a film shows
+        const step = Math.hypot(di, dj) * w.cell * (w.cost[k] + w.cost[n] + (bc ? bc[k] + bc[n] : 0)) * 0.5;
         const ng = g[k] + step;
         if (ng < g[n]) {
           g[n] = ng;
@@ -580,7 +650,10 @@ export type Act =
   | { kind: 'cake'; seat: string; phase: 'to' | 'gather' }
   /** Picking ripe fruit into a basket: walk to a plant, pick a few pieces, move to a different plant, and go in with the basket. */
   /** Two free people meet to talk, sometimes hugging first: each walks to a spot facing the other, the pair greet (a hug brings them closer than people pass), then talk and part. */
-  | { kind: 'meet'; phase: 'to' | 'wait' | 'greet' | 'talk'; partner: number; spot: Pt; hug: boolean; /** Seconds into this phase. */ t: number; /** How long the phase lasts. */ left: number; /** Who is speaking, by walker index, and for how much longer. */ speaker: number; speakerLeft: number }
+  | { kind: 'meet'; phase: 'to' | 'wait' | 'greet' | 'talk'; partner: number; spot: Pt; hug: boolean; /** Opens with a high five instead. */ five: boolean; /** Seconds into this phase. */ t: number; /** How long the phase lasts. */ left: number; /** Who is speaking, by walker index, and for how much longer. */ speaker: number; speakerLeft: number }
+  | { kind: 'linger'; what: LingerKind; phase: 'to' | 'do'; spot: Pt; /** What they look at. */ face: Pt | null; left: number; t: number; /** The rim they perch on, or the place they lean. */ rim: Rim | null; lean: LeanSpot | null; color: string | null; turns: number }
+  | { kind: 'dodge'; phase: 'to'; spot: Pt }
+  | { kind: 'chase'; phase: 'run' | 'tag'; target: number; left: number; t: number; replan: number }
   | { kind: 'harvest'; phase: 'to' | 'pick'; plant: string; stand: Pt; /** Pieces still to take from this plant. */ chunk: number; /** Seconds into the current pick. */ t: number; /** A pick is under way (the hand is out, carrying, or coming back). */ cycle: boolean; fired: boolean; /** How full (as used volume, cubic feet) they want the basket before carrying it in. */ final: number; /** Species already picked from. */ species: string[] };
 
 /** What a person carries when picking: fruit in the basket, and how many it holds. */
@@ -630,6 +703,15 @@ export interface Flight {
   bulk: number;
   aspect: number;
 }
+
+/** A place to lean on a building's wall: where they stand, the wall point, and which way they face (away from the wall). */
+export interface LeanSpot {
+  stand: Pt;
+  wall: Pt;
+  face: number;
+}
+
+export type Pose = 'none' | 'phone' | 'snack' | 'folded' | 'spin' | 'tag' | 'puppet';
 
 export interface Walker {
   kind: 'person' | 'dog';
@@ -694,7 +776,42 @@ export interface Walker {
   variant: number;
   replan: number;
   cruise: number;
+  /** Traits that make each person different: pace, how they weave, who they notice. */
+  pers: Personality;
+  /** Distance walked and the sideways offset applied so far, for the weave. */
+  weaveD: number;
+  weaveOff: number;
+  /** Seconds of skipping left, and of waving at someone. */
+  skip: number;
+  wave: number;
+  /** How much they smile, 0 to 1, how far their head tips down (radians, down is positive), how far the trunk bends forward (negative leans back). */
+  smile: number;
+  headPitch: number;
+  bend: number;
+  /** How far the right arm is up for a high five, 0 to 1. */
+  five: number;
+  pose: Pose;
+  /** Seconds in the current pose. */
+  poseT: number;
+  /** Color of the fruit in hand while snacking. */
+  snackColor: string | null;
+  /** Height of the seat they sit on when it is not a chair's, and the rim they perch on. */
+  seatZ: number | null;
+  /** Whom or what the head is turned toward for now: a place, or a walker's index, and seconds left. */
+  glance: { kind: 'person' | 'dog' | 'bee' | 'bloom'; x: number; y: number; who: number; left: number } | null;
+  glanceCool: number;
+  gazeTick: number;
+  greetCool: number;
+  playCool: number;
+  /** Seconds in the projector's light (a shadow across the screen); seconds still to wave at the one who is; who that is (a walker index, or -1); and how long, once waved at, before they step out of it (null when not yet decided). */
+  shadowS: number;
+  shoo: number;
+  shooAt: number;
+  reactT: number | null;
 }
+
+/** Perching on a raised bed's rim or leaning on a wall: the only times someone stands on ground that is otherwise blocked (besides a door or a chair). */
+export const restsOnEdge = (w: Walker): boolean => w.act?.kind === 'linger' && w.act.phase === 'do' && (w.act.what === 'perch' || w.act.what === 'lean');
 
 /** True while a person is inside a building and so not to be drawn. */
 export const isInside = (w: Walker): boolean => w.visit?.phase === 'inside' || w.away;
@@ -718,6 +835,8 @@ export interface LifeCounts {
   people: number;
   dogs: number;
   bees: boolean;
+  /** How many bees leave the hive, up to the configured number; the default is all of them. */
+  beeCount?: number;
 }
 
 /**
@@ -760,7 +879,7 @@ export class LifeSim {
     this.cfg = cfg;
     this.anatomy = anatomy;
     this.rng = mulberry32(seed);
-    this.counts = { people: Math.max(0, Math.min(cfg.people.max, Math.floor(counts.people))), dogs: Math.max(0, Math.min(cfg.dogs.max, Math.floor(counts.dogs))), bees: counts.bees };
+    this.counts = { people: Math.max(0, Math.min(cfg.people.max, Math.floor(counts.people))), dogs: Math.max(0, Math.min(cfg.dogs.max, Math.floor(counts.dogs))), bees: counts.bees, beeCount: counts.beeCount };
     this.populate();
   }
 
@@ -790,6 +909,7 @@ export class LifeSim {
         kind: person ? 'person' : 'dog', x: p[0], y: p[1], heading: this.rng() * Math.PI * 2, speed: 0, gait: this.rng() * 6, route: [],
         pauseLeft: this.rng() * 2, leader, visit: null, act: null, sit: 0, stepFt: 1.5, basket: null, pickU: 0, aim: null, hug: 0, blockedS: 0, heldTotal: 0, probeX: 0, probeY: 0, probeT: 0, meetCool: this.rng() * 30, talking: false, cheer: false, lookUp: false, headTurn: 0, away: false, age: spec?.age ?? 0, heightFt: spec?.heightFt ?? this.cfg.dogs.heightFt, variant: Math.floor(this.rng() * 1000),
         replan: 0, cruise: this.between(spec ? spec.speedFt : this.cfg.dogs.speedFt),
+        pers: personalityOf(this.rng, this.cfg.people.manner), weaveD: this.rng() * 20, weaveOff: 0, skip: 0, wave: 0, smile: 0.15, headPitch: 0, bend: 0, five: 0, pose: 'none', poseT: 0, snackColor: null, seatZ: null, glance: null, glanceCool: this.rng() * 3, gazeTick: this.rng() * 0.25, greetCool: this.rng() * 10, playCool: this.rng() * 20, shadowS: 0, shoo: 0, shooAt: -1, reactT: null,
       });
       const made = this.walkers[this.walkers.length - 1];
       if (spec) {
@@ -804,7 +924,7 @@ export class LifeSim {
     this.bees = [];
     const hive = this.world.hive;
     if (this.counts.bees && hive) {
-      for (let n = 0; n < this.cfg.bees.count; n++) {
+      for (let n = 0; n < Math.min(this.cfg.bees.count, Math.max(0, Math.floor(this.counts.beeCount ?? this.cfg.bees.count))); n++) {
         this.bees.push({ x: hive.x, y: hive.y, z: 1.5, phase: 'rest', timer: this.rng() * this.cfg.bees.restS[1] * 2, target: null, angle: this.rng() * 6.28, wobble: this.rng() * 6.28, speed: this.between(this.cfg.bees.speedFt), heading: 0 });
       }
     }
@@ -813,6 +933,7 @@ export class LifeSim {
   /** The yard changed (a plant grew, something was drawn): re-plan, and move anyone now standing on blocked ground. */
   setWorld(world: LifeWorld) {
     this.world = world;
+    this.leanSpots = null;
     for (const wk of this.walkers) {
       wk.route = [];
       // A seat, or the screen, that is gone ends what they were doing there; the rest carry on.
@@ -826,6 +947,10 @@ export class LifeSim {
         const a = wk.act;
         if (!world.harvest.some((q) => q.id === a.plant)) this.finishHarvest(wk);
         else if (a.phase === 'pick') continue; // at the plant, picking
+      } else if (wk.act?.kind === 'linger' || wk.act?.kind === 'dodge') {
+        this.endAct(wk); // the yard changed under them: carry on
+      } else if (wk.act?.kind === 'chase') {
+        // a chase carries on where it is
       } else if (wk.act) {
         const ok = wk.act.kind === 'watch' ? (wk.act.sky ? world.skySpots.length > 0 : !!world.screen) : !!this.findSeat(wk.act.seat);
         if (!ok) this.endAct(wk);
@@ -840,13 +965,14 @@ export class LifeSim {
       }
     }
     if (!world.screen && this.movieOn) this.movieOn = false;
+    this.syncBeam();
     if (!world.skySpots.length && this.fireworksOn) this.fireworksOn = false;
     if (!world.hive) this.bees = [];
     else if (this.counts.bees && this.bees.length === 0) this.populate();
   }
 
   setCounts(counts: LifeCounts) {
-    this.counts = { people: Math.max(0, Math.min(this.cfg.people.max, Math.floor(counts.people))), dogs: Math.max(0, Math.min(this.cfg.dogs.max, Math.floor(counts.dogs))), bees: counts.bees };
+    this.counts = { people: Math.max(0, Math.min(this.cfg.people.max, Math.floor(counts.people))), dogs: Math.max(0, Math.min(this.cfg.dogs.max, Math.floor(counts.dogs))), bees: counts.bees, beeCount: counts.beeCount };
     this.populate();
   }
 
@@ -882,6 +1008,8 @@ export class LifeSim {
         const k = w.pathCells[Math.floor(this.rng() * w.pathCells.length)];
         p = center(w, k % w.nx, Math.floor(k / w.nx));
       } else p = this.randomCell();
+      // During a film nobody picks a place in the projector's beam, except by forgetting (kids most).
+      if (p && this.movieOn && w.beamCells && w.beamCells[idx(w, ...cellOf(w, p[0], p[1]))] && this.rng() >= this.cfg.movie.shadow.forgetChance[ageGroup(wk.age)]) continue;
       if (p && Math.hypot(p[0] - wk.x, p[1] - wk.y) >= this.cfg.people.minTripFt) return p;
     }
     return this.randomCell();
@@ -927,6 +1055,10 @@ export class LifeSim {
       if (this.world.tables.length && this.rng() < this.cfg.dining.bias && this.startDinner(wk)) return;
       if (this.harvestOk(wk) && this.rng() < this.cfg.harvest.bias && this.startHarvest(wk)) return;
       if (this.rng() < this.cfg.people.meet.bias && this.startMeet(wk)) return;
+      const M = this.cfg.people.manner;
+      if (wk.playCool <= 0 && wk.age >= M.play.minAge && wk.age <= M.play.maxAge && this.rng() < M.play.chaseBias && this.startChase(wk)) return;
+      if (this.movieOn && this.rng() < this.cfg.movie.shadow.puppet.bias && this.startPuppet(wk)) return;
+      if (this.rng() < M.linger.bias * (1.3 - 0.6 * wk.pers.energy) && this.startLinger(wk)) return;
     }
     if (wk.visit?.phase === 'to' && !this.world.doors.some((d) => d.id === wk.visit!.door)) wk.visit = null;
     const door = wk.visit?.phase === 'to' ? this.world.doors.find((d) => d.id === wk.visit!.door)! : this.pickDoor(wk);
@@ -945,6 +1077,8 @@ export class LifeSim {
     const route = findRoute(this.world, [wk.x, wk.y], target);
     wk.route = route ? route.slice(1) : [];
     if (!route) wk.pauseLeft = 0.5;
+    const P = this.cfg.people.manner.play;
+    if (route && wk.kind === 'person' && wk.leader === null && wk.age >= P.minAge && wk.age <= P.maxAge && this.rng() < P.skipChance) wk.skip = this.between(P.skipS);
   }
 
   /** They have reached the spot outside a door: step in. */
@@ -1210,8 +1344,9 @@ export class LifeSim {
     if (this.walkers.some((q) => q !== wk && q !== o && q.kind === 'person' && !q.away && !isInside(q) && (Math.hypot(q.x - mid[0], q.y - mid[1]) < room || Math.hypot(q.x - spotA[0], q.y - spotA[1]) < room * 0.7 || Math.hypot(q.x - spotB[0], q.y - spotB[1]) < room * 0.7))) return false;
     const routeA = findRoute(this.world, [wk.x, wk.y], spotA), routeB = findRoute(this.world, [o.x, o.y], spotB);
     if (!routeA || !routeB) return false;
-    const hug = this.rng() < m.hugChance;
-    const mk = (partner: number, spot: Pt): Act => ({ kind: 'meet', phase: 'to', partner, spot, hug, t: 0, left: 0, speaker: self, speakerLeft: 0 });
+    const how = greeting(this.cfg.people.manner, m.hugChance, wk.age, o.age, this.rng());
+    const hug = how === 'hug', five = how === 'five';
+    const mk = (partner: number, spot: Pt): Act => ({ kind: 'meet', phase: 'to', partner, spot, hug, five, t: 0, left: 0, speaker: self, speakerLeft: 0 });
     wk.act = mk(i, spotA);
     o.act = mk(self, spotB);
     for (const [w2, route] of [[wk, routeA], [o, routeB]] as [Walker, Pt[]][]) {
@@ -1296,6 +1431,19 @@ export class LifeSim {
           a.t = pa.t = 0;
           a.speakerLeft = pa.speakerLeft = 0;
           a.left = pa.left = this.between(m.talkS);
+        }
+      } else if (a.five) {
+        // Walk up to arm's length, the right hands meet in the middle, then they talk.
+        const G = this.cfg.people.manner.greet;
+        const ready = this.closeTo(wk, partner, G.fiveGapFt, dt);
+        if (ready || a.speakerLeft > 0) a.speakerLeft = pa.speakerLeft = a.speakerLeft + dt;
+        wk.five = partner.five = fiveArm(a.speakerLeft, G.fiveS);
+        if (a.speakerLeft >= G.fiveS || a.t > 9) {
+          wk.five = partner.five = 0;
+          a.phase = pa.phase = 'talk';
+          a.t = pa.t = 0;
+          a.speakerLeft = pa.speakerLeft = 0;
+          a.left = pa.left = this.between(m.talkS) * 0.7;
         }
       } else {
         a.phase = pa.phase = 'talk';
@@ -1528,6 +1676,465 @@ export class LifeSim {
     this.flights = still;
   }
 
+
+  // -------------------------------------------------------------------------------------------
+  // Manner: idle moments, glances, smiles, greetings and play, so people read as people
+  // -------------------------------------------------------------------------------------------
+
+  private leanSpots: LeanSpot[] | null = null;
+
+  /** Places to lean on a building's wall: reachable ground close to a wall, away from doors. */
+  private leans(): LeanSpot[] {
+    if (this.leanSpots) return this.leanSpots;
+    const w = this.world, reach = this.cfg.margins.structureFt + 1.2;
+    const out: LeanSpot[] = [];
+    let n = 0;
+    for (const k of w.reachable) {
+      if (n++ % 3) continue;
+      const [x, y] = center(w, k % w.nx, Math.floor(k / w.nx));
+      let best: { d: number; pt: Pt } | null = null;
+      for (const st of w.structures) {
+        const d = distanceToPolygon(x, y, st);
+        if (d <= reach && (!best || d < best.d)) best = { d, pt: nearestOnPolygon(st, x, y) };
+      }
+      if (!best || w.doors.some((dr) => Math.hypot(dr.stand[0] - x, dr.stand[1] - y) < 4)) continue;
+      const face = Math.atan2(y - best.pt[1], x - best.pt[0]);
+      // Where the body would rest must be clear of every building part (two parts that meet make an inside corner, not a wall).
+      const bx = best.pt[0] + Math.cos(face) * 0.6, by = best.pt[1] + Math.sin(face) * 0.6;
+      if (w.structures.some((st) => pointInPolygon(bx, by, st) || distanceToPolygon(bx, by, st) < 0.45)) continue;
+      out.push({ stand: [x, y], wall: best.pt, face });
+    }
+    this.leanSpots = out;
+    return out;
+  }
+
+  /** Open ground a little way from a plant's canopy, nearest to this person, not crowded or claimed. */
+  private standNear(wk: Walker, x: number, y: number, r: number): Pt | null {
+    const w = this.world, off = this.cfg.people.manner.linger.standOffFt;
+    let best: Pt | null = null, bestD = Infinity;
+    for (const k of w.reachable) {
+      const c = center(w, k % w.nx, Math.floor(k / w.nx));
+      const d = Math.hypot(c[0] - x, c[1] - y);
+      if (d < r + 1.2 || d > r + off + 1.2) continue;
+      if (this.crowded(c[0], c[1], wk) || this.claimed(c[0], c[1], wk)) continue;
+      const near = Math.hypot(c[0] - wk.x, c[1] - wk.y);
+      if (near < bestD) { bestD = near; best = c; }
+    }
+    return best;
+  }
+
+  /** Someone with a free moment stops: looks at a plant, gazes up, checks a phone, smells a flower, leans on a wall, perches on a bed, eats a piece of fruit, or spins. */
+  private startLinger(wk: Walker): boolean {
+    const M = this.cfg.people.manner, L = M.linger, w = this.world;
+    if (wk.kind !== 'person' || this.night) return false;
+    const near = <T extends { x: number; y: number }>(list: T[]): T[] =>
+      list.map((o) => ({ o, d: Math.hypot(o.x - wk.x, o.y - wk.y) })).filter((e) => e.d <= L.searchFt).sort((a, b) => a.d - b.d).slice(0, 4).map((e) => e.o);
+    const plants = near(w.plants.map((p) => ({ x: p.x, y: p.y, radius: p.r })));
+    const blooms = near(w.blooms), fruit = near(w.harvest);
+    const rims = w.rims.map((r, i) => ({ r, i })).filter(({ r, i }) => !this.seatTaken.has(`rim:${i}`) && Math.hypot(r.x - wk.x, r.y - wk.y) <= L.searchFt);
+    const leans = this.leans().filter((l) => Math.hypot(l.stand[0] - wk.x, l.stand[1] - wk.y) <= L.searchFt);
+    const kind = pickWeighted(lingerOptions(M, { age: wk.age, energy: wk.pers.energy, curious: wk.pers.curious }, { look: plants.length > 0, smell: blooms.length > 0, snack: fruit.length > 0, perch: rims.length > 0, lean: leans.length > 0 }), this.rng());
+    if (!kind) return false;
+    const pick = <T,>(list: T[]): T => list[Math.floor(this.rng() * list.length)];
+    let spot: Pt | null = [wk.x, wk.y], face: Pt | null = null, rim: Rim | null = null, lean: LeanSpot | null = null, color: string | null = null;
+    if (kind === 'look') { const p = pick(plants); spot = this.standNear(wk, p.x, p.y, p.radius); face = [p.x, p.y]; }
+    else if (kind === 'smell') { const b = pick(blooms); spot = this.standNear(wk, b.x, b.y, b.radius); face = [b.x, b.y]; }
+    else if (kind === 'snack') { const f = pick(fruit); spot = this.standNear(wk, f.x, f.y, f.radius); face = [f.x, f.y]; color = f.color; }
+    else if (kind === 'lean') { lean = pick(leans); spot = lean.stand; }
+    else if (kind === 'perch') { const e = pick(rims); rim = e.r; spot = this.nearestFree(e.r.out[0], e.r.out[1]); this.seatTaken.set(`rim:${e.i}`, this.walkers.indexOf(wk)); }
+    const release = () => { if (rim) this.seatTaken.delete(`rim:${w.rims.indexOf(rim)}`); };
+    if (!spot) { release(); return false; }
+    const here = spot[0] === wk.x && spot[1] === wk.y;
+    // Stopping on the spot: only with nobody close by (a spin needs arm's length all round).
+    if (here) {
+      const clear = this.bodyR(wk) * 2 + this.cfg.people.spaceFt + (kind === 'spin' ? 2 : 0.8);
+      if (this.walkers.some((o) => o !== wk && o.kind === 'person' && !o.away && !isInside(o) && Math.hypot(o.x - wk.x, o.y - wk.y) < clear)) { release(); return false; }
+    }
+    const route = here ? [[wk.x, wk.y] as Pt] : findRoute(w, [wk.x, wk.y], spot);
+    if (!route) { release(); return false; }
+    const turns = Math.round(this.between(L.spinTurns));
+    const left = kind === 'spin' ? this.between(L.sec.spin) * Math.max(1, turns) : this.between(L.sec[kind]);
+    const act: Extract<Act, { kind: 'linger' }> = { kind: 'linger', what: kind, phase: here || route.length <= 1 ? 'do' : 'to', spot, face, left, t: 0, rim, lean, color, turns };
+    wk.act = act;
+    wk.route = route.slice(1);
+    wk.pauseLeft = 0;
+    if (act.phase === 'do') this.beginLinger(wk, act);
+    return true;
+  }
+
+  /** They are where they were going: settle in (onto the bed's rim, against the wall) and face the right way. */
+  private beginLinger(wk: Walker, a: Extract<Act, { kind: 'linger' }>) {
+    wk.route = [];
+    wk.speed = 0;
+    wk.poseT = 0;
+    if (a.what === 'perch' && a.rim) {
+      wk.x = a.rim.x;
+      wk.y = a.rim.y;
+      wk.seatZ = a.rim.z;
+    } else if (a.what === 'lean' && a.lean) {
+      wk.x = a.lean.wall[0] + Math.cos(a.lean.face) * 0.6;
+      wk.y = a.lean.wall[1] + Math.sin(a.lean.face) * 0.6;
+    } else if (a.what === 'sky') wk.heading += (this.rng() - 0.5) * 1.5;
+  }
+
+  private stepLinger(wk: Walker, dt: number) {
+    const a = wk.act as Extract<Act, { kind: 'linger' }>;
+    const L = this.cfg.people.manner.linger;
+    a.t += dt;
+    wk.poseT += dt;
+    wk.speed = 0;
+    if (this.night || a.t >= a.left) {
+      this.endAct(wk);
+      return;
+    }
+    const u = a.t / a.left;
+    const toward = (p: Pt | null) => { if (p) this.faceToward(wk, p[0], p[1], dt); };
+    switch (a.what) {
+      case 'look':
+        toward(a.face);
+        wk.headTurn = approach(wk.headTurn, Math.sin(this.clock * 0.7 + wk.variant) * 0.25, 2, dt);
+        break;
+      case 'sky':
+        wk.lookUp = true;
+        wk.heading += Math.sin(this.clock * 0.35 + wk.variant) * 0.12 * dt;
+        break;
+      case 'phone':
+        wk.pose = 'phone';
+        wk.headPitch = approach(wk.headPitch, L.phoneHeadDown, 2.5, dt);
+        break;
+      case 'smell': {
+        toward(a.face);
+        const k = Math.max(0, Math.min(1, u / 0.2, (1 - u) / 0.15));
+        wk.bend = approach(wk.bend, L.bendSmell * k, 3, dt);
+        wk.headPitch = approach(wk.headPitch, 0.2 * k, 3, dt);
+        break;
+      }
+      case 'lean':
+        if (a.lean) wk.heading += Math.atan2(Math.sin(a.lean.face - wk.heading), Math.cos(a.lean.face - wk.heading)) * Math.min(1, dt * 4);
+        wk.pose = 'folded';
+        wk.bend = approach(wk.bend, -0.1, 2, dt);
+        this.stepGaze(wk, dt);
+        break;
+      case 'perch': {
+        if (a.rim) wk.heading += Math.atan2(Math.sin(a.rim.face - wk.heading), Math.cos(a.rim.face - wk.heading)) * Math.min(1, dt * 4);
+        wk.sit = Math.max(0, Math.min(1, a.t / L.sitSeconds, (a.left - a.t) / L.sitSeconds));
+        this.stepGaze(wk, dt);
+        break;
+      }
+      case 'snack':
+        toward(a.face);
+        wk.pose = 'snack';
+        wk.snackColor = a.color;
+        break;
+      case 'spin':
+        wk.heading += ((a.turns * Math.PI * 2) / a.left) * dt;
+        wk.pose = 'spin';
+        break;
+      case 'puppet':
+        toward(a.face);
+        wk.pose = 'puppet';
+        break;
+    }
+  }
+
+  /** What a walker might look at now: someone near, a dog, a bee, a flower. */
+  private glanceOptions(wk: Walker): { item: NonNullable<Walker['glance']>; w: number }[] {
+    const g = this.cfg.people.manner.gaze;
+    const out: { item: NonNullable<Walker['glance']>; w: number }[] = [];
+    const self = this.walkers.indexOf(wk);
+    this.walkers.forEach((o, i) => {
+      if (i === self || o.away || isInside(o)) return;
+      const d = Math.hypot(o.x - wk.x, o.y - wk.y);
+      if (o.kind === 'person' && d <= g.rangeFt) out.push({ item: { kind: 'person', x: o.x, y: o.y, who: i, left: 0 }, w: 0.4 + wk.pers.social });
+      else if (o.kind === 'dog' && d <= g.dogRangeFt) out.push({ item: { kind: 'dog', x: o.x, y: o.y, who: i, left: 0 }, w: 1 });
+    });
+    for (const b of this.bees) if (b.phase !== 'rest' && Math.hypot(b.x - wk.x, b.y - wk.y) <= g.beeRangeFt) out.push({ item: { kind: 'bee', x: b.x, y: b.y, who: -1, left: 0 }, w: 0.5 });
+    for (const b of this.world.blooms) if (Math.hypot(b.x - wk.x, b.y - wk.y) <= g.bloomRangeFt) out.push({ item: { kind: 'bloom', x: b.x, y: b.y, who: -1, left: 0 }, w: 0.3 + wk.pers.curious * 1.2 });
+    return out;
+  }
+
+  /** The head: glances at what is near now and then (and waves at a person passing), otherwise looks where they are going. */
+  private stepGaze(wk: Walker, dt: number) {
+    const M = this.cfg.people.manner, g = M.gaze;
+    wk.gazeTick -= dt;
+    wk.glanceCool -= dt;
+    if (wk.glance) {
+      wk.glance.left -= dt;
+      const o = wk.glance.who >= 0 ? this.walkers[wk.glance.who] : null;
+      if (o) { wk.glance.x = o.x; wk.glance.y = o.y; }
+      if (wk.glance.left <= 0 || (o && (o.away || isInside(o)))) {
+        wk.glance = null;
+        wk.glanceCool = this.between(g.glanceCoolS);
+      }
+    } else if (wk.glanceCool <= 0 && wk.gazeTick <= 0) {
+      wk.gazeTick = g.tickS;
+      if (this.rng() < g.glanceBias * 0.5) {
+        const pick = pickWeighted(this.glanceOptions(wk), this.rng());
+        if (pick) {
+          wk.glance = { ...pick, left: this.between(g.glanceS) };
+          const o = pick.who >= 0 ? this.walkers[pick.who] : null;
+          // Someone passing: sometimes a wave, and sometimes it is returned.
+          if (o && o.kind === 'person' && wk.greetCool <= 0 && Math.hypot(o.x - wk.x, o.y - wk.y) <= M.greet.passRangeFt && this.rng() < M.greet.waveChance * (0.3 + wk.pers.social)) {
+            wk.wave = M.greet.waveS;
+            wk.greetCool = M.greet.cool;
+            if (o.greetCool <= 0 && !o.act && this.rng() < 0.6) {
+              o.wave = M.greet.waveS * 0.9;
+              o.greetCool = M.greet.cool;
+              o.glance = { kind: 'person', x: wk.x, y: wk.y, who: this.walkers.indexOf(wk), left: M.greet.waveS };
+            }
+          }
+        }
+      }
+    }
+    let turn = 0;
+    if (wk.glance) turn = headTurnToward(wk.heading, wk.x, wk.y, wk.glance.x, wk.glance.y, g.maxTurn);
+    else if (wk.route.length) {
+      const ahead = wk.route[Math.min(wk.route.length - 1, 2)];
+      turn = headTurnToward(wk.heading, wk.x, wk.y, ahead[0], ahead[1], g.maxTurn) * 0.6;
+    }
+    wk.headTurn = approach(wk.headTurn, turn, g.rate, dt);
+  }
+
+  /** Ease the face and body back to neutral when nothing is holding a pose. */
+  private relax(wk: Walker, dt: number) {
+    const a = wk.act;
+    if (a?.kind !== 'linger') {
+      if (wk.pose !== 'tag') wk.pose = 'none';
+      wk.bend = approach(wk.bend, 0, 3, dt);
+      wk.headPitch = approach(wk.headPitch, 0, 3, dt);
+      if (wk.pose === 'none') wk.snackColor = null;
+    }
+    wk.wave = Math.max(0, wk.wave - dt);
+    wk.shoo = Math.max(0, wk.shoo - dt);
+    // Done waving at someone in the light: the head comes back to the screen.
+    if (wk.shoo <= 0 && a?.kind === 'watch') wk.headTurn = approach(wk.headTurn, 0, 3, dt);
+    wk.greetCool -= dt;
+    wk.playCool -= dt;
+    if (wk.skip > 0) wk.skip -= dt;
+  }
+
+  /** A smile that follows what they are doing: a pleasant default (more for the sociable), more with company, a hug, play or a bite of fruit. */
+  private stepSmile(wk: Walker, dt: number) {
+    const S = this.cfg.people.manner.smile;
+    const a = wk.act;
+    let t = S.base + S.baseSocial * wk.pers.social;
+    if (wk.hug > 0.3) t = S.hug;
+    else if (wk.cheer) t = S.cheer;
+    else if (wk.five > 0.05 || wk.wave > 0) t = S.meet;
+    else if (a?.kind === 'meet') t = a.phase === 'talk' ? S.talk : S.meet;
+    else if (a?.kind === 'chase' || wk.skip > 0 || wk.pose === 'spin' || wk.pose === 'puppet') t = S.play;
+    else if (wk.pose === 'snack') t = S.snack;
+    else if (wk.talking || (a?.kind === 'dine' && a.phase === 'talk')) t = S.talk;
+    else if (wk.glance && wk.glance.kind !== 'bee') t = Math.max(t, S.glance * (0.5 + wk.pers.social * 0.5));
+    wk.smile = approach(wk.smile, t, S.rate, dt);
+  }
+
+  /** Walk the route's next leg at a speed, going round people; false when held up or the route is spent. */
+  private follow(wk: Walker, dt: number, speed: number): boolean {
+    const next = wk.route[0];
+    if (!next) { wk.speed = 0; return false; }
+    const dx = next[0] - wk.x, dy = next[1] - wk.y, dist = Math.hypot(dx, dy);
+    let diff = Math.atan2(dy, dx) - wk.heading;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    const turn = this.cfg.people.turnRate * dt;
+    wk.heading += Math.max(-turn, Math.min(turn, diff));
+    const move = Math.min(dist, speed * (Math.abs(diff) > 1.2 ? 0.5 : 1) * dt);
+    const adj = this.avoid(wk, wk.x + (dx / (dist || 1)) * move, wk.y + (dy / (dist || 1)) * move);
+    if (!adj) { wk.speed = 0; this.heldUp(wk, dt); return false; }
+    wk.blockedS = 0;
+    if (this.world.blocked[idx(this.world, ...cellOf(this.world, adj[0], adj[1]))]) { wk.route = []; return false; }
+    wk.x = adj[0];
+    wk.y = adj[1];
+    wk.speed = move / dt;
+    wk.gait += move * (Math.PI / wk.stepFt);
+    this.checkHeadway(wk, dt);
+    if (dist - move < 0.25) wk.route.shift();
+    return true;
+  }
+
+  /** A kid or teen picks someone to chase: tag. */
+  private startChase(wk: Walker): boolean {
+    const P = this.cfg.people.manner.play;
+    if (wk.kind !== 'person' || wk.leader !== null || this.night) return false;
+    const self = this.walkers.indexOf(wk);
+    const near = this.walkers.map((o, i) => ({ o, i, d: Math.hypot(o.x - wk.x, o.y - wk.y) }))
+      .filter(({ o, i, d }) => i !== self && o.kind === 'person' && !o.away && !isInside(o) && o.age >= 6 && !(o.act?.kind === 'dine' || o.act?.kind === 'cake') && d >= 6 && d <= P.chaseRangeFt);
+    if (!near.length) return false;
+    const t = near[Math.floor(this.rng() * near.length)];
+    wk.act = { kind: 'chase', phase: 'run', target: t.i, left: this.between(P.chaseS), t: 0, replan: 0 };
+    wk.route = [];
+    wk.pauseLeft = 0;
+    // The one being chased notices, and laughs.
+    t.o.glance = { kind: 'person', x: wk.x, y: wk.y, who: self, left: 2.5 };
+    return true;
+  }
+
+  private stepChase(wk: Walker, dt: number) {
+    const a = wk.act as Extract<Act, { kind: 'chase' }>;
+    const P = this.cfg.people.manner.play;
+    const tgt = this.walkers[a.target];
+    const stop = () => { this.endAct(wk); wk.playCool = P.cooldownS; };
+    if (!tgt || tgt.away || isInside(tgt) || this.night) return stop();
+    a.t += dt;
+    if (a.phase === 'tag') {
+      a.left -= dt;
+      wk.speed = 0;
+      wk.pose = 'tag';
+      this.faceToward(wk, tgt.x, tgt.y, dt);
+      if (a.left <= 0) stop();
+      return;
+    }
+    if (a.t >= a.left) return stop();
+    const reach = this.bodyR(wk) + this.bodyR(tgt) + this.cfg.people.spaceFt + P.tagReachFt;
+    if (Math.hypot(tgt.x - wk.x, tgt.y - wk.y) <= reach) {
+      a.phase = 'tag';
+      a.left = P.tagS;
+      wk.speed = 0;
+      tgt.wave = 0;
+      tgt.glance = { kind: 'person', x: wk.x, y: wk.y, who: this.walkers.indexOf(wk), left: 2 };
+      // Tag, you're it: a kid or teen turns and gives chase.
+      if (tgt.age >= P.minAge && tgt.age <= P.maxAge && !tgt.act && !tgt.visit && tgt.leader === null && this.rng() < P.chaseBackChance) {
+        tgt.act = { kind: 'chase', phase: 'run', target: this.walkers.indexOf(wk), left: this.between(P.chaseS), t: 0, replan: 0 };
+        tgt.route = [];
+        tgt.pauseLeft = 0;
+      }
+      return;
+    }
+    a.replan -= dt;
+    if (a.replan <= 0 || wk.route.length === 0) {
+      const route = findRoute(this.world, [wk.x, wk.y], [tgt.x, tgt.y]);
+      wk.route = route ? route.slice(1) : [];
+      a.replan = P.replanS;
+      if (!route) return stop();
+    }
+    this.follow(wk, dt, wk.cruise * P.chaseSpeedMul);
+  }
+
+
+  // -------------------------------------------------------------------------------------------
+  // The projector's light: shadows on the screen, and everyone's reaction to them
+  // -------------------------------------------------------------------------------------------
+
+  /** The shadows now on the screen, in the wall's coordinates (y along it, z up), for the scene to paint. */
+  screenShadows: Disc[] = [];
+  private shadowClock = 0;
+
+  /** Crossing the projector's beam costs extra while a film shows, and not otherwise. */
+  private syncBeam() {
+    this.world.beamOn = this.movieOn && !!this.world.beamCost;
+    if (!this.movieOn) this.screenShadows = [];
+  }
+
+  /** Someone who is part of something and will not be told to move: sitting at a table, in a meeting, picking fruit. */
+  private committed(wk: Walker): boolean {
+    const k = wk.act?.kind;
+    return k === 'dine' || k === 'cake' || k === 'meet' || k === 'harvest' || wk.visit !== null;
+  }
+
+  /**
+   * While a film shows, everyone between the projector and the screen throws a shadow on it (worked out from balls for their
+   * bodies and the light's real position). Whoever has been in the light for `complainAfterS` seconds is waved at by the nearest
+   * people, who keep waving until they leave it; the one in the light takes a moment to notice (kids, forgetful, longer) and then
+   * walks out of the beam.
+   */
+  private stepProjector(dt: number) {
+    const sc = this.world.screen, sh = this.cfg.movie.shadow;
+    if (!this.movieOn || !sc) {
+      if (this.screenShadows.length) this.screenShadows = [];
+      for (const wk of this.walkers) { wk.shadowS = 0; wk.shoo = 0; wk.shooAt = -1; wk.reactT = null; }
+      return;
+    }
+    this.shadowClock += dt;
+    if (this.shadowClock < sh.tickS) return;
+    const tick = this.shadowClock;
+    this.shadowClock = 0;
+    const rect = { y0: sc.y - sc.width / 2, y1: sc.y + sc.width / 2, z0: sc.bottom, z1: sc.bottom + sc.height };
+    const all: Disc[] = [];
+    const offenders: number[] = [];
+    this.walkers.forEach((wk, i) => {
+      if (wk.away || isInside(wk)) { wk.shadowS = 0; return; }
+      const spheres = wk.kind === 'person' ? personSpheres(wk.x, wk.y, wk.heading, wk.heightFt, wk.pose === 'puppet') : dogSpheres(wk.x, wk.y, wk.heading, wk.heightFt);
+      const discs = castOnWall(spheres, sc.lens, sc.x);
+      all.push(...discs);
+      if (wk.kind !== 'person') return;
+      const blocks = coverage(discs, rect) >= sh.coverMin && !this.committed(wk);
+      wk.shadowS = blocks ? wk.shadowS + tick : 0;
+      if (!blocks) wk.reactT = null;
+      else if (wk.shadowS >= sh.complainAfterS) offenders.push(i);
+    });
+    this.screenShadows = all;
+    for (const i of offenders) {
+      const off = this.walkers[i];
+      // The nearest people wave at them: viewers first, then anyone free within range.
+      const near = this.walkers
+        .map((o, j) => ({ o, j, d: Math.hypot(o.x - off.x, o.y - off.y) }))
+        .filter(({ o, j, d }) => j !== i && o.kind === 'person' && !o.away && !isInside(o) && d <= sh.shooRangeFt && !offenders.includes(j) && o.act?.kind !== 'chase' && !this.committed(o))
+        .sort((a, b) => Number(b.o.act?.kind === 'watch') - Number(a.o.act?.kind === 'watch') || a.d - b.d)
+        .slice(0, sh.maxShooers);
+      for (const { o, j } of near) {
+        o.shoo = sh.shooRefreshS;
+        o.shooAt = i;
+        o.headTurn = approach(o.headTurn, headTurnToward(o.heading, o.x, o.y, off.x, off.y, this.cfg.people.manner.gaze.maxTurn), 6, tick);
+        void j;
+      }
+      // Once waved at, they take a moment to notice, and then step out of the light.
+      if (off.reactT === null) off.reactT = this.between(ageGroup(off.age) === 'kid' ? sh.kidReactS : sh.reactS);
+      off.reactT -= tick;
+      if (off.reactT <= 0) this.dodge(off);
+    }
+  }
+
+  /** Step out of the projector's beam by the shortest way, then carry on. */
+  private dodge(wk: Walker) {
+    const sc = this.world.screen, sh = this.cfg.movie.shadow;
+    if (!sc) return;
+    const tri = beamTriangle(sc.lens, sc.x, sc.y - sc.width / 2, sc.y + sc.width / 2);
+    let best: Pt | null = null, bestD = Infinity;
+    for (const k of this.world.reachable) {
+      const c = center(this.world, k % this.world.nx, Math.floor(k / this.world.nx));
+      const d = Math.hypot(c[0] - wk.x, c[1] - wk.y);
+      if (d >= bestD || inBeam(c[0], c[1], tri, sh.dodgeMarginFt) || this.crowded(c[0], c[1], wk) || this.claimed(c[0], c[1], wk)) continue;
+      best = c;
+      bestD = d;
+    }
+    if (!best) return;
+    const route = findRoute(this.world, [wk.x, wk.y], best);
+    if (!route) return;
+    if (wk.act) this.endAct(wk);
+    wk.act = { kind: 'dodge', phase: 'to', spot: best };
+    wk.route = route.slice(1);
+    wk.pauseLeft = 0;
+    wk.reactT = null;
+    if (route.length <= 1) this.arrive(wk);
+  }
+
+  /** A kid or teen steps into the beam on purpose, to make shadow puppets on the screen. */
+  private startPuppet(wk: Walker): boolean {
+    const sc = this.world.screen, P = this.cfg.movie.shadow.puppet;
+    if (!sc || !this.movieOn || wk.kind !== 'person' || wk.leader !== null || wk.age < P.minAge || wk.age > P.maxAge || this.committed(wk)) return false;
+    const w = this.world;
+    let best: Pt | null = null, bestD = Infinity;
+    for (const k of w.reachable) {
+      if (!w.beamCells || !w.beamCells[k]) continue;
+      const c = center(w, k % w.nx, Math.floor(k / w.nx));
+      const out = c[0] - sc.x;
+      if (out < P.wallFt[0] || out > P.wallFt[1] || Math.abs(c[1] - sc.y) > sc.width * 0.35) continue;
+      const d = Math.hypot(c[0] - wk.x, c[1] - wk.y);
+      if (d >= bestD || this.crowded(c[0], c[1], wk) || this.claimed(c[0], c[1], wk)) continue;
+      best = c;
+      bestD = d;
+    }
+    if (!best) return false;
+    const route = findRoute(w, [wk.x, wk.y], best);
+    if (!route) return false;
+    const act: Extract<Act, { kind: 'linger' }> = { kind: 'linger', what: 'puppet', phase: route.length <= 1 ? 'do' : 'to', spot: best, face: [sc.x, sc.y], left: this.between(P.sec), t: 0, rim: null, lean: null, color: null, turns: 1 };
+    wk.act = act;
+    wk.route = route.slice(1);
+    wk.pauseLeft = 0;
+    if (act.phase === 'do') this.beginLinger(wk, act);
+    return true;
+  }
+
   private findSeat(id: string): WorldSeat | null {
     for (const t of this.world.tables) {
       const s = t.seats.find((q) => q.id === id);
@@ -1549,12 +2156,20 @@ export class LifeSim {
     }
     if (a?.kind === 'cake') this.seatTaken.delete(a.seat);
     if (a?.kind === 'harvest') this.dropBasket(wk);
+    if (a?.kind === 'linger' && a.rim) this.seatTaken.delete(`rim:${this.world.rims.indexOf(a.rim)}`);
     if (a?.kind === 'meet') {
       wk.hug = 0;
       wk.meetCool = this.cfg.people.meet.cooldownS;
     }
     wk.cheer = false;
     wk.lookUp = false;
+    wk.pose = 'none';
+    wk.reactT = null;
+    wk.bend = 0;
+    wk.headPitch = 0;
+    wk.five = 0;
+    wk.snackColor = null;
+    wk.seatZ = null;
     wk.act = null;
     wk.sit = 0;
     wk.talking = false;
@@ -1576,6 +2191,8 @@ export class LifeSim {
     if (a.kind === 'watch') return a.spot;
     if (a.kind === 'harvest') return a.stand;
     if (a.kind === 'meet') return a.spot;
+    if (a.kind === 'linger' || a.kind === 'dodge') return a.spot;
+    if (a.kind === 'chase') return null;
     return this.findSeat(a.seat)?.approach ?? null; // a chair or a place at the cake
   }
 
@@ -1594,6 +2211,17 @@ export class LifeSim {
       a.t = 0;
       return;
     }
+    if (a.kind === 'linger') {
+      a.phase = 'do';
+      a.t = 0;
+      this.beginLinger(wk, a);
+      return;
+    }
+    if (a.kind === 'dodge') {
+      this.endAct(wk);
+      return;
+    }
+    if (a.kind === 'chase') return;
     if (a.kind === 'harvest') {
       a.phase = 'pick';
       a.t = 0;
@@ -1770,7 +2398,10 @@ export class LifeSim {
   /** The cake comes out: nearly everyone heads for a place round the table. */
   private gatherCake() {
     for (const wk of this.walkers) {
-      if (!this.idle(wk) || this.rng() >= this.cfg.party.cakeBias) continue;
+      // Someone watching the greeting (the projector now starts well before the cake) leaves it for the cake.
+      const watching = wk.act?.kind === 'watch' && !wk.act.sky;
+      if (!(this.idle(wk) || watching) || this.rng() >= this.cfg.party.cakeBias) continue;
+      if (watching) this.endAct(wk);
       this.sendToCake(wk);
     }
   }
@@ -1882,6 +2513,7 @@ export class LifeSim {
     const on = !night && !fw && !!this.world.screen && minutes >= movieStart && minutes < mc.endMin;
     if (on !== this.movieOn) {
       this.movieOn = on;
+      this.syncBeam();
       if (on) {
         for (const wk of this.walkers) if (this.idle(wk) && this.rng() < mc.attendBias) this.assignWatch(wk);
       } else {
@@ -2018,8 +2650,15 @@ export class LifeSim {
       if (wk.away) continue;
       if (wk.meetCool > 0) wk.meetCool -= dt;
       if (wk.leader !== null) wk.replan -= dt;
+      if (wk.kind === 'person') {
+        this.relax(wk, dt);
+        this.stepSmile(wk, dt);
+        if ((!wk.act || wk.act.phase === 'to') && !wk.visit) this.stepGaze(wk, dt);
+      }
       if (wk.act && wk.act.phase !== 'to') {
-        if (wk.act.kind === 'dine') this.stepDine(wk, dt);
+        if (wk.act.kind === 'linger') this.stepLinger(wk, dt);
+        else if (wk.act.kind === 'chase') this.stepChase(wk, dt);
+        else if (wk.act.kind === 'dine') this.stepDine(wk, dt);
         else if (wk.act.kind === 'harvest') this.stepHarvest(wk, dt);
         else if (wk.act.kind === 'meet') this.stepMeet(wk, dt);
         else if (wk.act.kind === 'cake') this.stepCake(wk);
@@ -2054,9 +2693,27 @@ export class LifeSim {
       let diff = want - wk.heading;
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
       wk.heading += Math.max(-turn, Math.min(turn, diff));
-      const speed = wk.cruise * (Math.abs(diff) > 1.2 ? 0.4 : 1);
+      const M = this.cfg.people.manner;
+      const person = wk.kind === 'person';
+      const pace = person ? paceMultiplier(wk.pers, M, this.minutes, this.clock) * (wk.skip > 0 ? M.play.skipSpeedMul : 1) : 1;
+      const speed = wk.cruise * pace * (Math.abs(diff) > 1.2 ? 0.4 : 1);
       const move = Math.min(dist, speed * dt);
       let nx = wk.x + (dx / (dist || 1)) * move, ny = wk.y + (dy / (dist || 1)) * move;
+      // Nobody walks a ruler-straight line: a gentle weave to either side of the route, fading out as they near the end.
+      if (person && wk.leader === null && dist > 0.05) {
+        let remaining = dist;
+        for (let r = 1; r < wk.route.length; r++) remaining += Math.hypot(wk.route[r][0] - wk.route[r - 1][0], wk.route[r][1] - wk.route[r - 1][1]);
+        const fade = Math.max(0, Math.min(1, (remaining - M.weave.minLeftFt) / M.weave.minLeftFt));
+        const wantOff = weaveOffset(wk.weaveD + move, wk.pers.weaveAmp, wk.pers.weaveLen, wk.pers.phase) * fade;
+        const delta = wantOff - wk.weaveOff;
+        const lx = nx - (dy / (dist || 1)) * delta, ly = ny + (dx / (dist || 1)) * delta;
+        if (!w.blocked[idx(w, ...cellOf(w, lx, ly))]) {
+          nx = lx;
+          ny = ly;
+          wk.weaveOff = wantOff;
+        }
+        wk.weaveD += move;
+      }
       // People keep clear of each other: step around someone in the way, or wait if there is no room.
       if (wk.kind === 'person') {
         const adj = this.avoid(wk, nx, ny);
@@ -2094,6 +2751,7 @@ export class LifeSim {
       }
     }
     this.separate(dt);
+    this.stepProjector(dt);
     this.clock += dt;
     this.stepFlights(dt);
     this.stepTables(dt);

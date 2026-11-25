@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../store/store';
-import { addLook, listenForWalkKeys } from '../scene/walkInput';
+import { addLook, hintShown, isMoveCode, listenForWalkKeys } from '../scene/walkInput';
 
 /**
  * Over the yard in the Walk view only: it listens for the movement keys, turns a drag of the mouse into looking
@@ -15,6 +15,28 @@ export function WalkOverlay() {
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
 
   useEffect(() => (active ? listenForWalkKeys() : undefined), [active, view]);
+
+  // The legend fades while walking keys are in use and comes back after ten quiet seconds.
+  const [legend, setLegend] = useState(true);
+  useEffect(() => {
+    if (!active) { setLegend(true); return; }
+    const down = new Set<string>();
+    let last: number | null = null;
+    const touch = (e: KeyboardEvent, isDown: boolean) => {
+      if (!isMoveCode(e.code) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isDown) down.add(e.code); else down.delete(e.code);
+      last = performance.now();
+      setLegend(false);
+    };
+    const onDown = (e: KeyboardEvent) => touch(e, true);
+    const onUp = (e: KeyboardEvent) => touch(e, false);
+    const onBlur = () => { down.clear(); last = performance.now(); };
+    const timer = window.setInterval(() => setLegend(hintShown(down.size, last, performance.now())), 500);
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    window.addEventListener('blur', onBlur);
+    return () => { window.clearInterval(timer); window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); window.removeEventListener('blur', onBlur); setLegend(true); };
+  }, [active, view]);
   if (!active) return null;
 
   return (
@@ -31,7 +53,7 @@ export function WalkOverlay() {
         onPointerUp={() => { drag.current = null; }}
         onPointerCancel={() => { drag.current = null; }}
       />}
-      <div className="walkhint" role="note">
+      <div className={`walkhint ${legend ? '' : 'away'}`} role="note" aria-hidden={!legend}>
         <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · hold <kbd>C</kbd> crouch · drag or arrows to look
       </div>
     </>

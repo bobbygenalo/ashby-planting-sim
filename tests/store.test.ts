@@ -491,7 +491,9 @@ describe('the life layer defaults', () => {
   it('starts with at least eight people, two dogs, the hive and the bees all on', () => {
     const s = makeAppStore('edit');
     expect(s.getState().layers.life).toBe(true);
-    expect(s.getState().lifeSettings).toEqual({ people: engine.life.people.defaultCount, dogs: 2, bees: true });
+    expect(s.getState().lifeSettings).toMatchObject({ people: engine.life.people.defaultCount, dogs: 2, bees: true });
+    expect(s.getState().lifeSettings.birds).toBeGreaterThan(0); // every kind starts at its top number
+    expect(s.getState().lifeSettings.beeCount).toBeGreaterThan(0);
     s.getState().setLifeSettings({ bees: false });
     expect(s.getState().lifeSettings.bees).toBe(false);
     expect(s.getState().lifeSettings.people).toBeGreaterThanOrEqual(8);

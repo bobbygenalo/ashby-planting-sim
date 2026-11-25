@@ -56,7 +56,7 @@ export function roofPoints(s: StructureCfg): Pt3[] {
 }
 
 /** Roof plane height of a shed roof at x (low side west or east). */
-function shedTopZ(s: StructureCfg, x: number): number {
+export function shedTopZ(s: StructureCfg, x: number): number {
   const { minX, maxX } = bbox(s.footprint);
   const t = (x - minX) / (maxX - minX);
   const f = (s.lowSide ?? 'west') === 'east' ? 1 - t : t;

@@ -3,6 +3,13 @@ import { detectConflicts } from '../engine/conflicts';
 import { activeStructures } from '../engine/site';
 import { pointInPolygon } from '../engine/geometry';
 import { placedPlants, type PlacedPlant } from '../engine/growth';
+import { planIrrigation, type IrrigationPlan } from '../engine/irrigation';
+import { buildSchedule, nextRun, type IrrigationSchedule, type ValveRun } from '../engine/irrigationSchedule';
+import { doyToMonthDay } from '../engine/time';
+import { footprint } from '../engine/hardscape';
+import { polygonArea } from '../engine/geometry';
+import soilRaw from '../data/soil.json';
+import { costReadout, type CostReadout } from '../engine/pricing';
 import { waterDemand } from '../engine/water';
 import { appStore, useApp } from './store';
 
@@ -83,4 +90,106 @@ export function useConflictSync() {
   useEffect(() => {
     appStore.getState().setConflicts(conflicts);
   }, [conflicts]);
+}
+
+let irrigationCache: { deps: unknown[]; plan: IrrigationPlan | null } | null = null;
+
+/**
+ * The suggested irrigation layout (null when the site has no water source). Inputs are deferred so dragging a plant
+ * stays smooth, and the last answer is shared by every caller (the yard layer and the Water & soil panel).
+ */
+export function useIrrigationPlan(): IrrigationPlan | null {
+  const instances = useDeferredValue(useApp((s) => s.instances));
+  const palette = useApp((s) => s.palette);
+  const hardscape = useDeferredValue(useApp((s) => s.hardscape));
+  const hydrozones = useApp((s) => s.hydrozones);
+  const autoIrrigation = useApp((s) => s.autoIrrigation);
+  const aduEnabled = useApp((s) => s.aduEnabled);
+  const site = useApp((s) => s.site);
+  const water = useApp((s) => s.water);
+  const library = useApp((s) => s.library);
+  const engine = useApp((s) => s.engine);
+  const month = useApp((s) => s.timelineMonth);
+  const bedsOnDrip = useApp((s) => s.layers.irrigationBeds);
+  const deps = [instances, palette, hardscape, hydrozones, autoIrrigation, aduEnabled, site, water, library, engine, month, bedsOnDrip];
+  const hit = irrigationCache && irrigationCache.deps.length === deps.length && irrigationCache.deps.every((d, i) => d === deps[i]);
+  if (!hit) {
+    const sources = site.irrigation?.sources ?? [];
+    const plan = sources.length > 0
+      ? planIrrigation({
+          plants: placedPlants(instances, palette, library.species, month, engine.growth),
+          elements: hardscape,
+          structures: activeStructures(site, { aduEnabled }),
+          lot: site.lot,
+          sources,
+          hydrozones,
+          autoIrrigation,
+          water,
+          hardscapeCfg: engine.hardscape,
+          bedsOnDrip,
+          soilFreeboardIn: soilRaw.raisedBed.freeboardIn,
+          cfg: engine.irrigation,
+        })
+      : null;
+    irrigationCache = { deps, plan };
+  }
+  return irrigationCache!.plan;
+}
+
+/** The water the scenario needs through its irrigation layout and a typical weekly schedule for it (null with no layout). */
+export function useIrrigationSchedule(): IrrigationSchedule | null {
+  const plan = useIrrigationPlan();
+  const demand = useWaterDemand();
+  const hardscape = useApp((s) => s.hardscape);
+  const water = useApp((s) => s.water);
+  const useRain = useApp((s) => s.useRain);
+  const engine = useApp((s) => s.engine);
+  return useMemo(() => {
+    if (!plan) return null;
+    const beds = hardscape.filter((e) => e.type === 'raisedBed' && !e.removed && !e.existing).map((e) => ({ id: e.id, areaSf: polygonArea(footprint(e, engine.hardscape)) }));
+    return buildSchedule({ plan, rows: demand.rows, beds, water, useRain, cfg: engine.irrigation });
+  }, [plan, demand, hardscape, water, useRain, engine]);
+}
+
+/** Live cost of the current scenario: hardscape and planting up front, the irrigation system's parts, and a year of water. */
+export function useCostReadout(): CostReadout {
+  const plants = usePlaced();
+  const hardscape = useApp((s) => s.hardscape);
+  const materials = useApp((s) => s.materials);
+  const engine = useApp((s) => s.engine);
+  const prices = useApp((s) => s.prices);
+  const plan = useIrrigationPlan();
+  const schedule = useIrrigationSchedule();
+  const demand = useWaterDemand();
+  return useMemo(
+    () => costReadout({
+      plants, elements: hardscape, materials, engine, prices,
+      irrigationSystemCost: plan?.cost ?? 0,
+      waterGallonsPerYear: schedule?.totalAnnualGal ?? demand.lot.annualGal,
+    }),
+    [plants, hardscape, materials, engine, prices, plan, schedule, demand],
+  );
+}
+
+/**
+ * The next time a valve runs from the sun dock's date and time, and a function that moves the sun dock into it (a minute in,
+ * so water is already moving) and switches the irrigation layout on. Valves only run early morning and evening, so at noon
+ * nothing is flowing until the sun time is moved.
+ */
+export function useShowRun(): { next: { doy: number; run: ValveRun } | null; jump: () => void } {
+  const schedule = useIrrigationSchedule();
+  const engine = useApp((s) => s.engine);
+  const doy = useApp((s) => s.doy);
+  const minutes = useApp((s) => s.minutes);
+  const setDoy = useApp((s) => s.setDoy);
+  const setMinutes = useApp((s) => s.setMinutes);
+  const setLayer = useApp((s) => s.setLayer);
+  const next = useMemo(() => (schedule ? nextRun(schedule, doy, minutes, engine.referenceYear, engine.irrigation, doyToMonthDay) : null), [schedule, engine, doy, minutes]);
+  const jump = () => {
+    if (!next) return;
+    setDoy(next.doy);
+    setMinutes(Math.floor(next.run.startMin + Math.min(1, (next.run.endMin - next.run.startMin) / 2)));
+    setLayer('irrigation', true);
+  };
+  return { next, jump };
 }

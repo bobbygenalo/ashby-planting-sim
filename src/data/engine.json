@@ -1,6 +1,101 @@
 {
   "version": "engine/1",
   "referenceYear": 2026,
+  "irrigation": {
+    "source": "General residential drip and spray design practice. Every number here is guidance, not a manufacturer's figure.",
+    "confidence": "unverified",
+    "gridFt": 1,
+    "lotMarginFt": 0.5,
+    "buildingClearFt": 1,
+    "blockedTypes": ["raisedBed", "wall", "fence", "table", "grill"],
+    "crossCost": { "patio": 10, "deck": 10, "path": 3, "gravel": 1.5, "lawn": 1.1, "bed": 0.9 },
+    "keepClearCost": 25,
+    "sharedTrenchFactor": 0.6,
+    "terminalSearchFt": 4,
+    "maxSpurFt": 45,
+    "isolatedNeighborFt": 20,
+    "isolatedFromSourceFt": 40,
+    "maxRunFt": 150,
+    "supplyGph": 600,
+    "byType": {
+      "tree": "bubbler",
+      "shrub": "emitter",
+      "perennial": "emitter",
+      "grass": "emitter",
+      "groundcover": "inline",
+      "vine": "emitter",
+      "succulent": "emitter",
+      "edible": "emitter"
+    },
+    "emitter": { "gph": 2, "areaPerEmitterSf": 10, "min": 1, "max": 8, "ringShare": 0.55, "tailMinFt": 0.5 },
+    "bubbler": { "gph": 30, "ftPerBubbler": 8, "min": 1, "max": 4, "ringShare": 0.5 },
+    "inline": { "gphPerFt": 0.6, "rowSpacingFt": 1, "ringShare": 0.6 },
+    "spray": { "gph": 72, "coverageSf": 100, "ringShare": 0.5 },
+    "bed": { "emitterSpacingFt": 1, "gph": 0.5, "edgeInsetFt": 0.5, "category": "moderate", "hydrozoneName": "Raised beds (drip)", "searchMarginFt": 3, "plantFactor": 0.8, "plantFactorSource": "Vegetable crops sit near the top of the MWELO plant-factor range for moderate-use plants; an estimate, unverified." },
+    "schedule": {
+      "source": "A typical residential schedule: deep and infrequent for established plants, early morning, valves one after another. Guidance only; not a controller program.",
+      "confidence": "unverified",
+      "daysPerWeek": { "very low": 1, "low": 1, "moderate": 2, "high": 3 },
+      "bedDaysPerWeek": 3,
+      "maxRunMin": { "drip": 120, "bubbler": 60, "spray": 15, "rotor": 40 },
+      "minRunMin": 3,
+      "gapMin": 1,
+      "windows": [ { "startMin": 300, "endMin": 540 }, { "startMin": 1080, "endMin": 1320 } ],
+      "windowNote": "Watering avoids 9 am to 4 pm, the hours many Southern California water agencies restrict."
+    },
+    "flow": {
+      "dropFt": 0.2, "dropFallFt": 0.5, "dropEveryS": 1.3,
+      "bubblerRiseFt": 0.9, "sprayReachFt": 7, "rotorReachFt": 22, "sprayParticles": 7, "rotorParticles": 12, "bubblerParticles": 4,
+      "dropColor": "#6fb8ee"
+    },
+    "lawn": { "sprayGph": 72, "spraySpacingFt": 10, "rotorGph": 180, "rotorSpacingFt": 25, "rotorMinAreaSf": 1500, "headInsetFt": 1.5 },
+    "valveMaxGph": { "drip": 240, "bubbler": 480, "spray": 600, "rotor": 600 },
+    "splitStripFt": 30,
+    "lineSizes": [
+      { "inches": 0.5, "maxGph": 240, "label": "1/2 in drip tubing" },
+      { "inches": 0.75, "maxGph": 600, "label": "3/4 in poly pipe" },
+      { "inches": 1, "maxGph": 1200, "label": "1 in poly pipe" }
+    ],
+    "supplyLineInches": 1,
+    "controllerStations": [4, 6, 8, 12, 16],
+    "prices": {
+      "status": "stand-in",
+      "note": "Stand-in prices for a rough idea only, not a quote.",
+      "valve": 28,
+      "backflow": 45,
+      "filterRegulator": 38,
+      "controller": { "4": 55, "6": 75, "8": 95, "12": 140, "16": 190 },
+      "emitter": 0.45,
+      "bubbler": 6,
+      "sprayHead": 4.5,
+      "rotorHead": 11,
+      "inlinePerFt": 0.6,
+      "microTubingPerFt": 0.12,
+      "linePerFt": { "0.5": 0.3, "0.75": 0.55, "1": 0.85 },
+      "fittingsShare": 0.25
+    },
+    "draw": {
+      "ribbonFt": { "0.5": 0.22, "0.75": 0.3, "1": 0.4 },
+      "tailFt": 0.07,
+      "liftFt": 0.05,
+      "emitterFt": 0.28,
+      "bubblerFt": 0.5,
+      "sprayFt": 0.45,
+      "rotorFt": 0.6,
+      "manifoldFt": 1.6,
+      "layerStepFt": 0.012,
+      "labelGapFt": 7,
+      "lineColor": "#8fcdf5",
+      "lineFlowColor": "#0b3f9e",
+      "deviceColor": "#2f7fd1",
+      "waveLengthFt": 5,
+      "waveSpeedFtS": 4,
+      "wavePieceFt": 0.6,
+      "handRingFt": 0.12,
+      "valveColors": ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e", "#17becf", "#8c564b", "#e377c2", "#bcbd22", "#7f7f7f"],
+      "handColor": "#0b5fa5"
+    }
+  },
   "sun": {
     "model": "clear-sky",
     "refraction": true,
@@ -1102,7 +1197,7 @@
       "bodyRadiusShare": 0.11,
       "blockedReplanS": 1.5,
       "meet": {
-        "bias": 0.07,
+        "bias": 0.12,
         "rangeFt": 32,
         "talkFt": 3.2,
         "hugChance": 0.4,
@@ -1122,7 +1217,22 @@
         ],
         "cooldownS": 60
       },
-      "giveUpS": 9
+      "giveUpS": 9,
+      "manner": {
+        "pace": { "driftAmp": 0.13, "driftRadS": 0.37, "energyMul": [0.84, 1.14], "hours": [[0, 0.6], [6, 0.8], [9, 1], [12, 0.92], [15, 1], [18, 0.9], [21, 0.7], [24, 0.6]], "hourWeight": 0.2 },
+        "weave": { "ampFt": [0.12, 0.5], "lenFt": [8, 15], "minLeftFt": 3 },
+        "linger": {
+          "bias": 0.45,
+          "weights": { "look": 3, "sky": 1, "phone": 1.4, "smell": 1.5, "lean": 1, "perch": 1.7, "snack": 1.4, "spin": 1.2 },
+          "sec": { "look": [5, 12], "sky": [4, 9], "phone": [8, 20], "smell": [4, 8], "lean": [10, 24], "perch": [14, 40], "snack": [5, 9], "spin": [1.6, 2.6] },
+          "standOffFt": 2.2, "searchFt": 45, "phoneMinAge": 11, "snackMinAge": 4, "spinMaxAge": 12, "sitSeconds": 0.7, "bendSmell": 0.55, "phoneHeadDown": 0.4, "spinTurns": [1, 2],
+          "eatCycleS": 2.2
+        },
+        "gaze": { "rangeFt": 12, "dogRangeFt": 9, "beeRangeFt": 6, "bloomRangeFt": 7, "lookAheadFt": 6, "maxTurn": 1.05, "rate": 4.5, "glanceS": [1.4, 3.2], "glanceCoolS": [1.5, 5], "glanceBias": 0.6, "tickS": 0.25 },
+        "smile": { "rate": 2.4, "base": 0.12, "baseSocial": 0.18, "glance": 0.55, "meet": 0.75, "talk": 0.55, "hug": 1, "play": 1, "snack": 0.7, "cheer": 1 },
+        "greet": { "passRangeFt": 14, "waveChance": 0.35, "waveS": 1.6, "cool": 25, "highFive": { "adult": 0.1, "teen": 0.45, "kid": 0.6 }, "fiveGapFt": 2.6, "fiveS": 1.5 },
+        "play": { "minAge": 6, "maxAge": 17, "skipChance": 0.3, "skipS": [2.5, 5], "skipSpeedMul": 1.35, "skipHopFt": 0.15, "chaseBias": 0.1, "chaseRangeFt": 35, "chaseS": [6, 11], "chaseSpeedMul": 1.7, "replanS": 0.7, "tagReachFt": 1.0, "tagS": 0.8, "chaseBackChance": 0.75, "cooldownS": 40 }
+      }
     },
     "dogs": {
       "max": 2,
@@ -1214,6 +1324,12 @@
       "spotLateralFt": 8,
       "spotGapFt": 2.2,
       "projectorFromWallFt": 17,
+      "shadow": {
+        "tickS": 0.1, "coverMin": 0.012, "complainAfterS": 4, "maxShooers": 3, "shooRangeFt": 30, "shooRefreshS": 1.2,
+        "reactS": [1.2, 2.8], "kidReactS": [6, 12], "dodgeMarginFt": 1.6,
+        "forgetChance": { "adult": 0.05, "teen": 0.1, "kid": 0.3 }, "beamAvoidCost": 9,
+        "puppet": { "bias": 0.12, "minAge": 6, "maxAge": 17, "sec": [7, 15], "wallFt": [3.5, 9] }
+      },
       "projectorHeightFt": 5.2
     },
     "night": {
@@ -1786,6 +1902,13 @@
   },
   "pricing": {
     "currency": "$",
+    "water": {
+      "status": "stand-in",
+      "perCcf": 10,
+      "galPerCcf": 748,
+      "source": "A stand-in for what the water costs you: $10 per hundred cubic feet (748 gallons). For comparison, LADWP's July to December 2026 notice puts a typical single-dwelling 10 HCF monthly bill at $122.91 (about $12.29 an HCF with fixed charges), and its upper tiers cost more than its first; the notice's tier tables could not be read cleanly, so no tier rate is used. Replace it with the rate on your own bill.",
+      "reference": { "name": "LADWP July to December 2026 biannual notice of change in water rates", "url": "https://webprod.ladwp.com/sites/default/files/2026-04/July%20-%20December%202026_Biannual_Notice_of_Change_in_Water_Rates.pdf" }
+    },
     "plantByContainer": {
       "1gal": 12,
       "5gal": 44,
@@ -1860,6 +1983,7 @@
     "partyHoursAfter": 3,
     "cakeMinutesBefore": 60,
     "cakeMinutesAfter": 60,
+    "projectorMinutesBeforeSunset": 90,
     "presents": {
       "count": 9,
       "nearTableShare": 0.65,
@@ -1939,6 +2063,31 @@
     "tailFromStreetFt": 2,
     "color": "#f2f2ee",
     "marginFt": 1.5
+  },
+  "planet": {
+    "radiusFt": 700,
+    "plateauFt": 100,
+    "segments": 160,
+    "ringsCurved": 90,
+    "colors": { "plateau": "#a9b98f", "meadow": "#86a45f", "field": "#b3b66a", "dry": "#b49c70" },
+    "patchFt": 140,
+    "atmosphere": { "thicknessFt": 90, "color": "#8fc4ff", "opacity": 0.38, "scaleFt": 160, "nightShare": 0.12 },
+    "sun": { "distanceFt": 3000, "radiusFt": 105, "color": "#fff3c4", "glowScale": 3.2, "glowOpacity": 0.5 },
+    "stars": { "count": 1800, "distanceFt": 3300, "sizeFt": 7, "seed": 41, "fullDeg": -9, "fadeEndDeg": -1 },
+    "clouds": {
+      "count": 46, "seed": 17,
+      "colors": { "day": "#ffffff", "dusk": "#ffb48a", "night": "#2c3556" },
+      "types": {
+        "cumulus": { "label": "Cumulus (puffy)", "countShare": 1, "altitudeFt": [260, 480], "puffs": [6, 11], "puffFt": [18, 38], "spread": 1.3, "flatten": 0.5, "stretch": 1, "shade": 1, "opacity": 1 },
+        "stratus": { "label": "Stratus (flat layers)", "countShare": 0.8, "altitudeFt": [200, 280], "puffs": [10, 16], "puffFt": [40, 80], "spread": 2.4, "flatten": 0.16, "stretch": 1.6, "shade": 0.82, "opacity": 0.95 },
+        "cirrus": { "label": "Cirrus (wispy streaks)", "countShare": 1.3, "altitudeFt": [560, 760], "puffs": [8, 14], "puffFt": [10, 20], "spread": 2.2, "flatten": 0.07, "stretch": 5, "shade": 1, "opacity": 0.55 },
+        "storm": { "label": "Storm clouds (tall, dark)", "countShare": 0.6, "altitudeFt": [220, 420], "puffs": [9, 14], "puffFt": [30, 55], "spread": 1, "flatten": 0.95, "stretch": 1, "shade": 0.38, "opacity": 1 }
+      }
+    },
+    "wind": { "defaultFtPerS": 3.5, "maxFtPerS": 30, "defaultFromDeg": 270 },
+    "meteors": { "defaultPerMin": 3, "maxPerMin": 40, "maxLive": 16, "speedDegPerS": [35, 70], "lengthDeg": [4, 9], "lifeS": [0.5, 1.1], "minElevationDeg": 8, "color": "#fff7e6" },
+    "defaults": { "cloudType": "cumulus", "cloudCover": 1 },
+    "radiusRangeFt": [350, 1400]
   },
   "sky": {
     "day": "#dfe7ee",

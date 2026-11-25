@@ -8,11 +8,12 @@ import { pointInPolygon } from '../engine/geometry';
 import { drivewayBlocks } from '../engine/hardscape';
 import { activeStructures } from '../engine/site';
 import { doyToMonthDay } from '../engine/time';
-import { useApp } from '../store/store';
+import { appStore, useApp } from '../store/store';
 import { branchSkeleton, type Skeleton } from '../engine/branches';
 import { branchGeometry } from './branchGeometry';
 import { MIN_FORM_SIZE, partGeometry, plantParts } from './forms';
 import { LeafDrop } from './LeafDrop';
+import { takeHold } from './grab';
 import { DetailedPlant } from './DetailedPlant';
 
 // Spheres and domes are shared unit shapes that each plant scales; the rest are built per plant and thrown away with it.
@@ -262,6 +263,9 @@ export function PlantLayer() {
   const onDown = (id: string) => (e: ThreeEvent<PointerEvent>) => {
     if (measureActive || placing || !edit) return;
     e.stopPropagation();
+    // Hold it where it was grabbed, not by its middle: the press is on the crown, well above the ground the drag follows.
+    const at = appStore.getState().instances.find((i) => i.id === id)?.position;
+    if (at) takeHold(e.ray, at);
     // Option-drag: leave this plant where it is and drag a copy (one undo step removes it again).
     if (e.nativeEvent.altKey) {
       const copyId = duplicateInstance(id, [0, 0]);

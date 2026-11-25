@@ -21,6 +21,9 @@ const input = (over: Partial<LifeWorldInput> = {}): LifeWorldInput => ({
 });
 const sim = (over: Partial<LifeWorldInput> = {}, cfgTweak?: (c: EngineConfig['life']) => void, seed = 3) => {
   const cfg = JSON.parse(JSON.stringify(engine.life)) as EngineConfig['life'];
+  // These tests are about the table and the screen: keep idle moments and play out of them.
+  cfg.people.manner.linger.bias = 0;
+  cfg.people.manner.play.chaseBias = 0;
   cfgTweak?.(cfg);
   const w = buildLifeWorld({ ...input(over), engine: { ...engine, life: cfg } });
   return { s: new LifeSim(w, cfg, seed, { people: 8, dogs: 1, bees: false }), w, cfg };
@@ -69,7 +72,7 @@ describe('the table in the life sim', () => {
     // later everyone has finished: no one is left seated, and every chair is pushed back in
     cfg.dining.bias = 0; // no new groups; let those at the table finish
     run(s, 60);
-    expect(s.walkers.every((wk) => wk.sit === 0 && wk.act === null)).toBe(true);
+    expect(s.walkers.every((wk) => wk.sit === 0 && wk.act?.kind !== 'dine')).toBe(true);
     expect([...s.chairs.values()].every((v) => v < 0.05)).toBe(true);
   });
 

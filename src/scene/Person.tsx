@@ -29,6 +29,7 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
   const hatCfg = useApp((s) => s.engine.birthday.hat);
   const lookUpRad = useApp((s) => s.engine.life.fireworks.lookUpRad);
   const hv = useApp((s) => s.engine.life.harvest);
+  const manner = useApp((s) => s.engine.life.people.manner);
   const seatTop = useApp((s) => s.engine.life.dining.seatHeightFt);
   const who = sim.current?.walkers[index];
   const variant = who?.variant ?? index;
@@ -39,6 +40,9 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
   const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const headRef = useRef<THREE.Group>(null);
+  const upper = useRef<THREE.Group>(null);
+  const mouth = [0, 1, 2, 3, 4].map(() => useRef<THREE.Mesh>(null)); // eslint-disable-line react-hooks/rules-of-hooks
+  const snackMesh = useRef<THREE.Mesh>(null);
   const hips = [useRef<THREE.Group>(null), useRef<THREE.Group>(null)];
   const knees = [useRef<THREE.Group>(null), useRef<THREE.Group>(null)];
   const ankles = [useRef<THREE.Group>(null), useRef<THREE.Group>(null)];
@@ -118,19 +122,22 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
     });
     // The pelvis rides at the height that keeps the lower foot on the ground; seated, it sits at the seat.
     const hipZ = standingHipFt(b, poses[0].hip, poses[0].knee, poses[1].hip, poses[1].knee);
-    const z = hipZ * (1 - seated) + sit.hipZ * seated;
+    const seatHip = w.seatZ != null ? sit.hipZ + (w.seatZ - seatTop) : sit.hipZ;
+    // Skipping: a little hop with each stride.
+    const hop = w.skip > 0 && w.speed > 0.5 ? Math.abs(Math.sin(w.gait)) * manner.play.skipHopFt : 0;
+    const z = hipZ * (1 - seated) + seatHip * seated + hop;
     if (body.current) body.current.position.z = z - b.hipH;
     void legDropFt;
     // Arms swing against the legs; a speaker gestures, a seated listener rests their hands forward; a picker reaches.
-    const armSwing = amp * gc.armSwingShare;
+    const armSwing = amp * gc.armSwingShare * (w.skip > 0 ? 1.8 : 1);
     const gesture = w.talking ? -0.9 - Math.sin(t * 5.5) * 0.35 : 0;
     const rest = seated * -0.5;
-    const set = (n: number, shoulder: number, elbow: number) => {
+    const set = (n: number, shoulder: number, elbow: number, roll = 0.07) => {
       // A relaxed arm hangs a little away from the body, never ramrod straight.
-      shoulders[n].current?.rotation.set((n === 0 ? 1 : -1) * 0.07, shoulder, 0);
+      shoulders[n].current?.rotation.set((n === 0 ? 1 : -1) * roll, shoulder, 0);
       elbows[n].current?.rotation.set(0, elbow, 0);
     };
-    let carry = 0, carryElbow = 0, pickingArm = false;
+    let carry = 0, carryElbow = 0, pickingArm = false, handsOnKnees = false;
     if (w.hug > 0.02) {
       // A hug: both arms come up and round the other person, the elbows bent.
       const k = w.hug;
@@ -145,15 +152,78 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
       carryElbow = w.act?.kind === 'harvest' ? -1.15 : -1.0;
       set(1, carry, carryElbow);
       pickingArm = true;
+    } else if (w.sit > 0.02 && w.act?.kind !== 'dine') {
+      // Seated with no table: the upper arms hang by the sides and the forearms rest forward, the hands on the knees.
+      const kneeX = b.thighL * Math.cos(sit.thighTilt) * 0.92;
+      const kneeZ = -b.trunkL - b.thighL * Math.sin(sit.thighTilt) * 0.92 + b.r.thigh;
+      const ik = armIK(b, [kneeX, 0, kneeZ]);
+      const k = seated;
+      for (const n of [0, 1]) {
+        const sh = shoulders[n].current;
+        if (!sh) continue;
+        sh.rotation.order = 'ZYX';
+        sh.rotation.set((n === 0 ? 1 : -1) * 0.07 * (1 - k), ik.pitch * k + (-0.05) * (1 - k), 0);
+        elbows[n].current?.rotation.set(0, ik.elbow * k - 0.24 * (1 - k), 0);
+      }
+      handsOnKnees = true;
     } else {
       const a0 = -armSwing * Math.sin(poses[0].ph) + gesture + rest, a1 = armSwing * Math.sin(poses[0].ph) + (w.talking ? -0.9 - Math.sin(t * 5.5 + 1.7) * 0.35 : 0) + rest;
-      set(0, a0 - 0.05, -0.24 - 0.4 * Math.max(0, -a0) - seated * 0.5);
-      set(1, a1 - 0.05, -0.24 - 0.4 * Math.max(0, -a1) - seated * 0.5);
+      let l: [number, number, number] = [a0 - 0.05, -0.24 - 0.4 * Math.max(0, -a0) - seated * 0.5, 0.07];
+      let r: [number, number, number] = [a1 - 0.05, -0.24 - 0.4 * Math.max(0, -a1) - seated * 0.5, 0.07];
+      if (w.five > 0.02) {
+        // A high five: the right arm comes up to meet the other's hand.
+        r = [-2.3 * w.five + a1 * (1 - w.five), -0.2 - 0.3 * (1 - w.five), 0.12];
+      } else if (w.shoo > 0) {
+        // "Get out of the light": the right arm up and sweeping wide from side to side, as if to move someone along.
+        const k = Math.min(1, w.shoo * 5);
+        const sweep = Math.sin(t * 7.5);
+        r = [(-1.9 + 0.15 * sweep) * k + a1 * (1 - k), (-0.35 - 0.45 * (0.5 + 0.5 * sweep)) * k, (0.25 + 0.55 * sweep) * k + 0.07 * (1 - k)];
+      } else if (w.wave > 0) {
+        // A wave: the arm up, the forearm waggling.
+        const k = Math.min(1, w.wave * 4);
+        r = [-2.45 * k + a1 * (1 - k), -0.5 - 0.5 * k * Math.sin(t * 9), 0.2];
+      } else if (w.pose === 'phone') {
+        l = [-0.08, -0.2, 0.07];
+        r = [-0.45, -2.35, 0.0];
+      } else if (w.pose === 'snack') {
+        // Hand to the mouth and back down, a bite at a time.
+        const c = 0.5 + 0.5 * Math.sin((t / manner.linger.eatCycleS) * Math.PI * 2);
+        l = [-0.08, -0.2, 0.07];
+        r = [-0.2 - 0.1 * c, -1.0 - 1.9 * c, 0.05];
+      } else if (w.pose === 'folded') {
+        l = [-0.2, -1.8, 0.0];
+        r = [-0.2, -1.8, 0.0];
+      } else if (w.pose === 'spin') {
+        l = [0, -0.1, 1.35];
+        r = [0, -0.1, 1.35];
+      } else if (w.pose === 'tag') {
+        r = [-1.4, -0.15, 0.1];
+      } else if (w.pose === 'puppet') {
+        // Shadow puppets: both hands up in front of the light, fingers and wrists wiggling.
+        l = [-2.55 + Math.sin(t * 6) * 0.25, -0.3 + Math.sin(t * 9) * 0.55, 0.4 + Math.sin(t * 4) * 0.2];
+        r = [-2.55 + Math.sin(t * 6 + 1.7) * 0.25, -0.3 + Math.sin(t * 9 + 2.2) * 0.55, 0.4 + Math.sin(t * 4 + 1) * 0.2];
+      }
+      set(0, l[0], l[1], l[2]);
+      set(1, r[0], r[1], r[2]);
     }
     if (hat.current) hat.current.visible = !!sim.current?.party && g.visible;
     if (headRef.current) {
       headRef.current.rotation.z = w.headTurn;
-      headRef.current.rotation.y = w.lookUp ? -lookUpRad : (w.talking ? Math.sin(t * 7) * 0.07 : 0) + 0.04;
+      headRef.current.rotation.y = w.lookUp ? -lookUpRad : (w.talking ? Math.sin(t * 7) * 0.07 : 0) + 0.04 + w.headPitch;
+    }
+    // The trunk bends forward from the hips to smell a flower, or leans back against a wall.
+    if (upper.current) upper.current.rotation.y = w.bend;
+    // A smile: a curve of five small beads at the mouth, the corners rising and the whole widening as it grows.
+    const sm = Math.max(0, Math.min(1, w.smile));
+    mouth.forEach((m, n) => {
+      const mesh = m.current;
+      if (!mesh) return;
+      const u = (n - 2) / 2;
+      mesh.position.set(b.headD * 0.43, u * b.headW * (0.1 + 0.05 * sm), b.headH * (0.095 + 0.05 * sm * u * u - 0.01 * sm));
+    });
+    if (snackMesh.current) {
+      snackMesh.current.visible = w.pose === 'snack' && !!w.snackColor;
+      if (w.snackColor) (snackMesh.current.material as THREE.MeshStandardMaterial).color.set(w.snackColor);
     }
     dots.forEach((d, n) => {
       const m = d.current;
@@ -252,6 +322,7 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
       handTipAt.delete(index);
       const sh0 = shoulders[0].current;
       if (sh0) sh0.rotation.order = 'XYZ';
+      if (!handsOnKnees) { const sh1 = shoulders[1].current; if (sh1) sh1.rotation.order = 'XYZ'; }
     }
   });
 
@@ -274,12 +345,18 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
             </group>
           </group>
         ))}
+        {/* Everything above the hips bends together. */}
+        <group ref={upper} position={[0, 0, b.hipH]}>
+        <group position={[0, 0, -b.hipH]}>
         {/* Trunk, neck and head. */}
         <mesh {...noHit} geometry={geo.torso} material={mats.shirt} position={[0, 0, b.hipH]} castShadow />
         <mesh {...noHit} geometry={geo.neck} material={mats.skin} position={[0, 0, b.shoulderH + b.neckL]} />
         <group ref={headRef} position={[0, 0, b.shoulderH + b.neckL]}>
           <mesh {...noHit} geometry={geo.head} material={mats.skin} castShadow />
           <mesh {...noHit} geometry={geo.hair} material={mats.hair} castShadow />
+          {mouth.map((m, n) => (
+            <mesh key={n} ref={m} {...noHit} geometry={unitSphere} material={mats.mouth} scale={[b.headD * 0.022, b.headW * 0.03, b.headH * 0.02]} />
+          ))}
           {/* A small nose and two ears, so a turned head reads as looking somewhere. */}
           <mesh {...noHit} geometry={unitSphere} material={mats.mouth} position={[b.headD * 0.455, 0, b.headH * 0.2]} scale={[b.headD * 0.03, b.headW * 0.2, b.headH * 0.02]} />
           <mesh {...noHit} geometry={unitSphere} material={mats.skin} position={[b.headD * 0.47, 0, b.headH * 0.41]} scale={[b.headD * 0.07, b.headW * 0.055, b.headH * 0.075]} />
@@ -301,6 +378,12 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
               <group position={[0, 0, -b.forearmL]}>
                 <mesh {...noHit} geometry={geo.hand} material={mats.skin} castShadow />
                 <mesh {...noHit} geometry={geo.thumb} material={mats.skin} position={[b.handL * 0.09, 0, -b.handL * 0.16]} rotation={[0, -0.55, 0]} />
+                {side === -1 && (
+                  <mesh ref={snackMesh} {...noHit} visible={false} position={[b.handL * 0.12, 0, -b.handL * 0.5]} castShadow>
+                    <sphereGeometry args={[b.handL * 0.22, 10, 8]} />
+                    <meshStandardMaterial color="#c0392b" roughness={0.6} />
+                  </mesh>
+                )}
                 {side === -1 && (
                   <group ref={basketGroup} visible={false} position={[0, 0, -b.handL * 0.8]}>
                     {/* A wicker basket hanging from the hand, drawn at unit size and scaled to its volume: a flared bowl, a rim, a handle over the top, and its fruit. */}
@@ -347,6 +430,8 @@ export function Person({ sim, index }: { sim: React.MutableRefObject<LifeSim | n
             <meshBasicMaterial color="#ffffff" />
           </mesh>
         ))}
+        </group>
+        </group>
       </group>
     </group>
   );

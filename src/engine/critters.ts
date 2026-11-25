@@ -160,6 +160,8 @@ export class CritterSim {
   birds: Bird[] = [];
   private rng: () => number;
   private t = 0;
+  /** The most of each kind to show (a viewer's choice): hummingbirds, butterflies, birds and worms up. */
+  private limits = { hummingbirds: Infinity, butterflies: Infinity, birds: Infinity, worms: Infinity };
   private daylight: Daylight = { minutes: 720, night: false };
 
   constructor(private world: LifeWorld, private cfg: Cfg, seed: number) {
@@ -228,8 +230,10 @@ export class CritterSim {
       taken.set(p.id, mine);
     }
     const keep = new Set([...taken.values()].flat());
+    let shown = 0;
     this.birds.forEach((b, i) => {
-      b.wanted = keep.has(i);
+      b.wanted = keep.has(i) && shown < this.limits.birds;
+      if (b.wanted) shown++;
     });
     for (const ids of taken.values()) ids.forEach((i) => (this.birds[i].leader = ids[0]));
   }
@@ -299,6 +303,12 @@ export class CritterSim {
     this.retarget();
   }
 
+  /** Show no more than this many of each kind (whole numbers; Infinity for no limit). */
+  setLimits(l: Partial<{ hummingbirds: number; butterflies: number; birds: number; worms: number }>) {
+    this.limits = { ...this.limits, ...l };
+    this.retarget();
+  }
+
   setClock(d: Daylight) {
     this.daylight = d;
     this.retarget();
@@ -307,14 +317,16 @@ export class CritterSim {
   /** Who should be about now, given the month, the time of day and what is in bloom. */
   private retarget() {
     const nh = hummerCount(this.world, this.daylight, this.cfg.hummer);
-    this.hummers.forEach((h, i) => (h.wanted = i < nh));
+    this.hummers.forEach((h, i) => (h.wanted = i < Math.min(nh, this.limits.hummingbirds)));
     const nb = butterflyCount(this.world, this.daylight, this.cfg.butterfly);
-    this.butterflies.forEach((b, i) => (b.wanted = i < nb));
+    this.butterflies.forEach((b, i) => (b.wanted = i < Math.min(nb, this.limits.butterflies)));
     this.assignBirds();
     const wc = this.cfg.worms;
+    let up = 0;
     for (const w of this.worms) {
       const spot = this.world.wormSpots[w.spot];
-      w.want = spot && w.lot < wormUpChance(this.world.month, this.daylight.minutes, spot.shade, wc) ? 1 : 0;
+      w.want = spot && w.lot < wormUpChance(this.world.month, this.daylight.minutes, spot.shade, wc) && up < this.limits.worms ? 1 : 0;
+      if (w.want) up++;
     }
   }
 

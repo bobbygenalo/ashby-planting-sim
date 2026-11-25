@@ -1,6 +1,7 @@
 import { WalkRig } from './Walk';
 import { driftOffset } from '../engine/drift';
 import { viewPose } from './viewPose';
+import { grab, groundUnder } from './grab';
 import { depthBias, useOverlayBase } from './overlay';
 import { skyColor } from '../engine/sky';
 import { tiledSurface } from './surfaces';
@@ -23,6 +24,9 @@ import { HolidayLights } from './HolidayLights';
 import { LifeLayer } from './Life';
 import { HardscapeLayer, useSnapper } from './Hardscape';
 import { ConflictRings, SuggestionLayer } from './Suggestions';
+import { IrrigationLayer } from './Irrigation';
+import { CompassMark, PlanetGround, SkyBodies } from './Planet';
+import { Glazing } from './glass';
 
 const SITE_TO_THREE = (x: number, y: number, z: number): [number, number, number] => [x, z, -y];
 
@@ -53,6 +57,7 @@ function StructureMesh({ s, rank = 0 }: { s: StructureCfg; rank?: number }) {
           <meshStandardMaterial color={proposed ? '#5d6b7d' : '#6d5b52'} roughness={0.8} {...depthBias(2, rank)} />
         </mesh>
       )}
+      {s.windows && <Glazing s={s} rank={rank} />}
     </group>
   );
 }
@@ -256,10 +261,16 @@ function Ground() {
   const moveElementBy = useApp((s) => s.moveElementBy);
   const setHsDrag = useApp((s) => s.setHsDrag);
   const snapper = useSnapper(hsDrag?.id);
+  const planetOn = useApp((s) => s.layers.planet);
   const { width, depth } = site.lot;
   const gridPoint = (e: ThreeEvent<MouseEvent | PointerEvent>): [number, number] => [
     Math.round(e.point.x / snap) * snap,
     Math.round(-e.point.z / snap) * snap,
+  ];
+  // The ground under the cursor, shifted by how far from it the dragged plant or hive was grabbed, on the snap grid.
+  const held = (e: ThreeEvent<MouseEvent | PointerEvent>): [number, number] => [
+    Math.round((e.point.x + grab.dx) / snap) * snap,
+    Math.round((-e.point.z + grab.dy) / snap) * snap,
   ];
   const clampPt = (x: number, y: number): [number, number] => [Math.min(width, Math.max(0, x)), Math.min(depth, Math.max(0, y))];
   const onClick = (e: ThreeEvent<MouseEvent>) => {
@@ -292,7 +303,7 @@ function Ground() {
     e.stopPropagation();
     const copyId = duplicateElement(el.id, [0, 0]);
     if (!copyId) return;
-    setHsDrag({ id: copyId, kind: 'move', last: [e.point.x, -e.point.z] });
+    setHsDrag({ id: copyId, kind: 'move', last: groundUnder(e.ray) ?? [e.point.x, -e.point.z] });
     if (controls) controls.enabled = false;
   };
   const onDouble = (e: ThreeEvent<MouseEvent>) => {
@@ -307,11 +318,11 @@ function Ground() {
       setHover(s.point, s.kind);
     }
     if (hiveDragging) {
-      const [x, y] = gridPoint(e);
+      const [x, y] = held(e);
       moveHive(clampPt(x, y));
     }
     if (dragId) {
-      const [x, y] = gridPoint(e);
+      const [x, y] = held(e);
       updateInstance(dragId, { position: clampPt(x, y) }, { silent: true });
     }
     if (hsDrag?.kind === 'vertex') {
@@ -323,7 +334,7 @@ function Ground() {
       const [lx, ly] = [Math.round(hsDrag.last[0] / snap) * snap, Math.round(hsDrag.last[1] / snap) * snap];
       if (gx !== lx || gy !== ly) {
         moveElementBy(hsDrag.id, gx - lx, gy - ly);
-        setHsDrag({ ...hsDrag, last: [e.point.x, -e.point.z] });
+        setHsDrag({ ...hsDrag, last: [e.point.x, -e.point.z] }); // the ground under the cursor, as this handler's point is
       }
     }
   };
@@ -332,10 +343,12 @@ function Ground() {
   useEffect(() => () => groundTex?.dispose(), [groundTex]);
   return (
     <>
-      <mesh position={[width / 2, depth / 2, -0.05]} receiveShadow>
-        <planeGeometry args={[400, 500]} />
-        <meshStandardMaterial color="#b9bdb0" />
-      </mesh>
+      {planetOn ? <PlanetGround /> : (
+        <mesh position={[width / 2, depth / 2, -0.05]} receiveShadow>
+          <planeGeometry args={[400, 500]} />
+          <meshStandardMaterial color="#b9bdb0" />
+        </mesh>
+      )}
       <mesh position={[width / 2, depth / 2, 0]} receiveShadow onClick={onClick} onDoubleClick={onDouble} onPointerDown={onDown} onPointerMove={onMove}>
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial color="#a9b98f" map={groundTex} bumpMap={groundTex} bumpScale={0.6} roughness={1} />
@@ -364,21 +377,6 @@ function Setbacks() {
         return <Line key={sb.id} points={pts} color="#c0392b" lineWidth={1.5} dashed dashSize={2} gapSize={1.5} />;
       })}
     </>
-  );
-}
-
-function Compass() {
-  const site = useApp((s) => s.site);
-  const n = sunVectorSite(site.rearBearingDeg, site.driveSide, 0, 0);
-  const o: [number, number] = [-14, 12];
-  const tip: [number, number, number] = [o[0] + n[0] * 10, o[1] + n[1] * 10, 0.2];
-  return (
-    <group>
-      <Line points={[[o[0], o[1], 0.2], tip]} color="#111" lineWidth={3} />
-      <Html position={[tip[0] + n[0] * 2, tip[1] + n[1] * 2, 0.2]} center style={{ pointerEvents: 'none' }}>
-        <span className="north">N</span>
-      </Html>
-    </group>
   );
 }
 
@@ -550,7 +548,7 @@ function Cameras() {
     // First person: no orbit controls; WalkRig moves the camera with the keyboard.
     return (
       <>
-        <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={engine.player.fovDeg} near={0.1} far={2000} position={SITE_TO_THREE(cfg.position?.[0] ?? cx, cfg.position?.[1] ?? 14, engine.player.eyeHeightFt)} />
+        <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={engine.player.fovDeg} near={0.1} far={3600} position={SITE_TO_THREE(cfg.position?.[0] ?? cx, cfg.position?.[1] ?? 14, engine.player.eyeHeightFt)} />
         <WalkRig key={`rig-${cfg.id}`} viewId={cfg.id} />
       </>
     );
@@ -559,7 +557,7 @@ function Cameras() {
   const tgt = SITE_TO_THREE(...(cfg.target ?? [cx, cy, 0]));
   return (
     <>
-      <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={48} near={1} far={1500} position={pos} />
+      <PerspectiveCamera key={`cam-${cfg.id}`} makeDefault fov={48} near={1} far={3600} position={pos} />
       <OrbitControls key={`ctl-${cfg.id}`} makeDefault enableDamping={false} target={tgt} maxPolarAngle={Math.PI / 2 - 0.02} />
       {cfg.drift && <Drift key={`drift-${cfg.id}`} degPerSecond={cfg.drift.degPerSecond} resumeS={cfg.drift.resumeS} />}
     </>
@@ -580,6 +578,7 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
       <Cameras />
       <ViewPoseTracker />
       <Sun target={target} />
+      {layers.skyBodies && <SkyBodies />}
       {/* Site coordinates: x across the lot, y toward the rear, z up. Rotating -90 deg about X maps them to three.js (x, z, -y). */}
       <group rotation={[-Math.PI / 2, 0, 0]}>
         <Ground />
@@ -605,7 +604,8 @@ export function SiteScene({ sunResult }: { sunResult: SunHoursResult | null }) {
         {layers.life && <LifeLayer />}
         <ConflictRings />
         <SuggestionLayer />
-        <Compass />
+        {layers.irrigation && <IrrigationLayer />}
+        <CompassMark />
         <Measure />
       </group>
     </Canvas>

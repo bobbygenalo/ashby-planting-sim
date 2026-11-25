@@ -8,6 +8,7 @@ import { formatFeetInches } from '../engine/units';
 import { useWaterDemand, usePlaced, zoneIdAt } from '../store/derived';
 import { useApp } from '../store/store';
 import { MonthlyBars, type Series } from './charts';
+import { IrrigationPanel } from './IrrigationPanel';
 
 const fmt = (n: number, d = 0) => n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -187,6 +188,8 @@ export function WaterSoilPanel() {
       </p>
       {budget.ratio !== null && <div className="bar" title="Share of allowance"><span style={{ width: `${Math.min(100, budget.ratio * 100)}%`, background: budget.ratio > 1 ? 'var(--series-8)' : 'var(--series-3)' }} /></div>}
       <p className="muted small">An informational benchmark, not a compliance finding.</p>
+
+      <IrrigationPanel />
 
       <h2>Soil by yard zone</h2>
       <p className="small muted">Enter test results when you have them. Until then each zone uses a default loam.</p>

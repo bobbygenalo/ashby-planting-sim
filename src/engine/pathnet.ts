@@ -43,7 +43,7 @@ export interface NetPath {
   to: string;
 }
 
-class Heap {
+export class Heap {
   private a: [number, number][] = [];
   get size() { return this.a.length; }
   push(cost: number, id: number) {

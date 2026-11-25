@@ -116,4 +116,28 @@ export function projectCost(plants: PlacedPlant[], elements: HardscapeElement[],
   return { plants: p.total, hardscape: h.total, total: p.total + h.total };
 }
 
+/** What a year of water costs at the stand-in rate: gallons / gallons per CCF x price per CCF. */
+export const waterCost = (gallons: number, cfg: PricingCfg): number => (gallons / cfg.water.galPerCcf) * cfg.water.perCcf;
+
+export interface CostReadout {
+  hardscape: number;
+  planting: number;
+  /** The irrigation system's parts (one time), 0 when the layout has no valves. */
+  irrigationSystem: number;
+  /** Everything paid once: hardscape, planting and the irrigation system. */
+  upFront: number;
+  waterGallonsPerYear: number;
+  waterPerYear: number;
+  /** Up-front cost plus the first year of water. */
+  firstYear: number;
+}
+
+/** The numbers behind the cost readout over the yard. Water is applied gallons a year from the irrigation schedule. */
+export function costReadout(args: { plants: PlacedPlant[]; elements: HardscapeElement[]; materials: Material[]; engine: EngineConfig; prices: Prices; irrigationSystemCost: number; waterGallonsPerYear: number }): CostReadout {
+  const p = projectCost(args.plants, args.elements, args.materials, args.engine, args.prices);
+  const water = waterCost(args.waterGallonsPerYear, args.engine.pricing);
+  const upFront = p.total + args.irrigationSystemCost;
+  return { hardscape: p.hardscape, planting: p.plants, irrigationSystem: args.irrigationSystemCost, upFront, waterGallonsPerYear: args.waterGallonsPerYear, waterPerYear: water, firstYear: upFront + water };
+}
+
 export const priceLabel: Record<'sf' | 'lf' | 'each', string> = { sf: 'sq ft', lf: 'lin ft', each: 'each' };

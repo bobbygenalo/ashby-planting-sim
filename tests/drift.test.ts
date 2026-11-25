@@ -11,7 +11,7 @@ describe('the Orbit view circles the property', () => {
     expect(orbit.drift).toBeDefined();
     expect(orbit.drift!.degPerSecond).toBeGreaterThan(0.5);
     expect(orbit.drift!.degPerSecond).toBeLessThan(5); // gentle: a full circle in well over a minute
-    expect(orbit.drift!.resumeS).toBeGreaterThan(2);
+    expect(orbit.drift!.resumeS).toBe(0); // it carries on as soon as the viewer lets go
     for (const v of site.views.filter((q) => q.id !== 'orbit')) expect(v.drift, v.id).toBeUndefined();
   });
 

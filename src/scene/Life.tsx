@@ -7,6 +7,7 @@ import { footprint } from '../engine/hardscape';
 import { Fireworks } from './Fireworks';
 import { Sedan } from './Sedan';
 import { balloonBunches, birthdayDay, greeting, presentSpots, type BalloonBunch, type Present } from '../engine/birthday';
+import { takeHold } from './grab';
 import { CritterSim } from '../engine/critters';
 import { buildLifeWorld, isInside, LifeSim, type LifeScreen, type LifeWorld } from '../engine/life';
 import type { SunMap } from '../engine/placement';
@@ -267,6 +268,30 @@ function paintBirthday(c: HTMLCanvasElement, t: number, text: string): string {
   return `hsl(${(hue + 70) % 360}, 85%, 55%)`;
 }
 
+/**
+ * Dark shapes on the picture where people stand in the projector's light: each disc (a piece of someone's body, projected from the
+ * lens onto the wall) is laid on the canvas by its place on the screen, with a soft edge. The canvas's left is the screen's smaller y.
+ */
+function paintShadows(canvas: HTMLCanvasElement, discs: { y: number; z: number; r: number }[], screen: LifeScreen) {
+  if (!discs.length) return;
+  const g = canvas.getContext('2d');
+  if (!g) return;
+  const pxPerFtX = canvas.width / screen.width;
+  for (const d of discs) {
+    const x = (d.y - (screen.y - screen.width / 2)) * pxPerFtX, y = (1 - (d.z - screen.bottom) / screen.height) * canvas.height;
+    const r = d.r * pxPerFtX;
+    if (x + r < 0 || x - r > canvas.width || y + r < 0 || y - r > canvas.height) continue;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r * 1.12);
+    grad.addColorStop(0, 'rgba(4,5,9,0.96)');
+    grad.addColorStop(0.78, 'rgba(4,5,9,0.94)');
+    grad.addColorStop(1, 'rgba(4,5,9,0)');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(x, y, r * 1.12, 0, Math.PI * 2);
+    g.fill();
+  }
+}
+
 /** The evening movie: a screen on the garage's east wall playing a looping film, a projector behind where people stand, and its beam. Only while it shows. */
 function Movie({ sim, screen }: { sim: React.MutableRefObject<LifeSim | null>; screen: LifeScreen }) {
   const mc = useApp((s) => s.engine.life.movie);
@@ -302,6 +327,7 @@ function Movie({ sim, screen }: { sim: React.MutableRefObject<LifeSim | null>; s
     if (t - last.current < 0.1) return;
     last.current = t;
     const tint = partyState.greeting ? paintBirthday(canvas, t, partyState.greeting) : paintFilm(canvas, t);
+    paintShadows(canvas, sim.current?.screenShadows ?? [], screen);
     tex.needsUpdate = true;
     if (light.current) {
       light.current.color.set(tint);
@@ -317,15 +343,23 @@ function Movie({ sim, screen }: { sim: React.MutableRefObject<LifeSim | null>; s
       <pointLight ref={light} position={[screen.x + 4, screen.y, centerZ]} distance={26} decay={1.6} intensity={2.4} />
       {/* The projector on a tripod, aimed at the screen, and its beam. */}
       <group position={[screen.projector[0], screen.projector[1], 0]}>
+        {/* Three legs, each from a foot on the ground to under the projector: a cylinder stands along its own y axis, so it is turned
+            upright first (the scene is z up), then tilted so its foot is out and its top is in. */}
         {[0, 1, 2].map((i) => {
           const a = (i / 3) * Math.PI * 2 + 0.4;
+          const top = mc.projectorHeightFt - 0.19, footR = 0.85, headR = 0.12;
+          const len = Math.hypot(top, footR - headR), tilt = Math.atan2(footR - headR, top);
           return (
-            <mesh key={i} {...noHit} position={[Math.cos(a) * 0.45, Math.sin(a) * 0.45, mc.projectorHeightFt / 2 - 0.2]} rotation={[Math.sin(a) * 0.17, -Math.cos(a) * 0.17, 0]}>
-              <cylinderGeometry args={[0.03, 0.03, mc.projectorHeightFt - 0.2, 5]} />
-              <meshStandardMaterial color="#1f1f22" />
-            </mesh>
+            <group key={i} rotation={[0, 0, a]}>
+              <group position={[(footR + headR) / 2, 0, top / 2]} rotation={[0, -tilt, 0]}>
+                <mesh {...noHit} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                  <cylinderGeometry args={[0.03, 0.03, len, 5]} />
+                  <meshStandardMaterial color="#1f1f22" />
+                </mesh>
+              </group>
+            </group>
           );
-        }).map((m) => m)}
+        })}
         <mesh {...noHit} position={[0, 0, mc.projectorHeightFt]} castShadow>
           <boxGeometry args={[1.0, 0.6, 0.38]} />
           <meshStandardMaterial color="#2b2b30" />
@@ -703,6 +737,7 @@ function Hive({ world }: { world: LifeWorld }) {
           selectHive(true);
           beginGesture();
           pin();
+          takeHold(e.ray, [hive.x, hive.y]);
           setHiveDragging(true);
           if (controls) controls.enabled = false;
         }}
@@ -823,7 +858,7 @@ export function LifeLayer() {
   }, [site, structures, hardscape, materials, plants, month, engine, ownerHive, sunMap, sedanKey]);
   const sim = useRef<LifeSim | null>(null);
   const crit = useRef<CritterSim | null>(null);
-  if (!sim.current) sim.current = new LifeSim(world, engine.life, Math.floor(Math.random() * 1e9), { people: settings.people, dogs: settings.dogs, bees: settings.bees }, engine.anatomy);
+  if (!sim.current) sim.current = new LifeSim(world, engine.life, Math.floor(Math.random() * 1e9), { people: settings.people, dogs: settings.dogs, bees: settings.bees, beeCount: settings.beeCount }, engine.anatomy);
   if (!crit.current) crit.current = new CritterSim(world, engine.life.critters, Math.floor(Math.random() * 1e9));
   useEffect(() => {
     sim.current?.setWorld(world);
@@ -838,8 +873,11 @@ export function LifeLayer() {
     crit.current?.setClock({ minutes, night: minutes >= nc.startMin || minutes < nc.endMin });
   }, [minutes, world, engine, bday, month, dayOfMonth]);
   useEffect(() => {
-    sim.current?.setCounts({ people: settings.people, dogs: settings.dogs, bees: settings.bees });
-  }, [settings.people, settings.dogs, settings.bees]);
+    sim.current?.setCounts({ people: settings.people, dogs: settings.dogs, bees: settings.bees && settings.beeCount > 0, beeCount: settings.beeCount });
+  }, [settings.people, settings.dogs, settings.bees, settings.beeCount]);
+  useEffect(() => {
+    crit.current?.setLimits({ hummingbirds: settings.hummingbirds, butterflies: settings.butterflies, birds: settings.birds, worms: settings.worms });
+  }, [settings.hummingbirds, settings.butterflies, settings.birds, settings.worms]);
   // In development the simulation is on `window.__life`, for inspecting it from the console.
   if (import.meta.env.DEV) {
     (window as unknown as { __life?: LifeSim | null }).__life = sim.current;

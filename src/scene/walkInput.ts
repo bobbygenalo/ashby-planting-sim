@@ -7,6 +7,15 @@ let dragY = 0;
 
 const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ShiftRight', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyC']);
 
+/** Whether a key is one of the walking controls (movement, run, jump, crouch, look). */
+export const isMoveCode = (code: string): boolean => MOVE_KEYS.has(code);
+
+/** How long the walking legend stays away after the last walking key, in milliseconds. */
+export const HINT_RETURN_MS = 10000;
+
+/** The legend shows unless a walking key is down or one was pressed or let go less than `HINT_RETURN_MS` ago. */
+export const hintShown = (keysDown: number, lastKeyAt: number | null, now: number): boolean => keysDown === 0 && (lastKeyAt === null || now - lastKeyAt >= HINT_RETURN_MS);
+
 /** What the keyboard asks of the player right now. */
 export function readInput(): PlayerInput {
   const k = (c: string) => (held.has(c) ? 1 : 0);

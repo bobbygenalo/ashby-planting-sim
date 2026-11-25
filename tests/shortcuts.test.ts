@@ -85,3 +85,19 @@ describe('W takes you into the Walk view, and / finds in any view', () => {
     expect(isFindKey(k('k', { metaKey: true, shiftKey: true }))).toBe(false);
   });
 });
+
+import { HINT_RETURN_MS, hintShown, isMoveCode } from '../src/scene/walkInput';
+
+describe('the walking legend', () => {
+  it('goes while a walking key is down, stays away for ten seconds after the last one, then returns', () => {
+    expect(hintShown(0, null, 5000)).toBe(true); // nothing pressed yet
+    expect(hintShown(1, 1000, 1500)).toBe(false); // a key is held
+    expect(hintShown(0, 1000, 1000 + HINT_RETURN_MS - 1)).toBe(false);
+    expect(hintShown(0, 1000, 1000 + HINT_RETURN_MS)).toBe(true);
+    expect(hintShown(1, 1000, 1000 + HINT_RETURN_MS * 3)).toBe(false); // holding W for a long time keeps it away
+  });
+  it('counts the walking keys and not the others', () => {
+    for (const k of ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'Space', 'KeyC', 'ArrowLeft']) expect(isMoveCode(k)).toBe(true);
+    for (const k of ['KeyQ', 'Enter', 'Slash', 'Digit1']) expect(isMoveCode(k)).toBe(false);
+  });
+});

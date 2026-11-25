@@ -17,6 +17,7 @@ import {
   type ScenarioData, type ScenarioMeta, type ShareRecord, type ShareSnapshot, type SiteOverrides, type ValidationContext, type Workspace,
 } from '../engine/scenario';
 import { doyToMonthDay, monthDayToDoy } from '../engine/time';
+import { sanitizeSky, type SkySettings } from '../engine/planet';
 import speciesRaw from '../data/species.json';
 import materialsRaw from '../data/materials.json';
 import waterRaw from '../data/water.json';
@@ -25,6 +26,30 @@ import type {
   ContainerId, EngineConfig, HardscapeElement, HardscapeType, Hydrozone, Irrigation, Material, PlantInstance, Prices, Pt, SiteConfig, SoilConfig,
   SoilProfile, Species, SpeciesLibrary, WaterConfig,
 } from '../engine/types';
+
+/** How many of each kind of life to show: people, animals (dogs, birds, worms) and pollinators (bees, hummingbirds, butterflies). A view setting. */
+export interface LifeSettings {
+  people: number;
+  dogs: number;
+  birds: number;
+  worms: number;
+  /** Whether the hive and its bees are shown at all, and how many bees. */
+  bees: boolean;
+  beeCount: number;
+  hummingbirds: number;
+  butterflies: number;
+}
+
+export const defaultLifeSettings = (e: EngineConfig): LifeSettings => ({
+  people: Math.min(e.life.people.max, e.life.people.defaultCount), dogs: 2, birds: e.life.critters.birds.max, worms: e.life.critters.worms.max,
+  bees: true, beeCount: e.life.bees.count, hummingbirds: e.life.critters.hummer.max, butterflies: e.life.critters.butterfly.max,
+});
+
+const SKY_KEY = 'ashby-planner/sky';
+/** The sky settings this browser remembered, or null. */
+function readSky(): unknown {
+  try { const t = localStorage.getItem(SKY_KEY); return t ? JSON.parse(t) : null; } catch { return null; }
+}
 
 /** The parts of a scenario that undo and redo restore. */
 export interface ScenarioSnapshot {
@@ -64,6 +89,16 @@ export interface Layers {
   suggestions: boolean;
   /** Red rings on plants that have a conflict. */
   conflicts: boolean;
+  /** A suggested irrigation layout (plants, lawn and, optionally, raised beds). On by default. */
+  irrigation: boolean;
+  /** Include the raised beds in the irrigation layout (drip in every bed); off leaves them to hand watering. On by default. */
+  irrigationBeds: boolean;
+  /** Show every valve's label; off (the default) shows a label only on a valve that is being watered. */
+  irrigationLabels: boolean;
+  /** The ground beyond the lot is a tiny planet that curves away (otherwise a flat gray plane). */
+  planet: boolean;
+  /** Sun, stars and drifting clouds in the sky. */
+  skyBodies: boolean;
 }
 
 export interface ConceptSummary {
@@ -112,8 +147,11 @@ export interface AppState {
   setSunPeriod: (p: string) => void;
   setMeasureActive: (a: boolean) => void;
   /** How many people and dogs walk the yard, and whether the hive and bees are shown, when the life layer is on. */
-  lifeSettings: { people: number; dogs: number; bees: boolean };
-  setLifeSettings: (patch: Partial<{ people: number; dogs: number; bees: boolean }>) => void;
+  lifeSettings: LifeSettings;
+  setLifeSettings: (patch: Partial<LifeSettings>) => void;
+  /** The planet and its sky: cloud type and cover, wind, meteors, planet size (a view setting, remembered in this browser). */
+  skySettings: SkySettings;
+  setSkySettings: (patch: Partial<SkySettings>) => void;
   /** Whether the shuffle bar is showing over the yard (view state, not part of a scenario). */
   shuffleOpen: boolean;
   /** The species whose growth-stages dialog is open, or null. */
@@ -391,7 +429,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       site,
       engine,
       aduEnabled: true,
-      layers: { sunHours: true, dimensions: false, setbacks: false, easements: false, context: true, bloom: true, fruit: true, detail: true, crops: true, life: true, drift: true, suggestions: true, conflicts: true },
+      layers: { sunHours: true, dimensions: false, setbacks: false, easements: false, context: true, bloom: true, fruit: true, detail: true, crops: true, life: true, drift: true, suggestions: true, conflicts: true, irrigation: true, irrigationBeds: true, irrigationLabels: false, planet: true, skyBodies: true },
       doy: monthDayToDoy(6, 21),
       minutes: 12 * 60,
       playing: false,
@@ -401,8 +439,14 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       shuffleOpen: false,
       growthStagesFor: null,
       setGrowthStagesFor: (id) => set({ growthStagesFor: id }),
-      lifeSettings: { people: Math.min(engine.life.people.max, engine.life.people.defaultCount), dogs: 2, bees: true },
+      lifeSettings: defaultLifeSettings(engine),
       setLifeSettings: (patch) => set({ lifeSettings: { ...get().lifeSettings, ...patch } }),
+      skySettings: sanitizeSky(readSky(), engine.planet),
+      setSkySettings: (patch) => {
+        const next = sanitizeSky({ ...get().skySettings, ...patch }, engine.planet);
+        set({ skySettings: next });
+        try { localStorage.setItem(SKY_KEY, JSON.stringify(next)); } catch { /* private window: it just will not be remembered */ }
+      },
       setShuffleOpen: (open) => set({ shuffleOpen: open }),
       measurePoints: [],
       snap: engine.scene.snapDefaultFt,

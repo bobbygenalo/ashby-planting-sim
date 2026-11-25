@@ -75,7 +75,7 @@ describe('sunset and the party around it', () => {
     expect(b.partyEnd).toBe(b.sunset + 180);
     expect(b.cakeStart).toBe(b.sunset - 60);
     expect(b.cakeEnd).toBe(b.sunset + 60);
-    expect(b.movieStart).toBe(b.sunset);
+    expect(b.movieStart).toBe(b.sunset - 90); // an hour and a half before sunset, while it is still light
     expect(partyOn(b, b.sunset - 181)).toBe(false);
     expect(partyOn(b, b.sunset - 179)).toBe(true);
     expect(partyOn(b, b.sunset + 179)).toBe(true);
@@ -209,13 +209,16 @@ describe('the party in the sim', () => {
     expect(ordinary.s.cake).toBe(false);
   });
 
-  it('starts the projector at sunset on a birthday, with the greeting, instead of 8 pm', () => {
+  it('starts the projector an hour and a half before sunset on a birthday, with the greeting, instead of 8 pm', () => {
     const b = day(3, 30); // sunset before 8 pm
     expect(b.sunset).toBeLessThan(engine.life.movie.startMin);
     const { s } = setup();
     s.setBirthday(b);
-    s.setClock(b.sunset - 1);
+    s.setClock(b.movieStart - 1);
     expect(s.movieOn).toBe(false);
+    s.setClock(b.movieStart + 1);
+    expect(s.movieOn).toBe(true); // still daylight: sunset is 90 minutes away
+    expect(b.sunset - b.movieStart).toBe(90);
     s.setClock(b.sunset + 1);
     expect(s.movieOn).toBe(true);
     s.setClock(23 * 60);
@@ -224,6 +227,8 @@ describe('the party in the sim', () => {
     const plain = setup().s;
     plain.setBirthday(null);
     plain.setClock(b.sunset + 5);
+    expect(plain.movieOn).toBe(false);
+    plain.setClock(b.movieStart + 5);
     expect(plain.movieOn).toBe(false);
     plain.setClock(engine.life.movie.startMin + 1);
     expect(plain.movieOn).toBe(true);

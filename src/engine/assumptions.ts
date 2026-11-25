@@ -85,6 +85,7 @@ export function buildAssumptions(args: {
     {
       title: 'Prices and costs',
       items: [
+        { label: 'Water rate (cost readout)', value: `${engine.pricing.currency}${engine.pricing.water.perCcf} per hundred cubic feet (${engine.pricing.water.galPerCcf} gal), applied to the irrigation plan's gallons a year`, source: engine.pricing.water.source, confidence: 'low' as Confidence, placeholder: true },
         { label: 'Plant prices', value: `Per plant by container: ${Object.entries(engine.pricing.plantByContainer).map(([k, v]) => `${k} ${engine.pricing.currency}${v}`).join(', ')}, unless set per species or per plant`, source: engine.pricing.source, confidence: 'medium' },
         ...(materials.length ? [{ label: 'Hardscape prices', value: materials.filter((m) => m.price !== undefined).map((m) => `${m.name} ${engine.pricing.currency}${m.price}/${m.priceBasis === 'each' ? 'each' : m.priceBasis === 'lf' ? 'lin ft' : 'sq ft'}`).join('; '), source: 'Stand-in installed prices for the Los Angeles area; no public data set was used. Replace them with quotes.', confidence: 'low' as Confidence, placeholder: true }] : []),
         ...(engine.pricing.references ?? []).map((r) => ({ label: `Price source: ${r.name}`, value: `${r.covers}. ${r.note}`, source: r.url, confidence: 'medium' as Confidence })),

@@ -1,3 +1,4 @@
+import type { IrrigationCfg } from './irrigation';
 export type Pt = [number, number];
 export type Pt3 = [number, number, number];
 
@@ -27,6 +28,21 @@ export interface StructureCfg {
   status: 'existing' | 'proposed';
   toggleable: boolean;
   note?: string;
+  /** Bands of glass in the walls (the ADU's clerestories). */
+  windows?: WindowCfg[];
+}
+
+/**
+ * A wide band of glass along a wall, following the roof's slope: it runs the wall's length less `insetFt` at each end, its top
+ * `belowRoofFt` under the underside of the roof (under the roof slab where there is one), `heightFt` tall, split by mullions about
+ * every `mullionFt`. Sizes and heights are placeholders until read from the elevations.
+ */
+export interface WindowCfg {
+  side: 'south' | 'north' | 'east' | 'west';
+  insetFt: number;
+  belowRoofFt: number;
+  heightFt: number;
+  mullionFt: number;
 }
 
 /** Existing hardscape shipped in the site file. Same shape as a scenario element. */
@@ -125,6 +141,8 @@ export interface BirthdayCfg {
   /** Everyone crowds the table for cake from this many minutes before sunset to this many after. */
   cakeMinutesBefore: number;
   cakeMinutesAfter: number;
+  /** The projector starts the birthday greeting this many minutes before sunset, so it can be seen well before dark. */
+  projectorMinutesBeforeSunset: number;
   presents: {
     count: number;
     /** Share of the presents placed close around the communal table. */
@@ -156,6 +174,8 @@ export interface SiteConfig {
   structures: StructureCfg[];
   /** Doors people walk in and out of. Optional: a site without them has people stay outside. */
   doors?: DoorCfg[];
+  /** Where the water comes in (hose bibs, each with its own valve manifold). Optional: without it there is no irrigation layout. */
+  irrigation?: { sources: { id: string; label: string; short?: string; point: Pt; estimate?: boolean; note?: string }[] };
   hardscape: HardscapeCfg[];
   contextObjects: ContextObjectCfg[];
   easements: EasementCfg[];
@@ -344,6 +364,27 @@ export interface PersonSpec {
   speedFt: [number, number];
 }
 
+export interface MannerCfg {
+  /** Walking pace: a slow drift around the person's own speed, scaled by their energy and the hour (`hours` are [hour, share], blended by `hourWeight`). */
+  pace: { driftAmp: number; driftRadS: number; energyMul: [number, number]; hours: [number, number][]; hourWeight: number };
+  /** A walker wanders a little to each side of the cheapest route: amplitude and wavelength in feet, never within `minLeftFt` of the end. */
+  weave: { ampFt: [number, number]; lenFt: [number, number]; minLeftFt: number };
+  /** Idle moments: the chance, when choosing what to do next, of lingering; the weights of each; how long (seconds); and details. */
+  linger: {
+    bias: number;
+    weights: Record<string, number>;
+    sec: Record<string, [number, number]>;
+    standOffFt: number; searchFt: number; phoneMinAge: number; snackMinAge: number; spinMaxAge: number; sitSeconds: number; bendSmell: number; phoneHeadDown: number; spinTurns: [number, number]; eatCycleS: number;
+  };
+  /** Where a walker's head turns: a person, dog, bee or flower in range, else ahead along the route. */
+  gaze: { rangeFt: number; dogRangeFt: number; beeRangeFt: number; bloomRangeFt: number; lookAheadFt: number; maxTurn: number; rate: number; glanceS: [number, number]; glanceCoolS: [number, number]; glanceBias: number; tickS: number };
+  smile: { rate: number; base: number; baseSocial: number; glance: number; meet: number; talk: number; hug: number; play: number; snack: number; cheer: number };
+  /** Greetings: people passing within `passRangeFt` sometimes wave; a meeting may open with a high five instead of a hug. */
+  greet: { passRangeFt: number; waveChance: number; waveS: number; cool: number; highFive: { adult: number; teen: number; kid: number }; fiveGapFt: number; fiveS: number };
+  /** Kids and teens: skipping, and chasing each other (tag). */
+  play: { minAge: number; maxAge: number; skipChance: number; skipS: [number, number]; skipSpeedMul: number; skipHopFt: number; chaseBias: number; chaseRangeFt: number; chaseS: [number, number]; chaseSpeedMul: number; replanS: number; tagReachFt: number; tagS: number; chaseBackChance: number; cooldownS: number };
+}
+
 export interface MeetCfg {
   /** The chance, when a free person chooses what to do and another is free within `rangeFt`, of going to meet them. */
   bias: number;
@@ -406,6 +447,29 @@ export interface MovieCfg {
   spotGapFt: number;
   projectorFromWallFt: number;
   projectorHeightFt: number;
+  /** Anyone between the projector and the screen casts a shadow on it; the rest of the yard reacts. */
+  shadow: ShadowCfg;
+}
+
+export interface ShadowCfg {
+  /** How often the shadows are worked out (seconds), and the share of the screen a shadow must cover to count as in the light. */
+  tickS: number;
+  coverMin: number;
+  /** Someone in the light for this long is waved at; at most `maxShooers` of the nearest people (within `shooRangeFt`) wave, each for `shooRefreshS` after the last tick that they should. */
+  complainAfterS: number;
+  maxShooers: number;
+  shooRangeFt: number;
+  shooRefreshS: number;
+  /** Once waved at, the one in the light takes this long (seconds) to get out of it: grown-ups and teens, and kids (who are forgetful). */
+  reactS: [number, number];
+  kidReactS: [number, number];
+  /** How far past the edge of the beam they go, in feet. */
+  dodgeMarginFt: number;
+  /** When someone picks where to go, the chance they forget the beam and pick a place in it anyway, by age group; the route cost of crossing the beam for everyone else. */
+  forgetChance: { adult: number; teen: number; kid: number };
+  beamAvoidCost: number;
+  /** Kids and teens sometimes step into the beam on purpose to make shadow puppets: the chance each time they are free, their ages, how long they play (seconds) and how far from the wall. */
+  puppet: { bias: number; minAge: number; maxAge: number; sec: [number, number]; wallFt: [number, number] };
 }
 
 export interface NightCfg {
@@ -566,6 +630,7 @@ export interface LifeCfg {
     giveUpS: number;
     /** Two free people sometimes meet to talk, and sometimes hug first. */
     meet: MeetCfg;
+    manner: MannerCfg;
     pauseS: [number, number];
     pathBias: number;
     minTripFt: number;
@@ -819,6 +884,8 @@ export interface PricingCfg {
   currency: string;
   /** What one plant costs by container size when nothing else says. */
   plantByContainer: Record<string, number>;
+  /** What water costs: a stand-in rate per hundred cubic feet (CCF, 748 gallons), unverified. */
+  water: { status: 'stand-in'; perCcf: number; galPerCcf: number; source: string; reference: { name: string; url: string } };
   source: string;
   /** The public price lists the container defaults come from. */
   references?: { name: string; url: string; covers: string; note: string }[];
@@ -827,6 +894,7 @@ export interface PricingCfg {
 }
 
 export interface EngineConfig {
+  irrigation: IrrigationCfg;
   birthday: BirthdayCfg;
   pricing: PricingCfg;
   holiday: HolidayCfg;
@@ -837,6 +905,7 @@ export interface EngineConfig {
   trunk: TrunkCfg;
   /** Background colors by sun height: bright day, the glow around sunset, and night. */
   sky: { day: string; dusk: string; night: string; fullDayElevationDeg: number; duskElevationDeg: number; fullNightElevationDeg: number };
+  planet: PlanetCfg;
   litter: LitterCfg;
   /** The growth-stages view: the ages shown and the two camera heights (angled, side-on). */
   growthStages: { years: number[]; anglePitch: number; sidePitch: number; /** The most plants shown side by side, the one opened included. */ maxPlants: number };
@@ -1262,4 +1331,55 @@ export interface AnatomyCfg {
   /** The hip joint is this share of stature above the seat when sitting. */
   seatHipAboveSeat: number;
   gait: { froude: number; stepOverLeg: number; stepExponent: number; gravity: number; maxSwing: number; kneeFlex: number; armSwingShare: number; /** Sitting on a seat too high for the feet to reach, the thighs tilt down by up to this many radians. */ maxSitTilt: number };
+}
+
+export type CloudKind = 'cumulus' | 'stratus' | 'cirrus' | 'storm';
+
+/** What one kind of cloud looks like: how many there are, how high, and the shape of its puffs. */
+export interface CloudTypeCfg {
+  label: string;
+  /** This kind's share of the full cloud count. */
+  countShare: number;
+  altitudeFt: [number, number];
+  puffs: [number, number];
+  puffFt: [number, number];
+  /** How far puffs spread from a cloud's middle, as a multiple of a puff's size. */
+  spread: number;
+  /** A puff's height as a share of its width (flat sheets are low, storm heads tall), and how much longer it is along the wind than across it. */
+  flatten: number;
+  stretch: number;
+  /** Multiplies the cloud's color (below 1 darkens it) and sets how see-through it is. */
+  shade: number;
+  opacity: number;
+}
+
+/** The tiny planet the lot sits on, and what is in its sky. */
+export interface PlanetCfg {
+  /** The planet's radius, and the radius of the flat plateau (centered on the lot) before the ground starts to curve away, in feet. */
+  radiusFt: number;
+  plateauFt: number;
+  /** Faces around the planet and rings along its profile. */
+  segments: number;
+  ringsCurved: number;
+  /** Ground colors: the plateau, then meadow patches, farm patches and dry patches beyond it; `patchFt` is the size of a patch. */
+  colors: { plateau: string; meadow: string; field: string; dry: string };
+  patchFt: number;
+  /** A thin glow of air round the planet. */
+  /** A haze of air round the planet, `thicknessFt` deep: it thickens with the length of air a view passes through (`scaleFt`), peaks at `opacity` by day and keeps `nightShare` of that after dark. */
+  atmosphere: { thicknessFt: number; color: string; opacity: number; scaleFt: number; nightShare: number };
+  sun: { distanceFt: number; radiusFt: number; color: string; glowScale: number; glowOpacity: number };
+  stars: { count: number; distanceFt: number; sizeFt: number; seed: number; /** Fully out below this sun elevation and gone above `fadeEndDeg`. */ fullDeg: number; fadeEndDeg: number };
+  clouds: {
+    /** Clouds on the shell at full cover (each type scales this by its `countShare`), and the seed for where they are. */
+    count: number; seed: number;
+    colors: { day: string; dusk: string; night: string };
+    types: Record<CloudKind, CloudTypeCfg>;
+  };
+  /** Wind carries the clouds: speed in feet a second at the surface, and the compass direction it blows from. */
+  wind: { defaultFtPerS: number; maxFtPerS: number; defaultFromDeg: number };
+  /** Shooting stars on a dark night. */
+  meteors: { defaultPerMin: number; maxPerMin: number; maxLive: number; speedDegPerS: [number, number]; lengthDeg: [number, number]; lifeS: [number, number]; minElevationDeg: number; color: string };
+  /** What the sky controls start at, and how far they go. */
+  defaults: { cloudType: CloudKind; cloudCover: number };
+  radiusRangeFt: [number, number];
 }

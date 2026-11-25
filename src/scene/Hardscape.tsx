@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
+import { groundUnder } from './grab';
 import * as THREE from 'three';
 import { polygonArea } from '../engine/geometry';
 import { elementColor, footprint, layeredThickness, snapAnchors, snapPoint, type SnapResult } from '../engine/hardscape';
@@ -111,14 +112,14 @@ function ElementMesh({ el, mat, z, flatThick }: { el: HardscapeElement; mat: Mat
       e.stopPropagation();
       const copyId = duplicateElement(el.id, [0, 0]);
       if (!copyId) return;
-      setHsDrag({ id: copyId, kind: 'move', last: [e.point.x, -e.point.z] });
+      setHsDrag({ id: copyId, kind: 'move', last: groundUnder(e.ray) ?? [e.point.x, -e.point.z] });
       if (controls) controls.enabled = false;
       return;
     }
     if (!selected || el.existing) return;
     e.stopPropagation();
     beginGesture();
-    setHsDrag({ id: el.id, kind: 'move', last: [e.point.x, -e.point.z] });
+    setHsDrag({ id: el.id, kind: 'move', last: groundUnder(e.ray) ?? [e.point.x, -e.point.z] });
     if (controls) controls.enabled = false;
   };
   const base = topColor;

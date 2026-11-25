@@ -48,7 +48,8 @@ describe('people give each other room', () => {
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           const shortfall = d - (need(a, b) - cfg.people.spaceFt + Math.min(eff(a), eff(b)));
           worst = Math.min(worst, shortfall);
-          worstGap = Math.min(worstGap, d - radius(a, cfg) - radius(b, cfg));
+          const gap0 = d - radius(a, cfg) - radius(b, cfg);
+          worstGap = Math.min(worstGap, gap0);
           if (shortfall < -0.25) short++;
           checks++;
         }

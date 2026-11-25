@@ -180,3 +180,18 @@ describe('arms reach for things', () => {
     expect(armIK(child, [reachOf(b) * 0.9, 0, 0]).reached).toBe(false);
   });
 });
+
+describe('hands on the knees when seated without a table', () => {
+  it('lets every person in the cast reach their knee with a bent elbow, the arm never stretched straight or bent backward', () => {
+    const seatTop = engine.life.dining.seatHeightFt;
+    for (const r of roster) {
+      const b = bodyFor(r);
+      const sit = sitPose(b, seatTop, cfg);
+      const target: [number, number, number] = [b.thighL * Math.cos(sit.thighTilt) * 0.92, 0, -b.trunkL - b.thighL * Math.sin(sit.thighTilt) * 0.92 + b.r.thigh];
+      const ik = armIK(b, target);
+      expect(ik.elbow, `age ${r.age}`).toBeLessThan(0); // bends forward
+      expect(ik.elbow, `age ${r.age}`).toBeGreaterThan(-2.4); // not folded back on itself
+      expect(Math.hypot(ik.tip[0] - target[0], ik.tip[1] - target[1], ik.tip[2] - target[2]), `age ${r.age}`).toBeLessThan(0.2); // a child's arm may stop just short
+    }
+  });
+});

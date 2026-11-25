@@ -49,7 +49,7 @@ export interface BirthdayDay {
   /** The cake is out from `cakeStart` to `cakeEnd`. */
   cakeStart: number;
   cakeEnd: number;
-  /** The projector plays the greeting from sunset on. */
+  /** The projector plays the greeting from `projectorMinutesBeforeSunset` before sunset on. */
   movieStart: number;
 }
 
@@ -63,7 +63,7 @@ export function birthdayDay(site: SiteConfig, engine: EngineConfig, month: numbe
     names, sunset,
     partyStart: sunset - b.partyHoursBefore * 60, partyEnd: sunset + b.partyHoursAfter * 60,
     cakeStart: sunset - b.cakeMinutesBefore, cakeEnd: sunset + b.cakeMinutesAfter,
-    movieStart: sunset,
+    movieStart: sunset - b.projectorMinutesBeforeSunset,
   };
 }
 

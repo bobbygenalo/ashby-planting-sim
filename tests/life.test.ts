@@ -5,7 +5,7 @@ import speciesRaw from '../src/data/species.json';
 import materialsRaw from '../src/data/materials.json';
 import { distanceToPolygon, pointInPolygon } from '../src/engine/geometry';
 import { instanceSize, type PlacedPlant } from '../src/engine/growth';
-import { ADULT_AGE, buildLifeWorld, chooseHiveSpot, findRoute, hiveSpotIsGood, isInside, LifeSim, TODDLER_AGE_LIMIT, type LifeWorld, type LifeWorldInput } from '../src/engine/life';
+import { ADULT_AGE, buildLifeWorld, chooseHiveSpot, findRoute, hiveSpotIsGood, isInside, LifeSim, restsOnEdge, TODDLER_AGE_LIMIT, type LifeWorld, type LifeWorldInput } from '../src/engine/life';
 import { activeStructures, loadSite } from '../src/engine/site';
 import type { EngineConfig, HardscapeElement, Material, PlantInstance, SiteConfig, SpeciesLibrary } from '../src/engine/types';
 
@@ -122,9 +122,10 @@ describe('people and dogs', () => {
   const run = (seed: number, seconds: number, people = 4, dogs = 2, dt = 0.1) => {
     const sim = new LifeSim(w, cfg, seed, { people, dogs, bees: true });
     const samples: { kind: string; x: number; y: number; stepping: boolean }[] = [];
+    // Perching on a bed or leaning on a wall is the one other time someone is on blocked ground.
     for (let t = 0; t < seconds; t += dt) {
       sim.step(dt);
-      for (const a of sim.walkers) samples.push({ kind: a.kind, x: a.x, y: a.y, stepping: a.visit !== null });
+      for (const a of sim.walkers) samples.push({ kind: a.kind, x: a.x, y: a.y, stepping: a.visit !== null || restsOnEdge(a) });
     }
     return { sim, samples };
   };
@@ -150,8 +151,8 @@ describe('people and dogs', () => {
     for (let n = 0; n < 200; n++) {
       sim.step(4); // a four-second hitch
       for (const a of sim.walkers) {
-        expect(a.visit ? false : cellBlocked(w, a.x, a.y)).toBe(false);
-        for (const s of w.structures) expect(pointInPolygon(a.x, a.y, s)).toBe(false);
+        expect(a.visit || restsOnEdge(a) ? false : cellBlocked(w, a.x, a.y)).toBe(false);
+        for (const s of w.structures) expect(pointInPolygon(a.x, a.y, s), JSON.stringify({ x: a.x, y: a.y, act: a.act, sit: a.sit })).toBe(false);
       }
     }
   });
@@ -360,7 +361,7 @@ describe('the cast of people', () => {
       sim.step(0.1);
       for (const a of sim.walkers) {
         if (isInside(a)) continue;
-        expect(a.visit ? false : cellBlocked(w, a.x, a.y), `${a.kind} age ${a.age}`).toBe(false);
+        expect(a.visit || restsOnEdge(a) ? false : cellBlocked(w, a.x, a.y), `${a.kind} age ${a.age} ${JSON.stringify(a.act)}`).toBe(false);
         for (const p of w.plants) expect(Math.hypot(p.x - a.x, p.y - a.y)).toBeGreaterThan(p.r);
         for (const s of w.structures) expect(pointInPolygon(a.x, a.y, s)).toBe(false);
       }
@@ -446,7 +447,7 @@ describe('going into buildings', () => {
     expect(exits).toBeGreaterThan(5);
     // afterwards everyone who is visible and walking is on open ground again
     for (let t = 0; t < 120; t += 0.1) sim.step(0.1);
-    for (const p of sim.walkers) if (!p.visit) expect(cellBlocked(w, p.x, p.y)).toBe(false);
+    for (const p of sim.walkers) if (!p.visit && !restsOnEdge(p)) expect(cellBlocked(w, p.x, p.y)).toBe(false);
   });
 
   it('keeps dogs and toddlers waiting outside while their person is inside, and never takes them in', () => {

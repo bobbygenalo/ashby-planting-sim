@@ -122,6 +122,9 @@ export interface ShuffleSummary {
 
 export interface AppState {
   mode: Mode;
+  /** A phone-size screen is a viewer: editing is off (the mode is view) until the screen is wide again. */
+  phoneViewer: boolean;
+  setPhoneViewer: (on: boolean) => void;
   site: SiteConfig;
   engine: EngineConfig;
   /** Plan setting: model the lot with the ADU. A mutation, so blocked in view mode. */
@@ -429,6 +432,8 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
 
     return {
       mode,
+      phoneViewer: false,
+      setPhoneViewer: (on) => set(on ? { phoneViewer: true, mode: 'view', placingSpeciesId: null, drawing: null, dragId: null, hsDrag: null, quickFindOpen: false, measureActive: false } : { phoneViewer: false, mode }),
       site,
       engine,
       aduEnabled: true,
@@ -800,7 +805,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       },
       switchScenario: (id) => {
         const { activeScenarioId, saved, scenarios } = get();
-        if (get().mode !== 'edit' || id === activeScenarioId || !saved[id] || !scenarios.some((s) => s.id === id)) return;
+        if ((get().mode !== 'edit' && !get().phoneViewer) || id === activeScenarioId || !saved[id] || !scenarios.some((s) => s.id === id)) return;
         const target = saved[id];
         set({ saved: { ...without(saved, id), [activeScenarioId]: clone(currentData()) }, activeScenarioId: id });
         applyData(target);

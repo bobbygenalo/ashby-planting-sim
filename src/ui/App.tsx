@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { cycleSheet, NARROW_QUERY, PHONE_QUERY, raiseSheet, swipeSheet, useMedia, type Sheet } from './sheet';
 import { PlantsPanel } from './PlantsPanel';
 import { HardscapePanel } from './HardscapePanel';
 import { WaterSoilPanel } from './WaterSoilPanel';
@@ -244,6 +245,14 @@ function Planner() {
   const hasSelection = useApp((x) => !!x.selectedId || !!x.selectedElementId || x.hiveSelected);
   const selectionView = hasSelection && !inHand && !quickOpen;
   useEffect(() => { if (quickOpen) setPanelOpen(true); }, [quickOpen]);
+  // On a narrow screen the panel is a bottom sheet over the yard: peek, half or full height. Showing something in it raises it.
+  const narrow = useMedia(NARROW_QUERY);
+  // A phone is a viewer: editing is switched off while the screen is that small.
+  const phone = useMedia(PHONE_QUERY);
+  useEffect(() => { appStore.getState().setPhoneViewer(phone); }, [phone]);
+  const [sheet, setSheet] = useState<Sheet>('peek');
+  const wanted = quickOpen || placingView || selectionView;
+  useEffect(() => { if (narrow && wanted) setSheet(raiseSheet); }, [narrow, wanted]);
   const group = groupOf(tab);
   const go = (next: Tab) => {
     if (next !== 'hardscape') appStore.getState().commitDrawing();
@@ -252,7 +261,7 @@ function Planner() {
   return (
     <>
     {shared && <div className="viewer-banner">Shared plan: {shared.name}. You are viewing a read-only copy; only the owner can change it.</div>}
-    <div className={`app ${panelOpen ? '' : 'panel-closed'}`}>
+    <div className={`app ${panelOpen ? '' : 'panel-closed'} sheet-${sheet}`}>
       <TopBar onScenarios={() => setScenariosOpen(true)} panelOpen={panelOpen} onTogglePanel={togglePanel} />
       <main className="stage">
         <SiteScene sunResult={sun.result} />
@@ -262,6 +271,7 @@ function Planner() {
         <SimDock />
       </main>
       <aside className={`right ${quickOpen ? 'quick-open' : ''} ${placingView ? 'placing-open' : ''} ${selectionView ? 'selection-open' : ''}`}>
+        <SheetHandle sheet={sheet} onSheet={setSheet} />
         <QuickFind />
         <PlacingPanel />
         <SelectionPanel growing={sun.growing} />
@@ -318,6 +328,29 @@ const SHARE_MESSAGES: Record<Exclude<LoadOutcome['status'], 'ready'>, { title: s
  * A page opened from a share link first fetches the plan and checks it. Until that works, nothing of
  * the owner's plan is shown. Anyone else gets the app as normal.
  */
+/** The grip at the top of the bottom sheet (narrow screens only): tap to step through the heights, or swipe up and down. */
+function SheetHandle({ sheet, onSheet }: { sheet: Sheet; onSheet: (s: Sheet) => void }) {
+  const start = useRef<number | null>(null);
+  const label = sheet === 'peek' ? 'Show the panel' : sheet === 'half' ? 'Make the panel taller' : 'Lower the panel';
+  return (
+    <button
+      className="sheethandle"
+      aria-label={label}
+      title={label}
+      onPointerDown={(e) => { start.current = e.clientY; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); }}
+      onPointerUp={(e) => {
+        const dy = start.current === null ? 0 : e.clientY - start.current;
+        start.current = null;
+        if (Math.abs(dy) < 12) onSheet(cycleSheet(sheet));
+        else onSheet(swipeSheet(sheet, dy, 24));
+      }}
+      onPointerCancel={() => { start.current = null; }}
+    >
+      <span className="grip" aria-hidden="true" />
+    </button>
+  );
+}
+
 export function App() {
   const token = useMemo(() => tokenFromSearch(window.location.search), []);
   const wantsShare = useMemo(() => new URLSearchParams(window.location.search).has('share'), []);

@@ -7,6 +7,7 @@ import { doyToMonthDay } from '../engine/time';
 import { clock } from './IrrigationPanel';
 import { useRunningValves } from '../scene/IrrigationFlow';
 import type { CloudKind } from '../engine/types';
+import { PHONE_QUERY, useMedia } from './sheet';
 
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 const MPH = 0.681818; // feet a second to miles an hour
@@ -224,6 +225,38 @@ export function CanvasToolbar() {
   const edit = s.mode === 'edit';
   const current = s.site.views.find((v) => v.id === s.view) ?? s.site.views[0];
   const currentIndex = s.site.views.indexOf(current);
+  const phone = useMedia(PHONE_QUERY);
+  if (phone) {
+    // A phone gets one Layers button: the camera views and a few switches, nothing to tune.
+    const SIMPLE = [['irrigation', 'Irrigation'], ['life', 'People, animals and pollinators'], ['sunHours', 'Sun-hours overlay'], ['bloom', 'Bloom color'], ['fruit', 'Fruit on trees'], ['context', 'Trees, fences, pole']] as const;
+    return (
+      <div className="canvasbar">
+        <div className="toolbar-left">
+          <Dropdown align="left" ariaLabel="View and layers" label={<>View<kbd className="key">{currentIndex + 1}</kbd> and layers</>}>
+            {(close) => (
+              <>
+                <ul className="viewlist" role="listbox" aria-label="Camera views">
+                  {s.site.views.map((v) => (
+                    <li key={v.id} role="option" aria-selected={s.view === v.id}>
+                      <button className={s.view === v.id ? 'on' : ''} onClick={() => { s.setView(v.id); close(); }}><span>{v.label}</span></button>
+                    </li>
+                  ))}
+                </ul>
+                <div className="skybox-title">Show</div>
+                {SIMPLE.map(([k, label]) => (
+                  <label key={k} className="check">
+                    <input type="checkbox" checked={s.layers[k]} onChange={(e) => s.setLayer(k, e.target.checked)} />
+                    {label}
+                  </label>
+                ))}
+              </>
+            )}
+          </Dropdown>
+        </div>
+        <div className="toolbar-right"><CostReadout /></div>
+      </div>
+    );
+  }
   return (
     <div className="canvasbar">
       <div className="toolbar-left">

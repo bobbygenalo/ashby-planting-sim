@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { saveNow } from '../store/persistence';
 import { useCloudState } from '../store/cloudSync';
 import { useApp } from '../store/store';
@@ -54,6 +55,7 @@ function SaveStatus() {
 export function TopBar({ onScenarios, panelOpen, onTogglePanel }: { onScenarios: () => void; panelOpen: boolean; onTogglePanel: () => void }) {
   const s = useApp((x) => x);
   const edit = s.mode === 'edit';
+  const [more, setMore] = useState(false);
   return (
     <header className="topbar">
       <div className="brand">
@@ -67,9 +69,21 @@ export function TopBar({ onScenarios, panelOpen, onTogglePanel }: { onScenarios:
               {s.scenarios.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
             </select>
           </label>
-          <button onClick={() => s.createScenario()} title="Start another scenario">+ New</button>
-          <button onClick={onScenarios}>Manage…</button>
-          <ShuffleControl />
+          <div className={`collapsible ${more ? 'open' : ''}`}>
+            <button onClick={() => { s.createScenario(); setMore(false); }} title="Start another scenario">+ New</button>
+            <button onClick={() => { onScenarios(); setMore(false); }}>Manage…</button>
+            <ShuffleControl />
+          </div>
+          <button className="morebtn" aria-expanded={more} aria-label="More scenario actions" title="New, manage, shuffle" onClick={() => setMore(!more)}>⋯</button>
+        </div>
+      ) : s.phoneViewer ? (
+        <div className="scenariobar">
+          <label className="scenariopick">
+            <span className="muted small">Scenario</span>
+            <select value={s.activeScenarioId} onChange={(e) => s.switchScenario(e.target.value)} aria-label="Scenario">
+              {s.scenarios.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+            </select>
+          </label>
         </div>
       ) : (
         <div className="scenariobar"><span className="badge view">View only</span></div>

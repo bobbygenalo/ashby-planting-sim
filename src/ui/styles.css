@@ -226,10 +226,28 @@ button.icon { padding: 3px 8px; min-width: 28px; line-height: 1.2; }
 .popover { position: absolute; top: 100%; right: 0; max-height: min(72vh, 560px); overflow-y: auto; margin-top: 4px; min-width: 220px; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22); z-index: 5; pointer-events: auto; }
 
 .simdock { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 6px 10px; background: color-mix(in srgb, var(--panel) 93%, transparent); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(6px); z-index: 2; }
-.simdock.collapsed { right: auto; padding: 2px; }
 .sim-half { display: flex; align-items: center; gap: 8px; flex: 1 1 340px; min-width: 0; }
 .sim-half input[type='range'] { flex: 1 1 80px; min-width: 56px; }
 .sim-title { font-weight: 600; }
+/* Dock controls: a small label over each control, a faint vertical divider between neighbors */
+.sim-half { gap: 0; align-items: center; flex-wrap: nowrap; }
+.dg { display: flex; flex-direction: row; gap: 7px; align-items: center; padding: 0 9px; min-width: 0; border-left: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
+.dg:first-child { border-left: 0; padding-left: 0; }
+.dg.split { border-left: 1px solid var(--line); margin-left: 2px; }
+.dg-label { font-size: 10.5px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; flex: 0 0 auto; color: var(--muted, #8a8f98); white-space: nowrap; }
+.dg-body { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dg.fill { flex: 1 1 100px; }
+.dg.fill.wide { flex: 4 1 150px; }
+.dg.fill.mid { flex: 2 1 110px; }
+.dg-body { flex: 1 1 auto; }
+.simdock { flex-wrap: wrap; gap: 6px 8px; }
+.simdock .sim-half, .simdock .sim-half.sun { flex-wrap: nowrap; }
+.simdock .sim-half { flex: 2 1 300px; }
+.simdock .sim-half.sun { flex: 3 1 560px; }
+.sim-half + .sim-half { border-left: 1px solid var(--line); padding-left: 10px; }
+.dg select { max-width: 70px; }
+.dg input[type='range'] { min-width: 40px; }
+.dg select { max-width: 92px; }
 .readout { font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 84px; flex: 0 0 auto; }
 .sim-half select { max-width: 110px; font-size: 12px; }
 
@@ -261,12 +279,6 @@ button.icon { padding: 3px 8px; min-width: 28px; line-height: 1.2; }
 .star { font-size: 17px; line-height: 1; padding: 2px 7px; background: transparent; border: 0; color: var(--muted); }
 .star.on { color: #e0a100; background: transparent; border: 0; }
 
-@media (max-width: 1000px) {
-  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 60vh auto; height: auto; min-height: 100%; }
-  .right { border-left: 0; border-top: 1px solid var(--line); }
-  .rightstack { min-height: 70vh; }
-  .stage { height: 60vh; }
-}
 
 .shufflebar { position: absolute; top: 54px; left: 10px; width: 210px; max-height: calc(100% - 54px - 110px); overflow-y: auto; display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; background: color-mix(in srgb, var(--panel) 93%, transparent); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(6px); z-index: 3; }
 .shufflebar .chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
@@ -320,22 +332,11 @@ button.icon { padding: 3px 8px; min-width: 28px; line-height: 1.2; }
 .topbar .drawerbtn.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--ink); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .drawerbtn.on .drawericon::after { background: currentColor; border-left: 0; width: 5px; right: 0; }
 button.icon .feather { display: block; }
-@media (max-width: 1000px) {
-  .app { transition: none; }
-  .right > * { width: auto; }
-  .app.panel-closed { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 60vh; }
-  .app.panel-closed .right { display: none; }
-}
 
 .dialog.wide { width: min(1100px, 100%); }
 .stagescanvas { position: relative; height: min(520px, 60vh); border-radius: 10px; overflow: hidden; background: #dfe7ee; }
 
 /* The sun half of the dock is the wider one, with long date and time sliders, and the date opens a calendar. */
-.simdock .sim-half { flex: 1 1 340px; }
-.simdock .sim-half:not(.sun) input[type='range'] { min-width: 100px; }
-.simdock .sim-half.sun { flex: 3 1 660px; }
-.sim-half input[type='range'].wide { flex: 4 1 260px; min-width: 140px; }
-.sim-half input[type='range'].wide + input[type='range'].wide { flex: 2 1 170px; min-width: 110px; }
 .readout { min-width: 64px; }
 .datewrap { position: relative; display: inline-flex; flex: 0 0 auto; }
 .datebtn { font-variant-numeric: tabular-nums; font-weight: 600; padding: 3px 9px; }
@@ -372,16 +373,16 @@ button.icon .feather { display: block; }
 .quickfind kbd { margin: 0 1px; padding: 0 4px; font: inherit; font-size: 10px; border: 1px solid currentColor; border-radius: 4px; }
 
 /* While quick find is open it is the whole right panel: the section tabs and their content are hidden (not removed, so their state stays), and the results fill the height. */
-.right.quick-open > :not(.quickfind) { display: none; }
+.right.quick-open > :not(.quickfind):not(.sheethandle) { display: none; }
 .right.quick-open > .quickfind { flex: 1 1 auto; min-height: 0; border-bottom: 0; }
 .right.quick-open > .quickfind ul { flex: 1 1 auto; max-height: none; min-height: 0; }
 
 /* While something is in hand to place, its details are the right panel (the tabs and their content are hidden, not removed). */
-.right.placing-open > :not(.placing) { display: none; }
+.right.placing-open > :not(.placing):not(.sheethandle) { display: none; }
 .right:not(.placing-open) > .placing { display: none; }
 .right > .placing { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
-.right.selection-open > :not(.selpanel) { display: none; }
+.right.selection-open > :not(.selpanel):not(.sheethandle) { display: none; }
 .right:not(.selection-open) > .selpanel { display: none; }
 
 .valvetag.running { background: #1558b8; color: #fff; animation: valvepulse 1.2s ease-in-out infinite; }
@@ -426,3 +427,70 @@ button.icon .feather { display: block; }
 .plantphoto { margin: 0 0 8px; }
 .plantphoto img { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 6px; background: var(--panel-2, #eee); }
 .plantphoto figcaption { margin-top: 3px; line-height: 1.3; }
+
+.dg-sub { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted, #8a8f98); flex: 0 0 auto; }
+.dg select { max-width: 96px; }
+
+/* The dock is one full-width line: every control is a direct item of the dock (the groups only label them), the three scrubbers
+   share what is left equally, and a faint rule before each label separates the controls. */
+.simdock { gap: 8px; flex-wrap: wrap; }
+.simdock .sim-half, .simdock .dg, .simdock .dg-body { display: contents; }
+.simdock .dg { border: 0; padding: 0; margin: 0; }
+.simdock .dg-label { display: flex; align-items: center; align-self: stretch; padding-left: 10px; margin-left: 2px; border-left: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
+.simdock .dg:first-child .dg-label { border-left: 0; padding-left: 0; margin-left: 0; }
+.simdock .dg.split .dg-label { border-left-color: var(--line); }
+.simdock .dg input[type='range'], .simdock .dg input[type='range'].wide { flex: 1 1 56px; width: auto; min-width: 56px; }
+.simdock .dg select { max-width: 96px; }
+.simdock > button.icon:last-child { margin-left: 0; }
+
+/* Faint vertical rules between the dock's functions: growth, sun and date, time of day */
+.simdock .dg-label, .simdock .dg:first-child .dg-label, .simdock .dg.split .dg-label { border-left: 0; padding-left: 0; margin-left: 0; }
+.simdock .dock-div { flex: 0 0 1px; align-self: stretch; margin: 2px 4px; background: color-mix(in srgb, var(--muted, #8a8f98) 45%, transparent); }
+
+/* ---- Narrow screens (tablet and phone): the panel is a bottom sheet over the whole yard ---- */
+.sheethandle { display: none; }
+.topbar { position: relative; }
+.topbar .morebtn { display: none; }
+@media (max-width: 1000px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: 100vh; height: 100dvh; min-height: 0; transition: none; --sheet-h: 34px; }
+  .app.sheet-half { --sheet-h: 46dvh; }
+  .app.sheet-full { --sheet-h: calc(100dvh - 58px); }
+  .app.panel-closed { --sheet-h: 0px; }
+  .stage { height: auto; }
+  .right { position: fixed; left: 0; right: 0; bottom: 0; height: var(--sheet-h); z-index: 40; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25); padding-bottom: env(safe-area-inset-bottom); transition: height 0.22s ease; }
+  .right > * { width: auto; }
+  .app.panel-closed .right { display: none; }
+  .sheethandle { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 100%; height: 34px; padding: 0; border: 0; border-radius: 14px 14px 0 0; background: var(--panel); touch-action: none; }
+  .sheethandle .grip { width: 42px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--muted) 60%, transparent); }
+  .simdock { bottom: calc(var(--sheet-h) + 8px); transition: bottom 0.22s ease; }
+  .shufflebar { max-height: calc(100% - 54px - 130px); }
+}
+@media (max-width: 700px) {
+  .topbar { flex-wrap: nowrap; gap: 8px; padding: 6px 10px; }
+  .topbar .brand, .scenariopick .muted, .topbar .savepill { display: none; }
+  .scenariobar { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
+  .scenariopick { flex: 1 1 auto; min-width: 0; }
+  .scenariopick select { min-width: 0; width: 100%; max-width: none; }
+  .topright { gap: 6px; }
+  .topbar .morebtn { display: inline-flex; }
+  .topbar .collapsible { display: none; }
+  .topbar .collapsible.open { display: flex; flex-direction: column; align-items: stretch; gap: 6px; position: absolute; top: 100%; left: 10px; z-index: 60; padding: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3); }
+  .canvasbar { flex-direction: column; align-items: stretch; top: 6px; left: 6px; right: 6px; }
+  .toolbar-right { margin-left: 0; justify-content: flex-start; }
+  .costreadout { font-size: 12px; gap: 5px; }
+  .canvasbar .popover { position: fixed; left: 8px; right: 8px; top: 112px; min-width: 0; max-height: 50dvh; }
+  .costdrop .popover { min-width: 0; }
+  .simdock { left: 6px; right: 6px; padding: 4px 8px; gap: 4px 6px; }
+  .simdock .dg select { max-width: 76px; }
+  /* With the sheet up the yard has little room left, so the time controls step aside until it is lowered. */
+  .app.sheet-half .simdock, .app.sheet-full .simdock { display: none; }
+  .app.sheet-half { --sheet-h: 42dvh; }
+}
+
+/* The phone's dock: play, plant age, time of day and a season picker, two to a row */
+.simdock.phone { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 6px 10px; }
+.simdock.phone .pd:last-child { grid-column: 1 / -1; }
+.simdock.phone .rd { flex: 0 0 62px; white-space: nowrap; }
+.simdock.phone .pd { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; }
+.simdock.phone .pd input[type='range'] { flex: 1 1 60px; min-width: 40px; width: auto; }
+.simdock.phone .pd select { max-width: none; flex: 1 1 auto; min-width: 0; }

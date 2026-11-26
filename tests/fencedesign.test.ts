@@ -3,7 +3,7 @@ import siteRaw from '../src/data/site.json';
 import engineRaw from '../src/data/engine.json';
 import materialsRaw from '../src/data/materials.json';
 import speciesRaw from '../src/data/species.json';
-import { boardDensity, boardWidthFt, defaultFenceDesign, fenceDensity, fenceLayout, fenceRun, fenceSunPieces, packBlocks, sanitizeFenceDesign, shuffleBlocks, vineSpots, type FenceDesign } from '../src/engine/fencedesign';
+import { boardDensity, boardWidthFt, defaultFenceDesign, fenceDensity, fenceLayout, fenceRun, fenceSunPieces, packBlocks, reorderBlocks, sanitizeFenceDesign, shuffleBlocks, vineSpots, type FenceDesign } from '../src/engine/fencedesign';
 import { emptyScenarioData, validateScenarioData } from '../src/engine/scenario';
 import { buildSunScene, loadSite } from '../src/engine/site';
 import type { EngineConfig, SpeciesLibrary } from '../src/engine/types';
@@ -26,9 +26,9 @@ describe('customizable west fence', () => {
     expect(run.heightFt).toBe(6);
   });
 
-  it('offers boards of 2, 4, 6 and 8 ft, wire panels in 4 ft steps, and 1x2 to 1x6 boards with 0 to 1 in gaps', () => {
+  it('offers boards of 2, 4, 6 and 8 ft, wire panels of 2 ft or 4 ft steps, and 1x2 to 1x6 boards with 0 to 1 in gaps', () => {
     for (const m of cfg.materials.filter((x) => x.kind === 'boards')) expect(m.widthsFt).toEqual([2, 4, 6, 8]);
-    for (const m of cfg.materials.filter((x) => x.kind === 'wire')) expect(m.widthsFt).toEqual([4, 8, 12, 16]);
+    for (const m of cfg.materials.filter((x) => x.kind === 'wire')) expect(m.widthsFt).toEqual([2, 4, 8, 12, 16]);
     expect(cfg.boardNominalIn[0]).toBe(2);
     expect(cfg.boardNominalIn[cfg.boardNominalIn.length - 1]).toBe(6);
     expect(cfg.boardGapIn.min).toBe(0);
@@ -160,6 +160,114 @@ describe('customizable west fence', () => {
     expect(fenceDensity(mixed, run.lengthFt, cfg)).toBeCloseTo(1 - (16 / run.lengthFt) * cfg.panelOpenShare, 6);
   });
 
+  describe('reordering by dragging', () => {
+    const blocks = [blk('a', 'hog', 30, 8), blk('b', 'redwood', 38, 2), blk('c', 'cedar', 40, 4), blk('d', 'hog', 50, 12)]; // a gap before d
+    const order = (bs: ReturnType<typeof reorderBlocks>) => bs.map((b) => `${b.id}@${b.atFt}`).join();
+
+    it('moves a block to a new place and shifts the ones between, packed from where the first of them started', () => {
+      expect(order(reorderBlocks(blocks, 'c', 0, cfg, run.lengthFt))).toBe('c@30,a@34,b@42,d@50');
+      expect(order(reorderBlocks(blocks, 'a', 2, cfg, run.lengthFt))).toBe('b@30,c@32,a@36,d@50');
+      expect(order(reorderBlocks(blocks, 'b', 3, cfg, run.lengthFt))).toBe('a@30,c@38,d@42,b@54'); // the gap before d is closed inside the moved range
+    });
+
+    it('leaves the blocks outside the moved range where they were, and does nothing when it is dropped where it is', () => {
+      const r = reorderBlocks(blocks, 'b', 0, cfg, run.lengthFt);
+      expect(r.find((b) => b.id === 'd')!.atFt).toBe(50);
+      expect(order(reorderBlocks(blocks, 'b', 1, cfg, run.lengthFt))).toBe(order(packBlocks(blocks, cfg, run.lengthFt)));
+      expect(order(reorderBlocks(blocks, 'b', 99, cfg, run.lengthFt))).toBe(order(reorderBlocks(blocks, 'b', 3, cfg, run.lengthFt)));
+      expect(order(reorderBlocks(blocks, 'nope', 0, cfg, run.lengthFt))).toBe(order(packBlocks(blocks, cfg, run.lengthFt)));
+    });
+
+    it('is what the up and down buttons do, and in the app the climbing plants go with their panels', () => {
+      const st = makeAppStore('edit');
+      const g = () => st.getState();
+      g().setFenceCustom(true);
+      for (const b of [...g().fenceDesign!.blocks]) g().removeFenceBlock(b.id);
+      const a = g().addFenceBlock('hog', 90, 8)!, b = g().addFenceBlock('redwood', 98, 4)!, c = g().addFenceBlock('hog', 102, 8)!;
+      g().patchFenceDesign({ vines: ['trachelospermum-jasminoides'], vineSpacingFt: 4 });
+      g().updateFenceBlock(c, { climbers: true });
+      const ys = () => g().instances.filter((i) => i.id.startsWith('fv-')).map((i) => i.position[1]);
+      expect(ys()).toEqual([124, 128]); // panel c: 102 + 20, 2 ft and 6 ft in
+      g().reorderFenceBlock(c, 0);
+      expect(g().fenceDesign!.blocks.map((x) => x.id)).toEqual([c, a, b]);
+      expect(ys()).toEqual([112, 116]); // now first, at 90 + 20
+      g().moveFenceBlock(c, 1); // the button: the same as dragging it one place down
+      expect(g().fenceDesign!.blocks.map((x) => x.id)).toEqual([a, c, b]);
+      g().undo();
+      expect(g().fenceDesign!.blocks.map((x) => x.id)).toEqual([c, a, b]);
+    });
+  });
+
+  it('closes the Customize fence panel without taking the fence design out of the yard', () => {
+    const st = makeAppStore('edit');
+    const g = () => st.getState();
+    expect(g().fenceBarOpen).toBe(true);
+    g().setFenceCustom(true);
+    const design = JSON.stringify(g().fenceDesign);
+    g().setFenceBarOpen(false);
+    expect(g().fenceBarOpen).toBe(false);
+    expect(JSON.stringify(g().fenceDesign)).toBe(design); // the fence is still there
+    g().setFenceBarOpen(true);
+    g().setFenceBarOpen(false);
+    g().setFenceCustom(false); // unticking Customize fence is what takes it out
+    expect(g().fenceDesign).toBeNull();
+    g().setFenceCustom(true); // ticking it again brings the panel back
+    expect(g().fenceBarOpen).toBe(true);
+  });
+
+  describe('picking and dragging a block in the yard', () => {
+    const setup = () => {
+      const st = makeAppStore('edit');
+      const g = () => st.getState();
+      g().setFenceCustom(true);
+      for (const b of [...g().fenceDesign!.blocks]) g().removeFenceBlock(b.id);
+      const a = g().addFenceBlock('hog', 40, 8)!, b = g().addFenceBlock('redwood', 48, 4)!, c = g().addFenceBlock('cedar', 52, 4)!;
+      return { st, g, a, b, c, ids: () => g().fenceDesign!.blocks.map((x) => x.id) };
+    };
+
+    it('picks a block, and picking a plant, an element or the hive lets go of it (and the other way round)', () => {
+      const { g, b } = setup();
+      g().selectFenceBlock(b);
+      expect(g().fenceBlockId).toBe(b);
+      g().select('anything');
+      expect(g().fenceBlockId).toBeNull();
+      g().selectFenceBlock(b);
+      expect(g().selectedId).toBeNull();
+      g().selectHive(true);
+      expect(g().fenceBlockId).toBeNull();
+      g().selectFenceBlock(b);
+      g().selectFenceBlock(null);
+      expect(g().fenceBlockId).toBeNull();
+    });
+
+    it('moves a block along the fence as its center passes its neighbors, one undo step for the whole drag', () => {
+      const { g, a, b, c, ids } = setup();
+      const undoDepth = () => g().history.past.length;
+      g().setFenceDragging(true);
+      const d0 = undoDepth();
+      g().dragFenceBlock(a, 44); // center still on its own block: nothing changes
+      expect(ids()).toEqual([a, b, c]);
+      expect(undoDepth()).toBe(d0); // a plain click leaves no step
+      g().dragFenceBlock(a, 51); // past the redwood block's center (50)
+      expect(ids()).toEqual([b, a, c]);
+      g().dragFenceBlock(a, 60); // past the cedar block's center too
+      expect(ids()).toEqual([b, c, a]);
+      g().setFenceDragging(false);
+      expect(undoDepth()).toBe(d0 + 1);
+      g().undo();
+      expect(ids()).toEqual([a, b, c]); // the whole drag was one step, back to before it
+    });
+
+    it('does not drag in view mode', () => {
+      const { st, a, ids } = setup();
+      st.setState({ mode: 'view' });
+      st.getState().setFenceDragging(true);
+      expect(st.getState().fenceDragging).toBe(false);
+      st.getState().dragFenceBlock(a, 60);
+      expect(ids()[0]).toBe(a);
+    });
+  });
+
   describe('shuffling the blocks', () => {
     const d = none({ blocks: [blk('a', 'hog', 30, 8), blk('b', 'redwood', 38, 2), blk('c', 'cedar', 40, 4), blk('d', 'hog', 44, 12)] });
     const sig = (x: FenceDesign) => x.blocks.map((b) => `${b.id}@${b.atFt}`).join();
@@ -230,6 +338,14 @@ describe('customizable west fence', () => {
     expect(g().fenceDesign!.blocks.every((x) => !x.climbers)).toBe(true);
   });
 
+  it('allows a 2 ft hog wire panel, with a climbing plant mid-panel when the spacing is wider', () => {
+    const d = none({ blocks: [{ ...blk('a', 'hog', 40, 2), climbers: true }], vines: ['jasminum-polyanthum'], vineSpacingFt: 4 });
+    expect(sanitizeFenceDesign(d, cfg, run.lengthFt).blocks[0].widthFt).toBe(2);
+    const l = fenceLayout(d, run.lengthFt, cfg);
+    expect(l.panels[0]).toMatchObject({ from: 40, to: 42, verticals: 7 }); // 24 in / 4 in + 1
+    expect(vineSpots(d, run.a, run.b, cfg, l).map((x) => x.along)).toEqual([41]);
+  });
+
   it('plants beside the driveway too, rooting closer to the fence in the strip between them, and skips only what is on the driveway', () => {
     const st = makeAppStore('edit');
     const g = () => st.getState();
@@ -248,6 +364,25 @@ describe('customizable west fence', () => {
     const b = g().addFenceBlock('hog', 75, 8)!;
     g().updateFenceBlock(b, { climbers: true });
     expect(g().instances.filter((i) => i.id.startsWith('fv-') && i.position[1] > 90).every((i) => Math.abs(i.position[0] - cfg.vine.offsetFt) < 1e-9)).toBe(true);
+  });
+
+  it('gives wire panels an optional wooden top piece: for every panel, or one at a time', () => {
+    const d = none({ blocks: [blk('a', 'hog', 20, 8), { ...blk('b', 'cattle', 28, 8), topPiece: true }, { ...blk('c', 'welded', 36, 8), topPiece: false }] });
+    const t = cfg.wireTop.thicknessIn / 12;
+    const panels = (x: typeof d) => fenceLayout(x, run.lengthFt, cfg).panels;
+    expect(panels(d).map((p) => p.topPiece)).toEqual([false, true, false]); // only the one that asked
+    expect(panels({ ...d, wireTop: true }).map((p) => p.topPiece)).toEqual([true, true, false]); // every panel, except the one that opted out
+    const withTop = panels(d)[1];
+    expect(withTop.topFt).toBeCloseTo(withTop.bottomFt + withTop.heightFt + t, 9);
+    expect(panels(d)[0].topFt).toBeCloseTo(panels(d)[0].bottomFt + panels(d)[0].heightFt, 9);
+    // the post beside it stands above the wood, and the sun model sees the added height
+    const l = fenceLayout(d, run.lengthFt, cfg);
+    const tallest = (x: number) => l.postHeights[l.posts.findIndex((p) => Math.abs(p - x) < 1e-6)];
+    expect(tallest(36)).toBeGreaterThanOrEqual(withTop.topFt + cfg.postRiseFt - 1e-9);
+    expect(fenceSunPieces(d, run, cfg).find((p) => p.id.endsWith('~' + l.segments.findIndex((sg) => sg.blockId === 'b')))!.height).toBeCloseTo(withTop.topFt, 9);
+    // boards never take one
+    expect(sanitizeFenceDesign({ blocks: [{ id: 'x', material: 'cedar', atFt: 10, widthFt: 4, topPiece: true }], wireTop: true }, cfg, run.lengthFt).blocks[0].topPiece).toBeUndefined();
+    expect(sanitizeFenceDesign({ wireTop: 'yes' }, cfg, run.lengthFt).wireTop).toBe(false);
   });
 
   it('has real climbing species to choose: jasmine and passion fruit', () => {
@@ -273,7 +408,7 @@ describe('customizable west fence', () => {
       for (const b of [...g().fenceDesign!.blocks]) g().removeFenceBlock(b.id);
       expect(g().fenceDesign!.blocks).toHaveLength(0);
       const id = g().addFenceBlock('hog', 100)!;
-      expect(g().fenceDesign!.blocks[0]).toMatchObject({ id, material: 'hog', atFt: 100, widthFt: 4 });
+      expect(g().fenceDesign!.blocks[0]).toMatchObject({ id, material: 'hog', atFt: 100, widthFt: 2 });
       g().updateFenceBlock(id, { widthFt: 8 });
       expect(g().fenceDesign!.blocks[0].widthFt).toBe(8);
       g().updateFenceBlock(id, { material: 'cedar' }); // a new material: its own sizes

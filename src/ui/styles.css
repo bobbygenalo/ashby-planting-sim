@@ -526,3 +526,11 @@ button.icon .feather { display: block; }
 .fencerow button { flex: 0 0 auto; }
 .fencerow select { flex: 1 1 0; }
 .fenceaddbtn { min-width: 0; }
+
+.fenceblocks { display: grid; gap: 2px; }
+.fenceblock[draggable='true'] { cursor: grab; position: relative; }
+.fenceblock.dragging { opacity: 0.4; }
+.fenceblock.drop-before::before, .fenceblock.drop-after::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 1px; pointer-events: none; }
+.fenceblock.drop-before::before { top: -2px; }
+.fenceblock.drop-after::after { bottom: -2px; }
+.fencegrip { flex: 0 0 auto; width: 12px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1; user-select: none; }

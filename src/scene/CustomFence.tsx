@@ -1,7 +1,9 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { fenceLayout, type FenceDesign } from '../engine/fencedesign';
 import { useApp } from '../store/store';
+import { grab, groundUnder, takeHold } from './grab';
 
 const IN = 1 / 12;
 
@@ -48,6 +50,44 @@ export function CustomFence({ a, b, design }: { a: [number, number]; b: [number,
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
   const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
   const layout = useMemo(() => fenceLayout(design, len, cfg), [design, len, cfg]);
+  // Picking and dragging a block in the yard: press on it to select it, then drag it along the fence (the ground handler in SiteScene follows the pointer).
+  const edit = useApp((st) => st.mode === 'edit');
+  const tool = useApp((st) => !!(st.drawing || st.placingSpeciesId || st.measureActive));
+  const pickedId = useApp((st) => st.fenceBlockId);
+  const selectBlock = useApp((st) => st.selectFenceBlock);
+  const setDragging = useApp((st) => st.setFenceDragging);
+  const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
+  const gl = useThree((st) => st.gl);
+  const dragging = useApp((st) => st.fenceDragging);
+  const dragBlock = useApp((st) => st.dragFenceBlock);
+  const camera = useThree((st) => st.camera);
+  useEffect(() => {
+    const up = () => {
+      setDragging(false);
+      if (controls) controls.enabled = true;
+    };
+    window.addEventListener('pointerup', up);
+    return () => window.removeEventListener('pointerup', up);
+  }, [controls, setDragging]);
+  // While a block is dragged, follow the pointer anywhere over the yard: the ground under it (shifted by where the block was grabbed)
+  // gives the block's center along the fence. Listening on the window, not the ground mesh, keeps the drag going over buildings and fences.
+  useEffect(() => {
+    if (!dragging || !pickedId) return;
+    const ray = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const move = (e: PointerEvent) => {
+      const r = gl.domElement.getBoundingClientRect();
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      const g = groundUnder(ray.ray);
+      if (!g) return;
+      const x = g[0] + grab.dx, y = g[1] + grab.dy;
+      dragBlock(pickedId, (x - a[0]) * ((b[0] - a[0]) / len) + (y - a[1]) * ((b[1] - a[1]) / len));
+    };
+    window.addEventListener('pointermove', move);
+    return () => window.removeEventListener('pointermove', move);
+  }, [dragging, pickedId, gl, camera, dragBlock, a, b, len]);
+  const dirX = (b[0] - a[0]) / len, dirY = (b[1] - a[1]) / len;
   const boardT = cfg.boardThicknessIn * IN;
   const railT = cfg.railIn[0] * IN, railW = cfg.railIn[1] * IN;
   const post = cfg.postIn * IN;
@@ -90,11 +130,52 @@ export function CustomFence({ a, b, design }: { a: [number, number]; b: [number,
     return [...m.entries()];
   }, [layout, cfg.maxWires, yWire, wire]);
 
+  // the wooden top piece: a board laid flat along the top of each wire panel that has one, sitting on the wire between its posts
+  const tops = useMemo(() => layout.panels.filter((q) => q.topPiece).map((q) => {
+    const t = cfg.wireTop.thicknessIn * IN;
+    return { p: [(q.from + q.to) / 2, yWire, q.bottomFt + q.heightFt + t / 2] as [number, number, number], s: [q.to - q.from, cfg.wireTop.widthIn * IN, t] as [number, number, number] };
+  }), [layout, cfg.wireTop, yWire]);
+
   return (
     <group position={[a[0], a[1], 0]} rotation={[0, 0, ang]}>
+      {layout.segments.filter((sg) => sg.blockId).map((sg) => {
+        const top = sg.kind === 'boards' ? sg.heightFt : sg.bottomFt + sg.heightFt + (sg.topPiece ? cfg.wireTop.thicknessIn / 12 : 0);
+        const bottom = sg.kind === 'boards' ? 0 : sg.bottomFt;
+        const mid = (sg.from + sg.to) / 2;
+        const on = sg.blockId === pickedId;
+        return (
+          <group key={sg.blockId} position={[mid, 0, (top + bottom) / 2]}>
+            {/* an invisible box over the block to pick it and drag it by */}
+            <mesh
+              onPointerOver={() => { if (edit && !tool) gl.domElement.style.cursor = 'grab'; }}
+              onPointerOut={() => { gl.domElement.style.cursor = ''; }}
+              onClick={(e) => { if (tool || e.delta > 3) return; e.stopPropagation(); selectBlock(sg.blockId!); }}
+              onPointerDown={(e) => {
+                if (tool) return;
+                e.stopPropagation();
+                selectBlock(sg.blockId!);
+                if (!edit) return;
+                takeHold(e.ray, [a[0] + dirX * mid, a[1] + dirY * mid]);
+                setDragging(true);
+                if (controls) controls.enabled = false;
+              }}
+            >
+              <boxGeometry args={[sg.to - sg.from, 0.7, top - bottom]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+            {on && (
+              <mesh raycast={() => null} renderOrder={6}>
+                <boxGeometry args={[sg.to - sg.from + 0.12, 0.5, top - bottom + 0.12]} />
+                <meshBasicMaterial color="#2563eb" transparent opacity={0.28} depthWrite={false} />
+              </mesh>
+            )}
+          </group>
+        );
+      })}
       {boardGroups.map(([color, items]) => <Boxes key={`b${color}`} items={items} color={color} jitter={0.07} />)}
       <Boxes items={rails} color={cfg.colors.rail} />
       <Boxes items={posts} color={cfg.colors.post} />
+      <Boxes items={tops} color={cfg.wireTop.color} />
       {wireGroups.map(([color, items]) => <Boxes key={`w${color}`} items={items} color={color} cast={false} metal={0.25} />)}
       {boardSegs.map((sg, i) => (
         <mesh key={i} position={[(sg.from + sg.to) / 2, 0, sg.heightFt + capCfg.capFt / 2]} castShadow>

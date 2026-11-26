@@ -328,6 +328,9 @@ export function CanvasToolbar() {
                 <input type="checkbox" checked={!!s.fenceDesign} disabled={!edit} onChange={(e) => s.setFenceCustom(e.target.checked)} />
                 Customize fence{!edit && ' (locked)'}
               </label>
+              {s.fenceDesign && !s.fenceBarOpen && edit && (
+                <button type="button" className="linklike" style={{ marginLeft: 22 }} onClick={() => s.setFenceBarOpen(true)}>Show the fence design panel</button>
+              )}
             </>
           )}
         </Dropdown>

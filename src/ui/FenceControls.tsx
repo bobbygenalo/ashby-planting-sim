@@ -28,6 +28,7 @@ export function FenceBar() {
   const remove = useApp((x) => x.removeFenceBlock);
   const duplicate = useApp((x) => x.duplicateFenceBlock);
   const move = useApp((x) => x.moveFenceBlock);
+  const reorder = useApp((x) => x.reorderFenceBlock);
   const shuffle = useApp((x) => x.shuffleFenceBlocks);
   const apply = useApp((x) => x.applyFenceVines);
   const clear = useApp((x) => x.clearFenceVines);
@@ -36,13 +37,18 @@ export function FenceBar() {
   const instances = useApp((x) => x.instances);
   const edit = useApp((x) => x.mode === 'edit');
   const setCustom = useApp((x) => x.setFenceCustom);
+  const barOpen = useApp((x) => x.fenceBarOpen);
+  const setBarOpen = useApp((x) => x.setFenceBarOpen);
   const shuffleOpen = useApp((x) => x.shuffleOpen && x.mode === 'edit');
   const [note, setNote] = useState('');
-  const [picked, setPicked] = useState<string | null>(null);
+  const picked = useApp((x) => x.fenceBlockId);
+  const setPicked = useApp((x) => x.selectFenceBlock);
+  // dragging a block up or down the list: which one, and where it would land (0 to the number of blocks: before that row)
+  const [drag, setDrag] = useState<{ id: string; at: number | null } | null>(null);
   // Sit just beneath the dropdowns, which wrap onto more rows in a narrow yard.
   const bar = useRef<HTMLDivElement>(null);
   const [top, setTop] = useState(54);
-  const open = !!d && edit;
+  const open = !!d && edit && barOpen;
   useEffect(() => {
     if (!open) return;
     const stage = bar.current?.parentElement;
@@ -54,7 +60,18 @@ export function FenceBar() {
     ro.observe(views);
     return () => ro.disconnect();
   }, [open]);
-  if (!d || !edit) return null;
+  // Escape lets go of the picked block, and a block picked in the yard scrolls into view in the list.
+  useEffect(() => {
+    if (!picked || !open) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.key === 'Escape' && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) setPicked(null);
+    };
+    window.addEventListener('keydown', onKey);
+    bar.current?.querySelector('.fenceblock.on')?.scrollIntoView?.({ block: 'nearest' });
+    return () => window.removeEventListener('keydown', onKey);
+  }, [picked, open, setPicked]);
+  if (!d || !edit || !barOpen) return null;
 
   const run = fenceRun(site, cfg);
   const streetAt = run?.a[1] ?? 0; // the fence starts this far from the street
@@ -75,7 +92,7 @@ export function FenceBar() {
     <div className="fencebar" ref={bar} style={{ top, left: shuffleOpen ? 230 : 10, maxHeight: `calc(100% - ${top}px - 110px)` }} role="group" aria-label="Fence design">
       <div className="fencebar-head">
         <span className="skybox-title">Customize fence</span>
-        <button type="button" className="icon" aria-label="Close and keep the plain fence" title="Turn the custom fence off" onClick={() => setCustom(false)}>×</button>
+        <button type="button" className="icon" aria-label="Close this panel" title="Close this panel: the fence design stays in the yard (open it again from Other)" onClick={() => setBarOpen(false)}>×</button>
       </div>
 
       <div className="skybox-title">Fence line <span className="muted">({Math.round(streetAt)} to {Math.round(streetAt + lengthFt)} ft from the street)</span></div>
@@ -99,27 +116,59 @@ export function FenceBar() {
           </button>
         ))}
       </div>
+      <label className="check" title="Give every hog wire, cattle and welded wire panel a wooden top piece (a panel can still be changed on its own)">
+        <input type="checkbox" checked={d.wireTop} onChange={(e) => patch({ wireTop: e.target.checked, blocks: d.blocks.map(({ topPiece: _t, ...b }) => { void _t; return b; }) })} />
+        Wood top on every wire panel
+      </label>
       <div className="fencerow">
         <button type="button" disabled={blocks.length < 2} onClick={() => { shuffle(); setNote('Blocks shuffled'); }} title="Put the blocks in a new order along the same stretch of fence">Shuffle blocks</button>
         <span className="muted">{blocks.length} block{blocks.length === 1 ? '' : 's'}</span>
       </div>
 
-      {blocks.map((b) => {
-        const m = materialOf(cfg, b.material);
-        return (
-          <div key={b.id} className={`fenceblock ${b.id === picked ? 'on' : ''}`}>
-            <button type="button" className="fenceblock-main" onClick={() => setPicked(b.id === picked ? null : b.id)} aria-pressed={b.id === picked}>
-              <i style={{ background: m?.color }} />
-              <span>{m?.label ?? b.material}</span>
-              <span className="muted">{b.climbers ? '🌿 ' : ''}{b.widthFt} ft at {street(b.atFt)}</span>
-            </button>
-            <button type="button" className="icon" aria-label="Move toward the street" title="Trade places with the block toward the street" onClick={() => move(b.id, -1)}>↑</button>
-            <button type="button" className="icon" aria-label="Move toward the rear" title="Trade places with the block toward the rear" onClick={() => move(b.id, 1)}>↓</button>
-            <button type="button" className="icon" aria-label="Duplicate block" title="Duplicate: a copy with the same settings goes right after it" onClick={() => { const nid = duplicate(b.id); if (nid) { setPicked(nid); setNote('Block duplicated'); } else setNote('No room for a copy'); }}>⧉</button>
-            <button type="button" className="icon" aria-label="Remove block" title="Remove this block (the fill takes its place)" onClick={() => { remove(b.id); if (b.id === picked) setPicked(null); }}>×</button>
-          </div>
-        );
-      })}
+      <div className="fenceblocks" onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrag((d) => (d ? { ...d, at: null } : d)); }}>
+        {blocks.map((b, i) => {
+          const m = materialOf(cfg, b.material);
+          const dragging = drag?.id === b.id;
+          const mark = drag && drag.at !== null && !dragging ? (drag.at === i ? 'before' : drag.at === i + 1 && i === blocks.length - 1 ? 'after' : '') : '';
+          return (
+            <div
+              key={b.id}
+              className={`fenceblock ${b.id === picked ? 'on' : ''} ${dragging ? 'dragging' : ''} ${mark ? `drop-${mark}` : ''}`}
+              draggable
+              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', b.id); setDrag({ id: b.id, at: null }); setPicked(b.id); }}
+              onDragEnd={() => setDrag(null)}
+              onDragOver={(e) => {
+                if (!drag) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const r = e.currentTarget.getBoundingClientRect();
+                const at = e.clientY < r.top + r.height / 2 ? i : i + 1;
+                if (drag.at !== at) setDrag({ ...drag, at });
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (drag && drag.at !== null) {
+                  const from = blocks.findIndex((x) => x.id === drag.id);
+                  reorder(drag.id, drag.at > from ? drag.at - 1 : drag.at);
+                  setNote('Block moved');
+                }
+                setDrag(null);
+              }}
+            >
+              <span className="fencegrip" aria-hidden="true" title="Drag to reorder">⠿</span>
+              <button type="button" className="fenceblock-main" onClick={() => setPicked(b.id === picked ? null : b.id)} aria-pressed={b.id === picked}>
+                <i style={{ background: m?.color }} />
+                <span>{m?.label ?? b.material}</span>
+                <span className="muted">{b.climbers ? '🌿 ' : ''}{b.widthFt} ft at {street(b.atFt)}</span>
+              </button>
+              <button type="button" className="icon" aria-label="Move toward the street" title="Trade places with the block toward the street" onClick={() => move(b.id, -1)}>↑</button>
+              <button type="button" className="icon" aria-label="Move toward the rear" title="Trade places with the block toward the rear" onClick={() => move(b.id, 1)}>↓</button>
+              <button type="button" className="icon" aria-label="Duplicate block" title="Duplicate: a copy with the same settings goes right after it" onClick={() => { const nid = duplicate(b.id); if (nid) { setPicked(nid); setNote('Block duplicated'); } else setNote('No room for a copy'); }}>⧉</button>
+              <button type="button" className="icon" aria-label="Remove block" title="Remove this block (the fill takes its place)" onClick={() => { remove(b.id); if (b.id === picked) setPicked(null); }}>×</button>
+            </div>
+          );
+        })}
+      </div>
 
       {sel && selMat && (
         <div className="fencedetail">
@@ -158,6 +207,10 @@ export function FenceBar() {
               <Slider label="Grid width" {...cfg.gridIn} value={sel.gridWidthIn ?? selMat.gridWidthIn ?? 4} onChange={(v) => update(sel.id, { gridWidthIn: v })} format={inch} />
               <Slider label="Grid height" {...cfg.gridIn} value={sel.gridHeightIn ?? selMat.gridHeightIn ?? 4} onChange={(v) => update(sel.id, { gridHeightIn: v })} format={inch} />
               <Slider label="Off the ground" {...cfg.panelBottomFt} value={sel.bottomFt ?? cfg.panelBottomFt.default ?? 0} onChange={(v) => update(sel.id, { bottomFt: v })} format={ft} />
+              <label className="check" title="A wooden board laid across the top of this panel">
+                <input type="checkbox" checked={sel.topPiece ?? d.wireTop} onChange={(e) => update(sel.id, { topPiece: e.target.checked })} />
+                Wood top piece
+              </label>
               <label className="check" title={d.vines.length ? 'Set out the chosen climbing plants along this panel' : 'Choose climbing plants below first'}>
                 <input type="checkbox" checked={!!sel.climbers} disabled={!d.vines.length && !sel.climbers} onChange={(e) => { update(sel.id, { climbers: e.target.checked }); setNote(e.target.checked ? 'Climbing plants set out along this panel' : 'Climbing plants removed from this panel'); }} />
                 Climbing plants on this panel{!d.vines.length && !sel.climbers ? ' (choose some below)' : ''}
@@ -204,6 +257,7 @@ export function FenceBar() {
         <button type="button" disabled={!d.vines.length || !layout?.panels.length} onClick={() => { const n = apply(); setNote(`${n} planted on ${layout?.panels.length ?? 0} panel${layout?.panels.length === 1 ? '' : 's'}`); }}>Plant every panel</button>
         <button type="button" className="linklike" disabled={!planted} onClick={() => { clear(); setNote('removed'); }}>Remove all ({planted})</button>
       </div>
+      <button type="button" className="linklike" onClick={() => setCustom(false)} title="Take the custom fence out and go back to the plain fence (the climbing plants it set out go too)">Turn off the custom fence</button>
       <div className="muted" aria-live="polite">{note || (planted ? `${planted} planted; they follow their panels when blocks move` : 'Plants are set out 1 ft from the fence and join the plan.')}</div>
     </div>
   );

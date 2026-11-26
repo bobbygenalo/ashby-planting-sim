@@ -9,7 +9,7 @@ export interface FenceMaterial {
   label: string;
   kind: 'boards' | 'wire';
   color: string;
-  /** Widths one block of this material comes in, feet (boards in bays of 2 to 8 ft, wire in 4 ft steps). */
+  /** Widths one block of this material comes in, feet (boards in bays of 2 to 8 ft, wire panels 2 ft or 4 ft steps). */
   widthsFt: number[];
   /** Wire only: the preset panel height and grid, inches. */
   heightIn?: number;
@@ -41,6 +41,8 @@ export interface FenceDesignCfg {
   defaultBlocks: { material: string; widthFt: number; atFt: number }[];
   /** The one-click buttons that add a block: its label, material and width. */
   quickAdd: { label: string; material: string; widthFt: number }[];
+  /** The wooden top piece on a wire panel: a board laid flat across its top, this wide (front to back) and thick, feet in the scene. */
+  wireTop: { widthIn: number; thicknessIn: number; color: string };
   maxBlocks: number;
   blockStepFt: number;
   panelHeightIn: Omit<Range, 'default'>;
@@ -75,6 +77,8 @@ export interface FenceBlock {
   bottomFt?: number;
   /** Wire only: climbing plants are set out along this panel (the fence's chosen species, `vines`). */
   climbers?: boolean;
+  /** Wire only: a wooden top piece along the panel's top (left out: the fence's `wireTop`). */
+  topPiece?: boolean;
 }
 
 /** What the owner chose for the west fence. Saved with the scenario. */
@@ -88,6 +92,8 @@ export interface FenceDesign {
   boardGapIn: number;
   /** Height of the fill's boards, feet. */
   fillHeightFt: number;
+  /** Every wire panel gets a wooden top piece (a block can say otherwise). */
+  wireTop: boolean;
   /** Species planted to climb the wire panels (ids), alternating in this order. */
   vines: string[];
   vineSpacingFt: number;
@@ -111,6 +117,7 @@ export function defaultFenceDesign(cfg: FenceDesignCfg): FenceDesign {
     boardNominalIn: cfg.boardNominalDefault,
     boardGapIn: cfg.boardGapIn.default ?? 0.25,
     fillHeightFt: cfg.boardHeightFt.default,
+    wireTop: false,
     vines: [],
     vineSpacingFt: cfg.vine.spacingFt.default ?? 4,
   };
@@ -139,6 +146,7 @@ function cleanBlock(raw: unknown, cfg: FenceDesignCfg, lengthFt: number, fallbac
     if (typeof r.gridHeightIn === 'number') opt('gridHeightIn', snap(r.gridHeightIn, cfg.gridIn));
     if (typeof r.bottomFt === 'number') opt('bottomFt', snap(r.bottomFt, cfg.panelBottomFt));
     if (r.climbers === true) b.climbers = true;
+    if (typeof r.topPiece === 'boolean') b.topPiece = r.topPiece;
   }
   return b;
 }
@@ -163,6 +171,24 @@ export function packBlocks(blocks: FenceBlock[], cfg: FenceDesignCfg, lengthFt: 
   return out;
 }
 
+/**
+ * Move one block to a new place in the order along the fence (`toIndex` is where it ends up, 0 first). The blocks between its old
+ * and new places shift one along and are packed side by side from where the first of them started; blocks outside that range
+ * stay exactly where they were. Pure.
+ */
+export function reorderBlocks(blocks: FenceBlock[], id: string, toIndex: number, cfg: FenceDesignCfg, lengthFt: number): FenceBlock[] {
+  const sorted = packBlocks(blocks, cfg, lengthFt);
+  const from = sorted.findIndex((b) => b.id === id);
+  const to = clamp(Math.round(toIndex), 0, sorted.length - 1);
+  if (from < 0 || from === to) return sorted;
+  const lo = Math.min(from, to), hi = Math.max(from, to);
+  const order = sorted.filter((b) => b.id !== id);
+  order.splice(to, 0, sorted[from]);
+  let at = sorted[lo].atFt;
+  const range = order.slice(lo, hi + 1).map((b) => { const p = { ...b, atFt: at }; at += b.widthFt; return p; });
+  return packBlocks([...order.slice(0, lo), ...range, ...order.slice(hi + 1)], cfg, lengthFt);
+}
+
 /** A design from anything saved: every value forced into its allowed range, missing ones taken from the default. */
 export function sanitizeFenceDesign(raw: unknown, cfg: FenceDesignCfg, lengthFt: number): FenceDesign {
   const d = defaultFenceDesign(cfg);
@@ -181,6 +207,7 @@ export function sanitizeFenceDesign(raw: unknown, cfg: FenceDesignCfg, lengthFt:
     boardNominalIn: cfg.boardNominalIn.includes(num(r.boardNominalIn, NaN)) ? (r.boardNominalIn as number) : d.boardNominalIn,
     boardGapIn: snap(num(r.boardGapIn, d.boardGapIn), cfg.boardGapIn),
     fillHeightFt: cfg.boardHeightFt.options.includes(num(r.fillHeightFt, NaN)) ? (r.fillHeightFt as number) : d.fillHeightFt,
+    wireTop: r.wireTop === true,
     vines: Array.isArray(r.vines) ? (r.vines.filter((v) => typeof v === 'string') as string[]) : [],
     vineSpacingFt: snap(num(r.vineSpacingFt, d.vineSpacingFt), cfg.vine.spacingFt),
   };
@@ -221,9 +248,11 @@ export interface Segment {
   bottomFt: number;
   gridWidthIn: number;
   gridHeightIn: number;
+  /** Wire only: has a wooden top piece. */
+  topPiece: boolean;
 }
 
-export interface PanelPlace { from: number; to: number; bottomFt: number; heightFt: number; verticals: number; horizontals: number; gridWidthIn: number; gridHeightIn: number; blockId?: string; material: string; color: string }
+export interface PanelPlace { from: number; to: number; bottomFt: number; heightFt: number; /** The top of the panel, with its wooden top piece if it has one. */ topFt: number; topPiece: boolean; verticals: number; horizontals: number; gridWidthIn: number; gridHeightIn: number; blockId?: string; material: string; color: string }
 export interface BoardPlace { at: number; widthFt: number; heightFt: number; color: string }
 export interface RailPlace { from: number; to: number; z: number }
 
@@ -245,7 +274,7 @@ export interface FenceLayout {
 export function fenceLayout(d: FenceDesign, lengthFt: number, cfg: FenceDesignCfg): FenceLayout {
   const fillMat = materialOf(cfg, d.fillMaterial) ?? cfg.materials.find((m) => m.kind === 'boards')!;
   const segments: Segment[] = [];
-  const base = { boardNominalIn: d.boardNominalIn, boardGapIn: d.boardGapIn, heightFt: d.fillHeightFt, bottomFt: 0, gridWidthIn: 0, gridHeightIn: 0 };
+  const base = { topPiece: false, boardNominalIn: d.boardNominalIn, boardGapIn: d.boardGapIn, heightFt: d.fillHeightFt, bottomFt: 0, gridWidthIn: 0, gridHeightIn: 0 };
   const fill = (from: number, to: number) => {
     for (let x = from; x < to - 1e-6; x += d.fillBayFt) segments.push({ ...base, kind: 'boards', from: x, to: Math.min(to, x + d.fillBayFt), material: fillMat.id, color: fillMat.color });
   };
@@ -258,7 +287,7 @@ export function fenceLayout(d: FenceDesign, lengthFt: number, cfg: FenceDesignCf
     if (mat.kind === 'boards') {
       segments.push({ ...base, kind: 'boards', from: b.atFt, to, blockId: b.id, material: mat.id, color: mat.color, boardNominalIn: b.boardNominalIn ?? d.boardNominalIn, boardGapIn: b.boardGapIn ?? d.boardGapIn, heightFt: b.heightFt ?? d.fillHeightFt });
     } else {
-      segments.push({ ...base, kind: 'wire', from: b.atFt, to, blockId: b.id, material: mat.id, color: mat.color, heightFt: (b.heightIn ?? mat.heightIn ?? 36) / 12, bottomFt: b.bottomFt ?? cfg.panelBottomFt.default ?? 0, gridWidthIn: b.gridWidthIn ?? mat.gridWidthIn ?? 4, gridHeightIn: b.gridHeightIn ?? mat.gridHeightIn ?? 4 });
+      segments.push({ ...base, kind: 'wire', from: b.atFt, to, blockId: b.id, material: mat.id, color: mat.color, heightFt: (b.heightIn ?? mat.heightIn ?? 36) / 12, bottomFt: b.bottomFt ?? cfg.panelBottomFt.default ?? 0, gridWidthIn: b.gridWidthIn ?? mat.gridWidthIn ?? 4, gridHeightIn: b.gridHeightIn ?? mat.gridHeightIn ?? 4, topPiece: b.topPiece ?? d.wireTop });
     }
     at = to;
   }
@@ -273,7 +302,7 @@ export function fenceLayout(d: FenceDesign, lengthFt: number, cfg: FenceDesignCf
       for (let x = sg.from + w / 2; x <= sg.to - w / 2 + 1e-9; x += pitch) boards.push({ at: x, widthFt: w, heightFt: sg.heightFt, color: sg.color });
     } else {
       panels.push({
-        from: sg.from, to: sg.to, bottomFt: sg.bottomFt, heightFt: sg.heightFt, blockId: sg.blockId, material: sg.material, color: sg.color,
+        from: sg.from, to: sg.to, bottomFt: sg.bottomFt, heightFt: sg.heightFt, topPiece: sg.topPiece, topFt: sg.bottomFt + sg.heightFt + (sg.topPiece ? cfg.wireTop.thicknessIn / 12 : 0), blockId: sg.blockId, material: sg.material, color: sg.color,
         gridWidthIn: sg.gridWidthIn, gridHeightIn: sg.gridHeightIn,
         verticals: Math.floor(((sg.to - sg.from) * 12) / sg.gridWidthIn) + 1,
         horizontals: Math.floor((sg.heightFt * 12) / sg.gridHeightIn) + 1,
@@ -281,7 +310,7 @@ export function fenceLayout(d: FenceDesign, lengthFt: number, cfg: FenceDesignCf
     }
   }
   const posts = [...new Set(segments.flatMap((sg) => [sg.from, sg.to]).map((x) => Math.round(x * 1e6) / 1e6))].sort((a, b) => a - b);
-  const top = (sg: Segment) => (sg.kind === 'boards' ? sg.heightFt : sg.bottomFt + sg.heightFt);
+  const top = (sg: Segment) => (sg.kind === 'boards' ? sg.heightFt : sg.bottomFt + sg.heightFt + (sg.topPiece ? cfg.wireTop.thicknessIn / 12 : 0));
   const postHeights = posts.map((x) => Math.max(...segments.filter((sg) => Math.abs(sg.from - x) < 1e-5 || Math.abs(sg.to - x) < 1e-5).map(top)) + cfg.postRiseFt);
   const rails: RailPlace[] = [];
   for (const sg of segments) {
@@ -339,7 +368,8 @@ export function vineSpots(d: FenceDesign, a: Pt, b: Pt, cfg: FenceDesignCfg, lay
   const out: VineSpot[] = [];
   let k = 0;
   for (const p of panels) {
-    for (let s = p.from + d.vineSpacingFt / 2; s < p.to - 1e-9; s += d.vineSpacingFt) {
+    // the first plant half a space in (or mid-panel on a panel narrower than the spacing)
+    for (let s = p.from + Math.min(d.vineSpacingFt, p.to - p.from) / 2; s < p.to - 1e-9; s += d.vineSpacingFt) {
       const at = (o: number): Pt => [a[0] + dir[0] * s + yard[0] * o, a[1] + dir[1] * s + yard[1] * o];
       out.push({ speciesId: d.vines[k++ % d.vines.length], along: s, at: at(cfg.vine.offsetFt), tight: at(cfg.vine.tightOffsetFt) });
     }
@@ -365,7 +395,7 @@ export function fenceSunPieces(d: FenceDesign, run: { a: Pt; b: Pt; lengthFt: nu
   return fenceLayout(d, run.lengthFt, cfg).segments.map((sg, i) => ({
     id: `${cfg.targetId}~${i}`,
     line: [at(sg.from), at(sg.to)],
-    height: sg.kind === 'boards' ? sg.heightFt : sg.bottomFt + sg.heightFt,
+    height: sg.kind === 'boards' ? sg.heightFt : sg.bottomFt + sg.heightFt + (sg.topPiece ? cfg.wireTop.thicknessIn / 12 : 0),
     density: sg.kind === 'boards' ? boardDensity(sg.boardNominalIn, sg.boardGapIn, cfg) : 1 - cfg.panelOpenShare,
   }));
 }

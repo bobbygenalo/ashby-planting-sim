@@ -4,7 +4,7 @@ import engineRaw from '../data/engine.json';
 import type { Conflict } from '../engine/conflicts';
 import { isRectangle, polygonArea, polylineLength, rotatePoints } from '../engine/geometry';
 import { drivewayBlocks, dropMappedColors, onKeepClear } from '../engine/hardscape';
-import { defaultFenceDesign, fenceLayout, fenceRun, materialOf, nextBlockId, packBlocks, sanitizeFenceDesign, shuffleBlocks, vineSpots, type FenceBlock, type FenceDesign } from '../engine/fencedesign';
+import { defaultFenceDesign, fenceLayout, fenceRun, materialOf, nextBlockId, packBlocks, reorderBlocks, sanitizeFenceDesign, shuffleBlocks, vineSpots, type FenceBlock, type FenceDesign } from '../engine/fencedesign';
 import { placeShape, reshapeBed, rotateBed, settleBed } from '../engine/bed';
 import type { QuickItem } from '../engine/quickfind';
 import type { SuggestResult, SuggestWeights } from '../engine/suggest';
@@ -314,10 +314,22 @@ export interface AppState {
   duplicateFenceBlock: (id: string) => string | null;
   /** Trade a block's place with its neighbor along the fence (-1 toward the street, 1 toward the rear). */
   moveFenceBlock: (id: string, dir: -1 | 1) => void;
+  /** Drag a block to a new place in the order along the fence (`toIndex`: where it ends up); the ones in between shift along. */
+  reorderFenceBlock: (id: string, toIndex: number) => void;
   /** Put the blocks in a new order; each press is a new order, and one undo step. */
   shuffleFenceBlocks: () => void;
   /** How many times the blocks have been shuffled (it picks the next seed). */
   fenceShuffles: number;
+  /** The fence block picked in the yard or in the Customize fence panel, and whether it is being dragged along the fence. */
+  fenceBlockId: string | null;
+  fenceDragging: boolean;
+  /** Whether the Customize fence panel is showing. Closing it leaves the fence design in the yard; unticking Customize fence removes it. */
+  fenceBarOpen: boolean;
+  setFenceBarOpen: (on: boolean) => void;
+  selectFenceBlock: (id: string | null) => void;
+  setFenceDragging: (on: boolean) => void;
+  /** Move a block along the fence while dragging, to where its center is `centerAt` feet along it: it takes the place of the blocks it passes. A whole drag is one undo step. */
+  dragFenceBlock: (id: string, centerAt: number) => void;
   /** Replace the climbing plants on the fence panels with the chosen species; returns how many were planted. */
   applyFenceVines: () => number;
   /** Remove the climbing plants this fence planted. */
@@ -380,6 +392,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
     };
     // The climbing plants this fence set out, laid again for a design: when some are planted they follow the panels as they change;
     // `force` plants them even when none were. Returns the patch to merge into a scenario edit.
+    let fenceGestureRecorded = false;
     const fenceVinesFor = (d: FenceDesign): { instances: PlantInstance[] } => {
       const cfg = engine.fenceDesign;
       const all = get().instances;
@@ -589,7 +602,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       },
       setTimelineMonth: (m) => set({ timelineMonth: Math.min(engine.timeline.maxYears * 12, Math.max(0, Math.round(m))) }),
       setTimelinePlaying: (p) => set({ timelinePlaying: p }),
-      select: (id) => set({ selectedId: id, selectedElementId: id ? null : get().selectedElementId, ...(id ? { hiveSelected: false } : {}) }),
+      select: (id) => set({ selectedId: id, selectedElementId: id ? null : get().selectedElementId, ...(id ? { hiveSelected: false, fenceBlockId: null } : {}) }),
       setPlacing: (id) => {
         get().commitDrawing();
         // Picking something to place, and letting go of it, both clear the selection: each plant placed becomes the
@@ -742,7 +755,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         scenario({ hardscape: [...get().hardscape, copy], selectedElementId: copyId, selectedId: null });
         return copyId;
       },
-      selectElement: (id) => set({ selectedElementId: id, selectedId: id ? null : get().selectedId, ...(id ? { hiveSelected: false } : {}) }),
+      selectElement: (id) => set({ selectedElementId: id, selectedId: id ? null : get().selectedId, ...(id ? { hiveSelected: false, fenceBlockId: null } : {}) }),
       updateElement: (id, patch, opts) => {
         const next = { hardscape: get().hardscape.map((e) => (e.id === id ? { ...e, ...patch } : e)) };
         if (opts?.silent) mutate(next);
@@ -957,9 +970,31 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       hive: null,
       fenceDesign: null,
       fenceShuffles: 0,
+      fenceBlockId: null,
+      fenceDragging: false,
+      fenceBarOpen: true,
+      setFenceBarOpen: (on) => set({ fenceBarOpen: on, ...(on ? {} : { fenceDragging: false }) }),
+      selectFenceBlock: (id) => set({ fenceBlockId: id, ...(id ? { selectedId: null, selectedElementId: null, hiveSelected: false } : {}) }),
+      setFenceDragging: (on) => { fenceGestureRecorded = false; set({ fenceDragging: on && get().mode === 'edit' }); },
+      dragFenceBlock: (id, centerAt) => {
+        const cfg = engine.fenceDesign;
+        const cur = get().fenceDesign;
+        const run = fenceRun(get().site, cfg);
+        if (!cur || !run || get().mode !== 'edit') return;
+        const sorted = packBlocks(cur.blocks, cfg, run.lengthFt);
+        const me = sorted.find((b) => b.id === id);
+        if (!me) return;
+        // the block takes the place of each neighbor its center has passed
+        const to = sorted.filter((b) => b.id !== id && b.atFt + b.widthFt / 2 < centerAt).length;
+        if (sorted.findIndex((b) => b.id === id) === to) return;
+        const next = sanitizeFenceDesign({ ...cur, blocks: reorderBlocks(cur.blocks, id, to, cfg, run.lengthFt) }, cfg, run.lengthFt);
+        // one undo step for the whole drag, recorded when it first changes something (a plain click leaves none)
+        if (!fenceGestureRecorded) { record(); fenceGestureRecorded = true; }
+        mutate({ fenceDesign: next, ...fenceVinesFor(next) });
+      },
       setFenceCustom: (on) => {
         const cfg = engine.fenceDesign;
-        if (on) scenario({ fenceDesign: get().fenceDesign ?? defaultFenceDesign(cfg) });
+        if (on) { scenario({ fenceDesign: get().fenceDesign ?? defaultFenceDesign(cfg) }); set({ fenceBarOpen: true }); }
         // turning it off takes the plants it set out away too, as one undo step
         else scenario({ fenceDesign: null, instances: get().instances.filter((i) => !i.id.startsWith(cfg.vine.idPrefix)) });
       },
@@ -1023,17 +1058,20 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
         return copy.id;
       },
       moveFenceBlock: (id, dir) => {
+        const cur = get().fenceDesign;
+        const run = fenceRun(get().site, engine.fenceDesign);
+        if (!cur || !run) return;
+        const i = packBlocks(cur.blocks, engine.fenceDesign, run.lengthFt).findIndex((b) => b.id === id);
+        if (i >= 0) get().reorderFenceBlock(id, i + dir);
+      },
+      reorderFenceBlock: (id, toIndex) => {
         const cfg = engine.fenceDesign;
         const cur = get().fenceDesign;
         const run = fenceRun(get().site, cfg);
         if (!cur || !run) return;
-        const sorted = packBlocks(cur.blocks, cfg, run.lengthFt);
-        const i = sorted.findIndex((b) => b.id === id), k = i + dir;
-        if (i < 0 || k < 0 || k >= sorted.length) return;
-        // the two trade places, packed side by side from where the earlier of them started
-        const [first, second] = i < k ? [sorted[i], sorted[k]] : [sorted[k], sorted[i]];
-        const swapped = [{ ...second, atFt: first.atFt }, { ...first, atFt: first.atFt + second.widthFt }];
-        const blocks = sorted.map((b) => swapped.find((x) => x.id === b.id) ?? b);
+        const before = packBlocks(cur.blocks, cfg, run.lengthFt).map((b) => b.id).join();
+        const blocks = reorderBlocks(cur.blocks, id, toIndex, cfg, run.lengthFt);
+        if (blocks.map((b) => b.id).join() === before) return; // nothing moved
         const next = sanitizeFenceDesign({ ...cur, blocks }, cfg, run.lengthFt);
         scenario({ fenceDesign: next, ...fenceVinesFor(next) });
       },
@@ -1082,7 +1120,7 @@ export function makeAppStore(mode: Mode, site: SiteConfig = loadSite(siteRaw)) {
       hiveDragging: false,
       setHive: (p) => scenario({ hive: p }),
       moveHive: (p) => mutate({ hive: p }),
-      selectHive: (on) => set({ hiveSelected: on, ...(on ? { selectedId: null, selectedElementId: null } : {}) }),
+      selectHive: (on) => set({ hiveSelected: on, ...(on ? { selectedId: null, selectedElementId: null, fenceBlockId: null } : {}) }),
       setHiveDragging: (on) => set({ hiveDragging: on }),
       soilProfiles: Object.fromEntries(site.zones.map((z) => [z.id, { ...soil.defaultProfile }])),
       playZones: {},

@@ -48,9 +48,9 @@
       { "id": "cedar", "label": "Cedar boards", "kind": "boards", "color": "#b49a78", "widthsFt": [2, 4, 6, 8] },
       { "id": "redwood", "label": "Redwood boards", "kind": "boards", "color": "#9a5a40", "widthsFt": [2, 4, 6, 8] },
       { "id": "weathered", "label": "Weathered gray boards", "kind": "boards", "color": "#8d8a82", "widthsFt": [2, 4, 6, 8] },
-      { "id": "hog", "label": "Hog wire panel", "kind": "wire", "color": "#9ea4aa", "widthsFt": [4, 8, 12, 16], "heightIn": 34, "gridWidthIn": 4, "gridHeightIn": 4 },
-      { "id": "cattle", "label": "Cattle panel", "kind": "wire", "color": "#8d9399", "widthsFt": [4, 8, 12, 16], "heightIn": 50, "gridWidthIn": 8, "gridHeightIn": 6 },
-      { "id": "welded", "label": "Welded wire trellis", "kind": "wire", "color": "#a8aeb4", "widthsFt": [4, 8, 12, 16], "heightIn": 72, "gridWidthIn": 2, "gridHeightIn": 4 }
+      { "id": "hog", "label": "Hog wire panel", "kind": "wire", "color": "#9ea4aa", "widthsFt": [2, 4, 8, 12, 16], "heightIn": 34, "gridWidthIn": 4, "gridHeightIn": 4 },
+      { "id": "cattle", "label": "Cattle panel", "kind": "wire", "color": "#8d9399", "widthsFt": [2, 4, 8, 12, 16], "heightIn": 50, "gridWidthIn": 8, "gridHeightIn": 6 },
+      { "id": "welded", "label": "Welded wire trellis", "kind": "wire", "color": "#a8aeb4", "widthsFt": [2, 4, 8, 12, 16], "heightIn": 72, "gridWidthIn": 2, "gridHeightIn": 4 }
     ],
     "fill": { "material": "cedar", "bayFt": { "options": [2, 4, 6, 8], "default": 8 } },
     "defaultBlocks": [
@@ -62,6 +62,7 @@
       { "label": "Hog wire panel", "material": "hog", "widthFt": 8 },
       { "label": "Wood fence panel", "material": "cedar", "widthFt": 4 }
     ],
+    "wireTop": { "widthIn": 3.5, "thicknessIn": 1.5, "color": "#9a8460" },
     "maxBlocks": 40,
     "blockStepFt": 0.5,
     "panelHeightIn": { "min": 24, "max": 96, "step": 2 },

@@ -411,6 +411,7 @@ function Ground() {
   const editMode = useApp((s) => s.mode === 'edit');
   const controls = useThree((st) => st.controls) as unknown as { enabled: boolean } | null;
   const selectHive = useApp((s) => s.selectHive);
+  const selectFenceBlock = useApp((s) => s.selectFenceBlock);
   const hiveDragging = useApp((s) => s.hiveDragging);
   const moveHive = useApp((s) => s.moveHive);
   const hardscapeCfg = useApp((s) => s.engine.hardscape);
@@ -451,6 +452,7 @@ function Ground() {
       select(null);
       selectElement(null);
       selectHive(false);
+      selectFenceBlock(null);
     }
   };
   // Option-drag copies whatever hardscape lies under the pointer, even when its own mesh did not take the press
@@ -641,7 +643,7 @@ function ViewPoseTracker() {
 function Drift({ degPerSecond, resumeS }: { degPerSecond: number; resumeS: number }) {
   const controls = useThree((st) => st.controls) as unknown as (THREE.EventDispatcher & { target: THREE.Vector3; update: () => void }) | null;
   const enabled = useApp((s) => s.layers.drift);
-  const busy = useApp((s) => !!(s.selectedId || s.selectedElementId || s.hiveSelected || s.placingSpeciesId || s.drawing || s.hsDrag || s.dragId || s.measureActive || s.quickFindOpen));
+  const busy = useApp((s) => !!(s.selectedId || s.selectedElementId || s.hiveSelected || !!s.fenceBlockId || s.placingSpeciesId || s.drawing || s.hsDrag || s.dragId || s.measureActive || s.quickFindOpen));
   const held = useMemo(() => ({ down: false, last: -1e9 }), []);
   const calm = useMemo(() => (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) || false, []);
   useEffect(() => {

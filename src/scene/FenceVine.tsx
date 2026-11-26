@@ -37,7 +37,7 @@ export function FenceVine({ p, month, design }: { p: PlacedPlant; month: number;
     const [px, py] = p.inst.position;
     return fenceVineGrowth({
       seed, along: (px - run.a[0]) * dir[0] + (py - run.a[1]) * dir[1], height: h, width: w, matureHeight: s.matureHeight,
-      panels: layout.panels.map((q) => ({ from: q.from, to: q.to, top: q.bottomFt + q.heightFt })),
+      panels: layout.panels.map((q) => ({ from: q.from, to: q.to, top: q.topFt })),
       boards: layout.segments.filter((sg) => sg.kind === 'boards').map((sg) => ({ from: sg.from, to: sg.to, top: sg.heightFt })),
       a: run.a, dir, yard, origin: [px, py],
       leaf: { lengthFt: look.leaf.lengthFt, widthFt: look.leaf.widthFt, perFt: look.leaf.perFt ?? 10, displayScale: engine.foliage.leafDisplayScale * (look.leaf.display ?? 1) },
